@@ -45,7 +45,7 @@ export function LoginForm() {
 
     setLoading(true);
     try {
-      const _response = await authService.login(validation.data);
+      await authService.login(validation.data);
 
       // Gerencia o Lembre-me
       if (typeof window !== "undefined") {

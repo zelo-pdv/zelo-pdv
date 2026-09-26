@@ -62,7 +62,7 @@ export function BarcodeScanner({
             }
           }
         },
-        (_errorMessage) => {
+        () => {
           // Ignore parsing errors as they fire constantly when no code is present
         },
       );

@@ -83,7 +83,8 @@ export async function PATCH(
       });
     }
 
-    const { password: _password, ...safeUser } = user;
+    const safeUser = { ...user };
+    delete (safeUser as { password?: string }).password;
 
     return NextResponse.json(safeUser);
   } catch (error) {

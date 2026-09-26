@@ -115,8 +115,8 @@ async function main() {
   });
 
   // Usuário Admin
-  const email = "joselucasa937@gmail.com";
-  const password = "2468JLsc";
+  const email = "zelopdv@gmail.com";
+  const password = "Zelopdv@2026";
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const adminUser = await prisma.user.upsert({
