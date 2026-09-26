@@ -43,13 +43,25 @@ const serwist = new Serwist({
         sameOrigin &&
         (pathname.startsWith("/_next/static/") ||
           pathname.match(/\.(woff|woff2|eot|ttf|otf)$/i) ||
-          request.destination === "image" ||
           request.destination === "font"),
       handler: new CacheFirst({
         cacheName: "static-assets",
         plugins: [
           new ExpirationPlugin({
             maxEntries: 200,
+            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+          }),
+        ],
+      }),
+    },
+    {
+      matcher: ({ request, sameOrigin }) =>
+        sameOrigin && request.destination === "image",
+      handler: new StaleWhileRevalidate({
+        cacheName: "image-assets",
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 100,
             maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
           }),
         ],
