@@ -4,15 +4,21 @@ import { useTheme } from "next-themes";
 import { useEffect } from "react";
 
 export function ThemeColorUpdater() {
-  const { resolvedTheme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const isDark =
-      resolvedTheme === "dark" ||
-      (typeof document !== "undefined" &&
-        document.documentElement.classList.contains("dark"));
+    const checkIsDark = () => {
+      if (resolvedTheme === "dark") return true;
+      if (resolvedTheme === "light") return false;
+      if (typeof document !== "undefined") {
+        return document.documentElement.classList.contains("dark");
+      }
+      return false;
+    };
 
     const updateStatusBar = () => {
+      const isDark = checkIsDark();
+
       const activeOverlay = document.querySelector(
         [
           '[data-slot="drawer-overlay"]:not([data-closed]):not([data-ending-style])',
@@ -58,6 +64,7 @@ export function ThemeColorUpdater() {
         meta.setAttribute("name", "theme-color");
         document.head.appendChild(meta);
       }
+      meta.removeAttribute("media");
       if (meta.getAttribute("content") !== color) {
         meta.setAttribute("content", color);
       }
@@ -116,7 +123,7 @@ export function ThemeColorUpdater() {
       observer.disconnect();
       htmlObserver.disconnect();
     };
-  }, [resolvedTheme]);
+  }, [theme, resolvedTheme]);
 
   return null;
 }
