@@ -46,6 +46,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getUserColumns} from "./columns";
 import { UsersDataTable } from "./data-table";
+import { maskPhone } from "@/lib/masks";
 
 // Serviços
 import { usersService } from "@/services/users.service";
@@ -265,7 +266,7 @@ function UserForm({
         name: initial.name,
         email: initial.email,
         password: "",
-        phone: initial.phone ? initial.phone.replace(/^\+55/, "") : "",
+        phone: initial.phone ? maskPhone(initial.phone) : "",
         avatar: initial.avatar || "",
         groupId: initial.groupId,
         active: initial.active,
@@ -379,8 +380,11 @@ function UserForm({
         <Input
           type="tel"
           value={form.phone || ""}
-          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
-          placeholder="(11) 99999-9999"
+          onChange={(e) =>
+            setForm({ ...form, phone: maskPhone(e.target.value) })
+          }
+          placeholder="(79) 98859-9091"
+          maxLength={15}
         />
       </div>
       <div className="sm:col-span-2 space-y-2">

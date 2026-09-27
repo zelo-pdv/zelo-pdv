@@ -63,6 +63,7 @@ import {
 import { categoriesService } from "@/services/categories.service";
 import { unitsService, Unit, UnitFormData } from "@/services/units.service";
 import { usersService } from "@/services/users.service";
+import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 
 export default function ConfiguracoesPage() {
   return (
@@ -129,14 +130,14 @@ function StoreSection() {
           const storeData: LojaFormData = {
             name: data.name || "",
             ownerName: firstUserName || data.ownerName || "",
-            document: data.document ? data.document.replace(/\D/g, "") : "",
-            phone: data.phone ? data.phone.replace(/^\+55/, "") : "",
+            document: data.document ? maskCpfCnpj(data.document) : "",
+            phone: data.phone ? maskPhone(data.phone) : "",
             email: data.email || "",
             logo: data.logo || "",
             active: data.active ?? true,
             address: {
               zipCode: data.address?.zipCode
-                ? data.address.zipCode.replace(/\D/g, "")
+                ? maskCep(data.address.zipCode)
                 : "",
               street: data.address?.street || "",
               number: data.address?.number || "",
@@ -254,7 +255,7 @@ function StoreSection() {
       }
 
       // 3. Atualiza o estado original para refletir a nova base de dados salva
-      setOriginal(dataToSave);
+      setOriginal(form);
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Erro ao salvar os dados da loja");
@@ -304,9 +305,10 @@ function StoreSection() {
             <Input
               value={form.document || ""}
               onChange={(e) =>
-                update("document", e.target.value.replace(/\D/g, ""))
+                update("document", maskCpfCnpj(e.target.value))
               }
               placeholder="00.000.000/0000-00"
+              maxLength={18}
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -315,9 +317,10 @@ function StoreSection() {
               type="tel"
               value={form.phone || ""}
               onChange={(e) =>
-                update("phone", e.target.value.replace(/\D/g, ""))
+                update("phone", maskPhone(e.target.value))
               }
-              placeholder="(00) 00000-0000"
+              placeholder="(79) 98859-9091"
+              maxLength={15}
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -361,9 +364,9 @@ function StoreSection() {
                 placeholder="00000-000"
                 value={form.address?.zipCode || ""}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "");
+                  const val = maskCep(e.target.value);
                   updateAddress("zipCode", val);
-                  if (val.length === 8) {
+                  if (val.replace(/\D/g, "").length === 8) {
                     buscarCep(val);
                   }
                 }}

@@ -68,49 +68,45 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214] font-sans overflow-x-hidden">
-      {/* Lado Esquerdo - Branding/Imagem */}
-      <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214] border-r border-border/40">
+    <div className="flex min-h-screen w-full bg-white dark:bg-black font-sans overflow-x-hidden">
+      {/* Lado Esquerdo - Branding & Imagem (somente Desktop) */}
+      <div className="hidden lg:flex w-1/2 flex-col justify-between p-10 xl:p-12 relative overflow-hidden bg-linear-to-br from-[#1e40af] via-[#1d4ed8] to-[#1e3a8a] dark:from-[#0b192e] dark:via-[#0f2240] dark:to-[#071120] text-white border-r border-blue-900/30 dark:border-blue-950/60">
         {/* Detalhes sutis de iluminação */}
-        <div className="absolute inset-0 z-0 opacity-40 dark:opacity-20 pointer-events-none bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_50%)]" />
+        <div className="absolute inset-0 z-0 opacity-25 dark:opacity-15 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.4),transparent_50%)]" />
+        <div className="absolute bottom-0 right-0 z-0 opacity-20 dark:opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.4),transparent_60%)] w-150 h-150" />
         
-        <div className="relative z-10 flex items-center gap-3">
-          <Image 
-            src="/zelo.jpeg" 
-            alt="Zelo PDV Logo" 
-            width={44} 
-            height={44}
-            className="rounded-xl object-contain shadow-sm"
-          />
-          <span className="text-2xl font-bold tracking-tight text-foreground">Zelo</span>
+        {/* Topo - Nome Zelo PDV */}
+        <div className="relative z-10 flex items-center">
+          <span className="text-2xl font-bold tracking-tight text-white">Zelo PDV</span>
         </div>
 
+        {/* Meio - Logo do Zelo em destaque */}
+        <div className="relative z-10 my-auto flex items-center justify-center py-6 w-full">
+          <div className="relative flex items-center justify-center">
+            <Image
+              src="/zelo.jpeg"
+              alt="Zelo PDV Logo"
+              width={260}
+              height={260}
+              priority
+              className="w-56 h-56 xl:w-64 xl:h-64 object-contain rounded-3xl shadow-2xl drop-shadow-2xl border border-white/10"
+            />
+          </div>
+        </div>
+
+        {/* Rodapé do lado esquerdo */}
         <div className="relative z-10 max-w-lg mt-auto">
-          <h2 className="text-4xl font-bold mb-6 leading-tight text-foreground">
+          <h2 className="text-3xl xl:text-4xl font-bold mb-4 leading-tight text-white tracking-tight">
             Gestão inteligente para o seu negócio decolar
           </h2>
-          <p className="text-muted-foreground text-lg mb-8">
+          <p className="text-blue-100/80 text-base xl:text-lg">
             Controle de vendas, estoque e muito mais em uma plataforma simples, rápida e segura.
           </p>
-          <div className="flex items-center gap-4 text-sm font-medium">
-            <div className="flex -space-x-3">
-              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
-                ⭐
-              </div>
-              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
-                🚀
-              </div>
-              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
-                📈
-              </div>
-            </div>
-            <span className="text-muted-foreground font-medium">A escolha inteligente para sua loja</span>
-          </div>
         </div>
       </div>
 
       {/* Lado Direito - Formulário */}
-      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214]">
+      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden bg-white dark:bg-black lg:bg-slate-50/50 dark:lg:bg-[#09090b]">
         <div className="absolute top-4 right-4 z-20">
           <ModeToggle />
         </div>
@@ -222,13 +218,6 @@ export function LoginForm() {
               )}
             </Button>
           </form>
-          
-          <div className="mt-10 text-center text-sm text-muted-foreground">
-            Ainda não tem uma conta?{' '}
-            <a href="#" className="font-semibold text-primary hover:underline underline-offset-4">
-              Crie seu PDV grátis
-            </a>
-          </div>
         </div>
       </div>
     </div>

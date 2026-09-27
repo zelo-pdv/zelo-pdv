@@ -1,6 +1,7 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { currency, dateTime } from "@/lib/format";
 import { Client } from "@/prisma/client";
+import { maskPhone } from "@/lib/masks";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -41,7 +42,7 @@ export default function ClientDetail({
       <div className="rounded-xl border border-border bg-card p-3 text-sm">
         <div>
           <span className="text-muted-foreground">Telefone:</span>{" "}
-          {client.phone}
+          {maskPhone(client.phone)}
         </div>
         <div>
           <span className="text-muted-foreground">Email:</span> {client.email}

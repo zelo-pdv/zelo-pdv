@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { currency, initials } from "@/lib/format";
 import { ClientWithAddress } from "@/types";
+import { maskPhone } from "@/lib/masks";
 
 export type ClientTableData = ClientWithAddress & {
   totalSpent: number;
@@ -40,7 +41,7 @@ export function getClientColumns({
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{c.name}</div>
               <div className="truncate text-xs text-muted-foreground">
-                {c.phone}
+                {maskPhone(c.phone)}
               </div>
               {/* Info resumida para Mobile (escondida no desktop) */}
               <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">

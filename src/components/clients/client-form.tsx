@@ -24,6 +24,7 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Client } from "@/prisma/client";
 import { ClientWithAddress } from "@/types";
+import { maskCep, maskPhone } from "@/lib/masks";
 
 // Tipagem segura para o endereço do formulário
 export type AddressData = {
@@ -68,20 +69,28 @@ const parseInitialAddress = (addressProp: any): AddressData => {
       neighborhood: firstAddress.neighborhood || "",
       city: firstAddress.city || "",
       state: firstAddress.state || "",
-      zipCode: firstAddress.zipCode || "",
+      zipCode: maskCep(firstAddress.zipCode || ""),
     };
   }
 
   if (typeof addressProp === "string") {
     try {
       const parsed = JSON.parse(addressProp);
-      return { ...defaultAddr, ...parsed };
+      return {
+        ...defaultAddr,
+        ...parsed,
+        zipCode: maskCep(parsed.zipCode || ""),
+      };
     } catch {
       return defaultAddr;
     }
   }
 
-  return { ...defaultAddr, ...addressProp };
+  return {
+    ...defaultAddr,
+    ...addressProp,
+    zipCode: maskCep(addressProp.zipCode || ""),
+  };
 };
 
 export function ClientForm({
@@ -107,7 +116,7 @@ export function ClientForm({
       }
       return {
         name: initial?.name || "",
-        phone: initialPhone,
+        phone: maskPhone(initialPhone),
         email: initial?.email || "",
         address: parseInitialAddress(initial?.address),
         notes: initial?.notes || "",
@@ -208,8 +217,8 @@ export function ClientForm({
 
     setLoading(true);
     try {
-      const phoneToSave =
-        form.phone && form.phone.trim() !== "" ? `+55${form.phone}` : null;
+      const rawPhone = form.phone ? form.phone.replace(/\D/g, "") : "";
+      const phoneToSave = rawPhone !== "" ? `+55${rawPhone}` : null;
 
       await onSubmit({
         ...form,
@@ -248,12 +257,11 @@ export function ClientForm({
             className={requiredInputClass}
             value={form.phone ?? ""}
             onChange={(e) => {
-              // Permitir apenas números
-              const onlyNumbers = e.target.value.replace(/\D/g, "");
-              setForm({ ...form, phone: onlyNumbers });
+              setForm({ ...form, phone: maskPhone(e.target.value) });
             }}
-            placeholder="(00) 00000-0000"
+            placeholder="(79) 98859-9091"
             autoComplete="off"
+            maxLength={15}
           />
         </div>
         <div className="space-y-2">
@@ -307,9 +315,7 @@ export function ClientForm({
               maxLength={9}
               disabled={cepLoading}
               onChange={(e) => {
-                const value = e.target.value
-                  .replace(/\D/g, "")
-                  .replace(/^(\d{5})(\d)/, "$1-$2");
+                const value = maskCep(e.target.value);
 
                 setForm({
                   ...form,

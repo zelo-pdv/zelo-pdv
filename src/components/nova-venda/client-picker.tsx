@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { initials } from "@/lib/format";
 import { Client } from "@/prisma/client";
+import { maskPhone } from "@/lib/masks";
 
 export function ClientPicker({
   open,
@@ -72,7 +73,7 @@ export function ClientPicker({
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{c.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {c.phone}
+                    {maskPhone(c.phone)}
                   </div>
                 </div>
               </button>

@@ -59,6 +59,7 @@ import {
   Product,
   SaleStatus,
 } from "@/types";
+import { maskPhone } from "@/lib/masks";
 
 type CartItem = {
   productId: string;
@@ -254,7 +255,7 @@ export default function NovaVenda() {
                   {client.name}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {client.phone}
+                  {maskPhone(client.phone)}
                 </div>
               </div>
               <Button
