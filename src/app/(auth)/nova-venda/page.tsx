@@ -89,6 +89,8 @@ export default function NovaVenda() {
   };
   const salesSettings = useSettingsStore((s) => s.sales) ?? {
     requireClient: false,
+    blockOutOfStock: false,
+    defaultPaymentMethod: PaymentMethod.DINHEIRO,
   };
 
   // Dados do BD (substitui o useDataStore)
@@ -100,7 +102,9 @@ export default function NovaVenda() {
   const [client, setClient] = useState<Client | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [step, setStep] = useState<"cart" | "payment">("cart");
-  const [payment, setPayment] = useState<PaymentMethod>(PaymentMethod.DINHEIRO);
+  const [payment, setPayment] = useState<PaymentMethod>(
+    salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO
+  );
   const [status, setStatus] = useState<SaleStatus>(SaleStatus.PAGO);
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -114,6 +118,55 @@ export default function NovaVenda() {
   const [productPicker, setProductPicker] = useState(false);
 
   const checkout = step === "payment";
+
+  // Item #16: Carrega rascunho do carrinho persistido
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem("zelo_cart_draft");
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+          setItems(parsed.items);
+          if (parsed.client) setClient(parsed.client);
+          if (parsed.discountType) setDiscountType(parsed.discountType);
+          if (parsed.discountValue) setDiscountValue(parsed.discountValue);
+          if (parsed.notes) setNotes(parsed.notes);
+          toast.info("Rascunho de venda anterior recuperado automaticamente.");
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao carregar rascunho:", err);
+    }
+  }, []);
+
+  // Item #16: Salva rascunho do carrinho em localStorage
+  useEffect(() => {
+    try {
+      if (items.length > 0) {
+        localStorage.setItem(
+          "zelo_cart_draft",
+          JSON.stringify({
+            items,
+            client,
+            discountType,
+            discountValue,
+            notes,
+          })
+        );
+      } else {
+        localStorage.removeItem("zelo_cart_draft");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar rascunho:", err);
+    }
+  }, [items, client, discountType, discountValue, notes]);
+
+  // Item #2: Atualiza forma de pagamento com a padrão caso seja alterada nas configurações
+  useEffect(() => {
+    if (salesSettings.defaultPaymentMethod && step === "cart") {
+      setPayment(salesSettings.defaultPaymentMethod);
+    }
+  }, [salesSettings.defaultPaymentMethod, step]);
 
   // Busca os clientes e produtos ao carregar a página com suporte a refresh silencioso
   const refreshData = async (silent = false) => {
@@ -190,6 +243,18 @@ export default function NovaVenda() {
     const existing = items.find((i) => i.productId === p.id);
     const currentQty = existing ? existing.quantity : 0;
 
+    // Item #1: Bloquear venda com estoque zerado
+    if (salesSettings.blockOutOfStock && currentQty + 1 > p.stock) {
+      toast.error(
+        `Venda bloqueada: Estoque insuficiente para ${p.name}. (Disponível: ${p.stock})`,
+        {
+          id: `stock-block-${p.id}`,
+          duration: 3500,
+        },
+      );
+      return;
+    }
+
     if (
       notifications.enableToasts &&
       notifications.outOfStockWarning &&
@@ -228,6 +293,19 @@ export default function NovaVenda() {
     if (qty < 1) return;
 
     const product = products.find((p) => p.id === id);
+
+    // Item #1: Bloquear venda com estoque zerado
+    if (salesSettings.blockOutOfStock && product && qty > product.stock) {
+      toast.error(
+        `Venda bloqueada: Estoque insuficiente para ${product.name}. (Disponível: ${product.stock})`,
+        {
+          id: `stock-block-${id}`,
+          duration: 3500,
+        },
+      );
+      return;
+    }
+
     if (
       notifications.enableToasts &&
       notifications.outOfStockWarning &&
@@ -253,12 +331,15 @@ export default function NovaVenda() {
   };
 
   const clear = () => {
+    try {
+      localStorage.removeItem("zelo_cart_draft");
+    } catch {}
     setClient(null);
     setItems([]);
     setDiscountType("fixed");
     setDiscountValue("");
     setStep("cart");
-    setPayment(PaymentMethod.DINHEIRO);
+    setPayment(salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO);
     setStatus(SaleStatus.PAGO);
     setDueDate("");
     setNotes("");

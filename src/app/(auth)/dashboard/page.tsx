@@ -6,6 +6,7 @@ import {
   Clock,
   DollarSign,
   Package,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import type { Sale } from "@/types";
 import type { ProductFrontend } from "../produtos/columns";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
+import { cn } from "@/lib/utils";
 
 function StatCard({
   icon: Icon,
@@ -56,6 +58,205 @@ function StatCard({
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneMap[tone]}`}
           >
             <Icon className="h-4 w-4" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Item #12: Gráfico de vendas dos últimos 7 dias em SVG puro
+function SalesWeekChart({
+  data,
+}: {
+  data: {
+    days: {
+      dateStr: string;
+      label: string;
+      shortDate: string;
+      total: number;
+      count: number;
+      isToday: boolean;
+    }[];
+    maxTotal: number;
+    sumTotal: number;
+  };
+}) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const avg = data.sumTotal / 7;
+
+  return (
+    <Card className="mt-6 border-border/70">
+      <CardContent className="p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">Vendas nos últimos 7 dias</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Volume diário de vendas finalizadas e pagas
+            </p>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4 text-xs">
+            <div className="bg-muted/50 rounded-lg px-3 py-1.5 border border-border/60">
+              <span className="text-muted-foreground">Total 7 dias: </span>
+              <span className="font-semibold text-foreground">
+                {currency(data.sumTotal)}
+              </span>
+            </div>
+            <div className="hidden sm:block bg-muted/50 rounded-lg px-3 py-1.5 border border-border/60">
+              <span className="text-muted-foreground">Média: </span>
+              <span className="font-semibold text-foreground">
+                {currency(avg)}/dia
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* SVG Chart */}
+        <div className="w-full overflow-x-auto pb-2">
+          <div className="min-w-[500px]">
+            <svg
+              viewBox="0 0 700 200"
+              className="w-full h-44 overflow-visible"
+              aria-label="Gráfico de vendas dos últimos 7 dias"
+            >
+              <defs>
+                <linearGradient id="barGradientPrimary" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.55" />
+                </linearGradient>
+                <linearGradient id="barGradientRegular" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.65" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.25" />
+                </linearGradient>
+                <linearGradient id="barGradientHover" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="1" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.75" />
+                </linearGradient>
+              </defs>
+
+              {/* Linhas de grade horizontais sutis */}
+              <line
+                x1="20"
+                y1="30"
+                x2="680"
+                y2="30"
+                stroke="currentColor"
+                strokeOpacity="0.08"
+                strokeDasharray="3 3"
+              />
+              <line
+                x1="20"
+                y1="85"
+                x2="680"
+                y2="85"
+                stroke="currentColor"
+                strokeOpacity="0.08"
+                strokeDasharray="3 3"
+              />
+              <line
+                x1="20"
+                y1="140"
+                x2="680"
+                y2="140"
+                stroke="currentColor"
+                strokeOpacity="0.12"
+              />
+
+              {/* Barras e rótulos para cada dia */}
+              {data.days.map((d, i) => {
+                const barWidth = 56;
+                const slotWidth = 660 / 7;
+                const x = 20 + i * slotWidth + (slotWidth - barWidth) / 2;
+                const maxHeight = 105;
+                const barHeight =
+                  d.total > 0
+                    ? Math.max(6, (d.total / data.maxTotal) * maxHeight)
+                    : 3;
+                const y = 140 - barHeight;
+                const isHovered = hoveredIdx === i;
+
+                return (
+                  <g
+                    key={d.dateStr}
+                    onMouseEnter={() => setHoveredIdx(i)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                    className="cursor-pointer"
+                  >
+                    {/* Área de toque/hover maior */}
+                    <rect
+                      x={x - 8}
+                      y="15"
+                      width={barWidth + 16}
+                      height="150"
+                      fill="transparent"
+                    />
+
+                    {/* Barra de dados */}
+                    <rect
+                      x={x}
+                      y={y}
+                      width={barWidth}
+                      height={barHeight}
+                      rx="6"
+                      ry="6"
+                      fill={
+                        isHovered
+                          ? "url(#barGradientHover)"
+                          : d.isToday
+                          ? "url(#barGradientPrimary)"
+                          : "url(#barGradientRegular)"
+                      }
+                      className="transition-all duration-300"
+                    />
+
+                    {/* Valor acima da barra */}
+                    {d.total > 0 && (
+                      <text
+                        x={x + barWidth / 2}
+                        y={y - 8}
+                        textAnchor="middle"
+                        className={cn(
+                          "text-[11px] font-semibold transition-all duration-200",
+                          isHovered || d.isToday
+                            ? "fill-foreground font-bold"
+                            : "fill-muted-foreground"
+                        )}
+                      >
+                        {currency(d.total)}
+                      </text>
+                    )}
+
+                    {/* Rótulo do dia */}
+                    <text
+                      x={x + barWidth / 2}
+                      y="160"
+                      textAnchor="middle"
+                      className={cn(
+                        "text-[12px] transition-colors",
+                        d.isToday
+                          ? "fill-primary font-bold"
+                          : "fill-foreground font-medium"
+                      )}
+                    >
+                      {d.isToday ? "Hoje" : d.label}
+                    </text>
+
+                    {/* Data resumida */}
+                    <text
+                      x={x + barWidth / 2}
+                      y="178"
+                      textAnchor="middle"
+                      className="text-[10px] fill-muted-foreground font-normal"
+                    >
+                      {d.shortDate}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         </div>
       </CardContent>
@@ -115,6 +316,57 @@ export default function Dashboard() {
     return { soldToday, pending, low };
   }, [sales, products]);
 
+  // Item #12: Dados dos últimos 7 dias para o gráfico
+  const last7DaysData = useMemo(() => {
+    const days: {
+      dateStr: string;
+      label: string;
+      shortDate: string;
+      total: number;
+      count: number;
+      isToday: boolean;
+    }[] = [];
+
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      const dayOfWeek = d.toLocaleDateString("pt-BR", { weekday: "short" });
+      const label = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1, 3);
+      const shortDate = `${day}/${month}`;
+
+      const daySales = sales.filter((s) => {
+        if (s.status !== "PAGO") return false;
+        const sDate = new Date(s.date);
+        return (
+          sDate.getFullYear() === year &&
+          sDate.getMonth() === d.getMonth() &&
+          sDate.getDate() === d.getDate()
+        );
+      });
+
+      const total = daySales.reduce((acc, s) => acc + Number(s.total), 0);
+      days.push({
+        dateStr,
+        label,
+        shortDate,
+        total,
+        count: daySales.length,
+        isToday: i === 0,
+      });
+    }
+
+    const maxTotal = Math.max(...days.map((d) => d.total), 1);
+    const sumTotal = days.reduce((acc, d) => acc + d.total, 0);
+
+    return { days, maxTotal, sumTotal };
+  }, [sales]);
+
   // Ordenar as vendas pela data mais recente
   const sortedSales = useMemo(() => {
     return [...sales].sort(
@@ -170,6 +422,9 @@ export default function Dashboard() {
           hint={stats.low.length ? "Reponha em breve" : "Tudo em ordem"}
         />
       </div>
+
+      {/* Item #12: Gráfico de vendas dos últimos 7 dias */}
+      <SalesWeekChart data={last7DaysData} />
 
       {products.length > 0 && stats.low.length > 0 && (
         <section className="mt-8">

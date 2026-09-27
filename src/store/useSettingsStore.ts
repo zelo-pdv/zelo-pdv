@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { PaymentMethod } from "@/types";
 
 export type ModuleKey =
   | "dashboard"
@@ -111,10 +112,14 @@ export const defaultNotificationSettings: NotificationSettings = {
 
 export interface SalesSettings {
   requireClient: boolean;
+  blockOutOfStock: boolean;
+  defaultPaymentMethod: PaymentMethod;
 }
 
 export const defaultSalesSettings: SalesSettings = {
   requireClient: false,
+  blockOutOfStock: false,
+  defaultPaymentMethod: PaymentMethod.DINHEIRO,
 };
 
 interface SettingsState {

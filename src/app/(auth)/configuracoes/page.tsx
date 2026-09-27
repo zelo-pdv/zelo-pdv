@@ -60,6 +60,7 @@ import {
   type Permissions,
   useSettingsStore,
 } from "@/store/useSettingsStore";
+import { PaymentMethod, PAYMENT_LABELS } from "@/types";
 import {
   createAccessGroup,
   deleteAccessGroup,
@@ -591,6 +592,8 @@ function NotificationsSection() {
 function SalesConfigSection() {
   const salesSettings = useSettingsStore((s) => s.sales) ?? {
     requireClient: false,
+    blockOutOfStock: false,
+    defaultPaymentMethod: PaymentMethod.DINHEIRO,
   };
   const setSalesSettings = useSettingsStore((s) => s.setSalesSettings);
 
@@ -603,6 +606,15 @@ function SalesConfigSection() {
     }
   };
 
+  const handleToggleBlockOutOfStock = (checked: boolean) => {
+    setSalesSettings({ blockOutOfStock: checked });
+    if (checked) {
+      toast.success("Vendas com estoque insuficiente agora serão bloqueadas");
+    } else {
+      toast.info("Vendas com estoque insuficiente agora são permitidas com aviso");
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -612,6 +624,7 @@ function SalesConfigSection() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Forçar seleção de cliente */}
         <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
           <div className="space-y-0.5 pr-4">
             <Label
@@ -629,6 +642,55 @@ function SalesConfigSection() {
             checked={salesSettings.requireClient}
             onCheckedChange={handleToggleRequireClient}
           />
+        </div>
+
+        {/* Item #1: Bloquear venda com estoque zerado */}
+        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label
+              className="text-sm font-medium cursor-pointer"
+              htmlFor="toggle-block-out-of-stock"
+            >
+              Bloquear venda com estoque zerado
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Proíbe adicionar ao carrinho ou vender produtos sem estoque disponível. Quando desativado, apenas exibe um aviso em toast.
+            </p>
+          </div>
+          <Switch
+            id="toggle-block-out-of-stock"
+            checked={salesSettings.blockOutOfStock}
+            onCheckedChange={handleToggleBlockOutOfStock}
+          />
+        </div>
+
+        {/* Item #2: Forma de pagamento padrão */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label className="text-sm font-medium">
+              Forma de pagamento padrão
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Define qual método de pagamento já vem pré-selecionado ao abrir o checkout de nova venda.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <select
+              value={salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO}
+              onChange={(e) => {
+                const method = e.target.value as PaymentMethod;
+                setSalesSettings({ defaultPaymentMethod: method });
+                toast.success(`Forma de pagamento padrão: ${PAYMENT_LABELS[method] || method}`);
+              }}
+              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+            >
+              {Object.values(PaymentMethod).map((pm) => (
+                <option key={pm} value={pm}>
+                  {PAYMENT_LABELS[pm] || pm}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </CardContent>
     </Card>
