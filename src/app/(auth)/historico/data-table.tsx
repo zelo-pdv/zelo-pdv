@@ -49,7 +49,8 @@ export function SalesDataTable({
     globalFilterFn: (row, _id, value) => {
       const term = String(value).trim().toLowerCase();
       if (!term) return true;
-      return row.original.clientName.toLowerCase().includes(term);
+      const clientName = row.original.clientName || "Consumidor Final";
+      return clientName.toLowerCase().includes(term);
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

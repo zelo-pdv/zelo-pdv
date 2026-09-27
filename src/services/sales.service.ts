@@ -13,4 +13,11 @@ export const salesService = {
       body: JSON.stringify(data),
     });
   },
+
+  async updateStatus(id: string, status: string): Promise<Sale> {
+    return apiRequest(`/sales/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  },
 };

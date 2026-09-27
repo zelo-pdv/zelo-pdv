@@ -32,6 +32,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Select,
@@ -77,6 +87,9 @@ export default function NovaVenda() {
     enableToasts: true,
     outOfStockWarning: true,
   };
+  const salesSettings = useSettingsStore((s) => s.sales) ?? {
+    requireClient: false,
+  };
 
   // Dados do BD (substitui o useDataStore)
   const [clients, setClients] = useState<Client[]>([]);
@@ -92,6 +105,10 @@ export default function NovaVenda() {
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [isFinalizing, setIsFinalizing] = useState(false);
+
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [discountType, setDiscountType] = useState<"fixed" | "percentage">("fixed");
+  const [discountValue, setDiscountValue] = useState<string>("");
 
   const [clientPicker, setClientPicker] = useState(false);
   const [productPicker, setProductPicker] = useState(false);
@@ -112,7 +129,7 @@ export default function NovaVenda() {
       setClients(typedClients);
       
       const defaultClient = typedClients.find(c => c.name === "Ao consumidor");
-      if (defaultClient) {
+      if (defaultClient && salesSettings.requireClient) {
         setClient(prev => prev || defaultClient);
       }
 
@@ -133,6 +150,7 @@ export default function NovaVenda() {
       return;
     }
     refreshData(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [can]);
 
   // Sincronização em tempo real de produtos e clientes
@@ -144,12 +162,28 @@ export default function NovaVenda() {
     enabled: can("nova-venda", "Visualizar"),
   });
 
-  const total = useMemo(
+  const subtotal = useMemo(
     () => items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
     [items],
   );
 
-  const canCheckout = client && items.length > 0;
+  const discountAmount = useMemo(() => {
+    const cleanStr = discountValue.replace(",", ".");
+    const num = parseFloat(cleanStr);
+    if (isNaN(num) || num <= 0) return 0;
+    if (discountType === "percentage") {
+      const calculated = (subtotal * num) / 100;
+      return Math.min(subtotal, Math.max(0, calculated));
+    }
+    return Math.min(subtotal, Math.max(0, num));
+  }, [subtotal, discountValue, discountType]);
+
+  const total = useMemo(
+    () => Math.max(0, subtotal - discountAmount),
+    [subtotal, discountAmount],
+  );
+
+  const canCheckout = items.length > 0 && (!salesSettings.requireClient || !!client);
 
   // Funções do carrinho
   const addProduct = (p: Product) => {
@@ -221,6 +255,8 @@ export default function NovaVenda() {
   const clear = () => {
     setClient(null);
     setItems([]);
+    setDiscountType("fixed");
+    setDiscountValue("");
     setStep("cart");
     setPayment(PaymentMethod.DINHEIRO);
     setStatus(SaleStatus.PAGO);
@@ -233,15 +269,24 @@ export default function NovaVenda() {
   };
 
   const finalize = async () => {
-    if (!client || items.length === 0) return;
+    if (items.length === 0) return;
+    if (salesSettings.requireClient && !client) {
+      toast.error("Por favor, selecione um cliente para finalizar a venda.");
+      return;
+    }
+    if (status === SaleStatus.PENDENTE && !client) {
+      toast.warning("Para vendas pendentes (fiado), é necessário vincular um cliente.");
+      return;
+    }
 
     setIsFinalizing(true);
     try {
       await salesService.create({
-        clientId: client.id,
-        clientName: client.name,
+        clientId: client?.id || null,
+        clientName: client?.name || "Consumidor Final",
         items,
         total,
+        discount: discountAmount > 0 ? discountAmount : undefined,
         paymentMethod: payment,
         status,
         dueDate: status === "PENDENTE" ? dueDate || undefined : undefined,
@@ -306,9 +351,15 @@ export default function NovaVenda() {
                 <User className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">Selecionar cliente</div>
+                <div className="text-sm font-medium">
+                  {salesSettings.requireClient
+                    ? "Selecionar cliente *"
+                    : "Cliente (Opcional)"}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  Toque para escolher
+                  {salesSettings.requireClient
+                    ? "Toque para escolher (obrigatório)"
+                    : "Toque para escolher ou deixe Consumidor Final"}
                 </div>
               </div>
               <Plus className="h-4 w-4 text-muted-foreground" />
@@ -329,10 +380,11 @@ export default function NovaVenda() {
         </Button>
         {items.length > 0 && (
           <Button
-            onClick={clear}
+            onClick={() => setShowClearConfirm(true)}
             variant="outline"
             size="icon"
             className="h-12 w-12 shrink-0 rounded-xl border-dashed border-destructive/40 text-destructive hover:border-destructive hover:text-destructive"
+            title="Limpar carrinho"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -443,6 +495,30 @@ export default function NovaVenda() {
         }}
       />
 
+      {/* Confirmação para limpar carrinho */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar carrinho?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os itens adicionados ao carrinho serão removidos. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                clear();
+                toast.info("Carrinho esvaziado.");
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Limpar carrinho
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Checkout */}
       {isMobile ? (
         <Drawer
@@ -466,7 +542,7 @@ export default function NovaVenda() {
                 <ScrollArea className="h-full">
                   <div className="pb-4">
                     <div className="mb-3 shrink-0 rounded-xl border border-border bg-card p-3 text-sm">
-                      <div className="font-medium">{client?.name}</div>
+                      <div className="font-medium">{client?.name || "Consumidor Final"}</div>
                       <div className="text-xs text-muted-foreground">
                         {items.length} item{items.length === 1 ? "" : "s"} ·{" "}
                         {currency(total)}
@@ -487,6 +563,61 @@ export default function NovaVenda() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Desconto na Venda */}
+                    <div className="mb-4 space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Desconto na venda
+                        </Label>
+                        <div className="flex rounded-lg border border-border bg-background p-0.5 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType("fixed")}
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer",
+                              discountType === "fixed"
+                                ? "bg-primary text-primary-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            R$
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType("percentage")}
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer",
+                              discountType === "percentage"
+                                ? "bg-primary text-primary-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            %
+                          </button>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min="0"
+                          step={discountType === "percentage" ? "1" : "0.01"}
+                          placeholder={discountType === "fixed" ? "0,00" : "0"}
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(e.target.value)}
+                          className="h-9 pr-14 text-sm bg-background"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                          {discountType === "fixed" ? "reais" : "%"}
+                        </div>
+                      </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-xs pt-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <span>Desconto aplicado:</span>
+                          <span className="tabular-nums">- {currency(discountAmount)}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mb-3 flex flex-col gap-2">
@@ -558,6 +689,18 @@ export default function NovaVenda() {
               </div>
 
               <div className="shrink-0 pt-4 border-t border-border">
+                {discountAmount > 0 && (
+                  <div className="space-y-1 mb-3 text-xs">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">{currency(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span>Desconto</span>
+                      <span className="tabular-nums">- {currency(discountAmount)}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -603,7 +746,7 @@ export default function NovaVenda() {
 
             <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 overflow-hidden">
               <div className="mb-3 shrink-0 rounded-xl border border-border bg-card p-3 text-sm">
-                <div className="font-medium">{client?.name}</div>
+                <div className="font-medium">{client?.name || "Consumidor Final"}</div>
                 <div className="text-xs text-muted-foreground">
                   {items.length} item{items.length === 1 ? "" : "s"} ·{" "}
                   {currency(total)}
@@ -628,6 +771,61 @@ export default function NovaVenda() {
                     ))}
                   </div>
                 </ScrollArea>
+              </div>
+
+              {/* Desconto na Venda */}
+              <div className="mb-3 space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Desconto na venda
+                  </Label>
+                  <div className="flex rounded-lg border border-border bg-background p-0.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("fixed")}
+                      className={cn(
+                        "px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer",
+                        discountType === "fixed"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      R$
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("percentage")}
+                      className={cn(
+                        "px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer",
+                        discountType === "percentage"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      %
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min="0"
+                    step={discountType === "percentage" ? "1" : "0.01"}
+                    placeholder={discountType === "fixed" ? "0,00" : "0"}
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    className="h-9 pr-14 text-sm bg-background"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                    {discountType === "fixed" ? "reais" : "%"}
+                  </div>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-xs pt-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span>Desconto aplicado:</span>
+                    <span className="tabular-nums">- {currency(discountAmount)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="mb-3 flex flex-col gap-2">
@@ -694,6 +892,19 @@ export default function NovaVenda() {
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
+
+              {discountAmount > 0 && (
+                <div className="space-y-1 mb-3 text-xs">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums">{currency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span>Desconto</span>
+                    <span className="tabular-nums">- {currency(discountAmount)}</span>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2 shrink-0 mt-auto pt-2">
                 <Button

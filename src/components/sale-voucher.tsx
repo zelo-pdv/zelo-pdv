@@ -167,6 +167,20 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     ).toUpperCase();
   }, [sale?.seller?.name, store.ownerName]);
 
+  const itemsSubtotal = useMemo(() => {
+    if (!sale) return 0;
+    return sale.items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+  }, [sale]);
+
+  const voucherDiscount = useMemo(() => {
+    if (!sale) return 0;
+    if (typeof sale.discount === "number" && sale.discount > 0) {
+      return sale.discount;
+    }
+    const diff = itemsSubtotal - Number(sale.total);
+    return diff > 0.01 ? diff : 0;
+  }, [sale, itemsSubtotal]);
+
   const render = async () => {
     if (!ref.current) throw new Error("sem conteúdo");
     const el = ref.current;
@@ -380,6 +394,18 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
 
       {/* 9. Totais */}
       <div className="space-y-1 text-xs text-slate-950">
+        {voucherDiscount > 0 && (
+          <>
+            <div className="flex justify-between items-center text-xs text-slate-700">
+              <span>Subtotal R$</span>
+              <span>{currency(itemsSubtotal).replace("R$", "").trim()}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs text-emerald-800 font-semibold">
+              <span>Desconto R$</span>
+              <span>- {currency(voucherDiscount).replace("R$", "").trim()}</span>
+            </div>
+          </>
+        )}
         <div className="flex justify-between items-center text-sm font-extrabold text-slate-950">
           <span>Total da Nota R$</span>
           <span>{currency(sale.total).replace("R$", "").trim()}</span>

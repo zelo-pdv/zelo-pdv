@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -32,7 +32,7 @@ export function ClientPicker({
   open: boolean;
   onClose: () => void;
   clients: Client[];
-  onPick: (c: Client) => void;
+  onPick: (c: Client | null) => void;
 }) {
   const [q, setQ] = useState("");
   const isMobile = useIsMobile();
@@ -59,6 +59,22 @@ export function ClientPicker({
         {/* SOLUÇÃO: Esconde a barra alvejando o elemento interno do Radix */}
         <ScrollArea className="h-full">
           <div className="space-y-1 pb-4">
+            {(!q || "consumidor final".includes(q.toLowerCase())) && (
+              <button
+                onClick={() => onPick(null)}
+                className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border/80 p-2.5 text-left transition hover:border-primary/40 hover:bg-accent"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">Consumidor Final</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    Venda avulsa sem cadastro de cliente
+                  </div>
+                </div>
+              </button>
+            )}
             {filtered.map((c) => (
               <button
                 key={c.id}

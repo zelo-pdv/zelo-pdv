@@ -109,14 +109,24 @@ export const defaultNotificationSettings: NotificationSettings = {
   outOfStockWarning: true,
 };
 
+export interface SalesSettings {
+  requireClient: boolean;
+}
+
+export const defaultSalesSettings: SalesSettings = {
+  requireClient: false,
+};
+
 interface SettingsState {
   store: StoreInfo;
   groups: AccessGroup[];
   voucher: VoucherSettings;
   notifications: NotificationSettings;
+  sales: SalesSettings;
   setStore: (s: StoreInfo) => void;
   setVoucher: (v: VoucherSettings) => void;
   setNotificationSettings: (s: Partial<NotificationSettings>) => void;
+  setSalesSettings: (s: Partial<SalesSettings>) => void;
   addGroup: (g: Omit<AccessGroup, "id" | "createdAt">) => void;
   updateGroup: (id: string, g: Partial<AccessGroup>) => void;
   removeGroup: (id: string) => void;
@@ -191,12 +201,20 @@ export const useSettingsStore = create<SettingsState>()(
       groups: defaultGroups,
       voucher: defaultVoucher,
       notifications: defaultNotificationSettings,
+      sales: defaultSalesSettings,
       setStore: (s) => set({ store: s }),
       setVoucher: (v) => set({ voucher: v }),
       setNotificationSettings: (s) =>
         set((state) => ({
           notifications: {
             ...(state.notifications ?? defaultNotificationSettings),
+            ...s,
+          },
+        })),
+      setSalesSettings: (s) =>
+        set((state) => ({
+          sales: {
+            ...(state.sales ?? defaultSalesSettings),
             ...s,
           },
         })),

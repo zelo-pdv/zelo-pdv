@@ -23,11 +23,12 @@ export interface SaleItem {
 
 export interface Sale {
   id: string;
-  clientId: string;
-  clientName: string;
+  clientId?: string | null;
+  clientName?: string | null;
   date: string; // ISO
   items: SaleItem[];
   total: number;
+  discount?: number | null;
   paymentMethod: PaymentMethod;
   status: SaleStatus;
   dueDate?: string;

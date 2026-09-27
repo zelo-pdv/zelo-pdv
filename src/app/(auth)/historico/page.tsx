@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Receipt, AlertTriangle } from "lucide-react";
+import { Receipt, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -23,19 +23,43 @@ import { GlobalLoader } from "@/components/ui/global-loader";
 import { SaleVoucher } from "@/components/sale-voucher";
 import { useVouchersStore, voucherCode } from "@/store/useVouchersStore";
 import { currency, dateTime } from "@/lib/format";
-import { PAYMENT_LABELS, type Sale } from "@/types";
+import { PAYMENT_LABELS, type Sale, SaleStatus } from "@/types";
 import { salesService } from "@/services/sales.service";
 import { getSaleColumns } from "./columns";
 import { SalesDataTable } from "./data-table";
 import { usePermissions } from "@/components/auth/permissions-provider";
-import { useDataSync } from "@/hooks/use-data-sync";
+import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 export default function HistoricoPage() {
   const isMobile = useIsMobile();
   const { can } = usePermissions();
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const addVoucher = useVouchersStore((s) => s.addVoucher);
+
+  const handleMarkAsPaid = async (saleId: string) => {
+    try {
+      setIsUpdatingStatus(true);
+      await salesService.updateStatus(saleId, SaleStatus.PAGO);
+      toast.success("Venda marcada como paga com sucesso!");
+      setSales((prev) =>
+        prev.map((s) =>
+          s.id === saleId ? { ...s, status: SaleStatus.PAGO } : s,
+        ),
+      );
+      setDetail((prev) =>
+        prev && prev.id === saleId
+          ? { ...prev, status: SaleStatus.PAGO }
+          : prev,
+      );
+      notifyLocalSync("sales");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao atualizar status da venda.");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   const refreshData = async (silent = false) => {
     try {
@@ -81,6 +105,20 @@ export default function HistoricoPage() {
     sale: Sale;
     phone?: string;
   } | null>(null);
+
+  const detailSubtotal = useMemo(() => {
+    if (!detail) return 0;
+    return detail.items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+  }, [detail]);
+
+  const detailDiscount = useMemo(() => {
+    if (!detail) return 0;
+    if (typeof detail.discount === "number" && detail.discount > 0) {
+      return detail.discount;
+    }
+    const diff = detailSubtotal - Number(detail.total);
+    return diff > 0.01 ? diff : 0;
+  }, [detail, detailSubtotal]);
 
   useEffect(() => {
     if (sales.length > 0 && typeof window !== "undefined") {
@@ -170,12 +208,31 @@ export default function HistoricoPage() {
 
                 <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-lg font-semibold tabular-nums">
-                    {currency(detail.total)}
+                {detailDiscount > 0 ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">{currency(detailSubtotal)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span>Desconto</span>
+                      <span className="tabular-nums">- {currency(detailDiscount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-border">
+                      <div className="text-sm font-semibold">Total</div>
+                      <div className="text-lg font-bold tabular-nums text-primary">
+                        {currency(detail.total)}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Total</div>
+                    <div className="text-lg font-semibold tabular-nums">
+                      {currency(detail.total)}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pagamento</span>
@@ -209,6 +266,22 @@ export default function HistoricoPage() {
                   <div className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
                     {detail.notes}
                   </div>
+                )}
+
+                {detail.status === "PENDENTE" && can("historico", "Editar") && (
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-green-600/40 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-950/40"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleMarkAsPaid(detail.id)}
+                  >
+                    {isUpdatingStatus ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                    )}
+                    Marcar como pago
+                  </Button>
                 )}
 
                 <Button
@@ -267,12 +340,31 @@ export default function HistoricoPage() {
 
                 <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-lg font-semibold tabular-nums">
-                    {currency(detail.total)}
+                {detailDiscount > 0 ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">{currency(detailSubtotal)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span>Desconto</span>
+                      <span className="tabular-nums">- {currency(detailDiscount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-border">
+                      <div className="text-sm font-semibold">Total</div>
+                      <div className="text-lg font-bold tabular-nums text-primary">
+                        {currency(detail.total)}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Total</div>
+                    <div className="text-lg font-semibold tabular-nums">
+                      {currency(detail.total)}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pagamento</span>
@@ -306,6 +398,22 @@ export default function HistoricoPage() {
                   <div className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
                     {detail.notes}
                   </div>
+                )}
+
+                {detail.status === "PENDENTE" && can("historico", "Editar") && (
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-green-600/40 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-950/40"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleMarkAsPaid(detail.id)}
+                  >
+                    {isUpdatingStatus ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                    )}
+                    Marcar como pago
+                  </Button>
                 )}
 
                 <Button

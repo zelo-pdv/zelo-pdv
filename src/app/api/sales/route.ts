@@ -65,6 +65,7 @@ export async function POST(req: Request) {
           clientId: parsed.clientId,
           clientName: parsed.clientName,
           total: parsed.total,
+          discount: parsed.discount ?? 0,
           paymentMethod: parsed.paymentMethod,
           status: parsed.status,
           dueDate: parsed.dueDate ? new Date(parsed.dueDate) : null,

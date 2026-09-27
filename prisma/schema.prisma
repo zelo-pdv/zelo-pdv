@@ -215,6 +215,7 @@ model Sale {
   id            String        @id @default(cuid())
   date          DateTime      @default(now())
   total         Decimal       @db.Decimal(10, 2)
+  discount      Decimal?      @default(0.00) @db.Decimal(10, 2)
   paymentMethod PaymentMethod
   status        SaleStatus    @default(PAGO)
   dueDate       DateTime?

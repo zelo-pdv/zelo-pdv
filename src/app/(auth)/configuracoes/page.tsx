@@ -11,6 +11,7 @@ import {
   Loader2,
   ChevronDown,
   Bell,
+  ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,7 @@ export default function ConfiguracoesPage() {
     <div className="w-full px-4">
       <StoreSection />
       <NotificationsSection />
+      <SalesConfigSection />
       <ProductsConfigSection />
       <GroupsSection />
     </div>
@@ -579,6 +581,53 @@ function NotificationsSection() {
               notifications.enableToasts && notifications.outOfStockWarning
             }
             onCheckedChange={handleToggleOutOfStockWarning}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SalesConfigSection() {
+  const salesSettings = useSettingsStore((s) => s.sales) ?? {
+    requireClient: false,
+  };
+  const setSalesSettings = useSettingsStore((s) => s.setSalesSettings);
+
+  const handleToggleRequireClient = (checked: boolean) => {
+    setSalesSettings({ requireClient: checked });
+    if (checked) {
+      toast.success("Seleção de cliente agora é obrigatória nas vendas");
+    } else {
+      toast.info("Vendas sem cliente (Consumidor Final) agora são permitidas");
+    }
+  };
+
+  return (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ShoppingCart className="h-4 w-4 text-primary" />
+          Configurações de Venda
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label
+              className="text-sm font-medium cursor-pointer"
+              htmlFor="toggle-require-client"
+            >
+              Forçar seleção de cliente
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Torna obrigatório vincular um cliente cadastrado antes de finalizar a venda. Quando desativado, permite vendas rápidas para &quot;Consumidor Final&quot;.
+            </p>
+          </div>
+          <Switch
+            id="toggle-require-client"
+            checked={salesSettings.requireClient}
+            onCheckedChange={handleToggleRequireClient}
           />
         </div>
       </CardContent>
