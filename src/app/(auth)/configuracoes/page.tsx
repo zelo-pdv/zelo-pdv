@@ -10,6 +10,7 @@ import {
   MapPin,
   Loader2,
   ChevronDown,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ import {
   type ActionKey,
   type ModuleKey,
   type Permissions,
+  useSettingsStore,
 } from "@/store/useSettingsStore";
 import {
   createAccessGroup,
@@ -78,6 +80,7 @@ export default function ConfiguracoesPage() {
   return (
     <div className="w-full px-4">
       <StoreSection />
+      <NotificationsSection />
       <ProductsConfigSection />
       <GroupsSection />
     </div>
@@ -489,6 +492,94 @@ function StoreSection() {
               Salvar
             </LoadingButton>
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotificationsSection() {
+  const notifications = useSettingsStore((s) => s.notifications) ?? {
+    enableToasts: true,
+    outOfStockWarning: true,
+  };
+  const setNotificationSettings = useSettingsStore(
+    (s) => s.setNotificationSettings,
+  );
+
+  const handleToggleEnableToasts = (checked: boolean) => {
+    setNotificationSettings({ enableToasts: checked });
+    if (checked) {
+      toast.success("Notificações em toast ativadas");
+    }
+  };
+
+  const handleToggleOutOfStockWarning = (checked: boolean) => {
+    setNotificationSettings({ outOfStockWarning: checked });
+    if (notifications.enableToasts) {
+      if (checked) {
+        toast.success("Avisos de estoque insuficiente ativados");
+      } else {
+        toast.info("Avisos de estoque insuficiente desativados");
+      }
+    }
+  };
+
+  return (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Bell className="h-4 w-4 text-primary" />
+          Notificações e Avisos
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Toggle Global de Notificações / Toasts */}
+        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label
+              className="text-sm font-medium cursor-pointer"
+              htmlFor="toggle-toasts"
+            >
+              Notificações do sistema (Toasts)
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Ativa ou desativa os alertas visuais em toast exibidos no sistema.
+            </p>
+          </div>
+          <Switch
+            id="toggle-toasts"
+            checked={notifications.enableToasts}
+            onCheckedChange={handleToggleEnableToasts}
+          />
+        </div>
+
+        {/* Toggle Específico para Produtos Sem Estoque */}
+        <div
+          className={cn(
+            "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
+            !notifications.enableToasts && "opacity-50 pointer-events-none",
+          )}
+        >
+          <div className="space-y-0.5 pr-4">
+            <Label
+              className="text-sm font-medium cursor-pointer"
+              htmlFor="toggle-stock-warning"
+            >
+              Avisos de produto sem estoque
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Exibe um aviso em toast ao selecionar ou alterar a quantidade de um produto com estoque insuficiente.
+            </p>
+          </div>
+          <Switch
+            id="toggle-stock-warning"
+            disabled={!notifications.enableToasts}
+            checked={
+              notifications.enableToasts && notifications.outOfStockWarning
+            }
+            onCheckedChange={handleToggleOutOfStockWarning}
+          />
         </div>
       </CardContent>
     </Card>

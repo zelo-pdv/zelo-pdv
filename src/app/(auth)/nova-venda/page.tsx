@@ -59,6 +59,7 @@ import {
 } from "@/types";
 import { maskPhone } from "@/lib/masks";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 type CartItem = {
   productId: string;
@@ -72,6 +73,10 @@ export default function NovaVenda() {
   const router = useRouter();
   const { can } = usePermissions();
   const isMobile = useIsMobile();
+  const notifications = useSettingsStore((s) => s.notifications) ?? {
+    enableToasts: true,
+    outOfStockWarning: true,
+  };
 
   // Dados do BD (substitui o useDataStore)
   const [clients, setClients] = useState<Client[]>([]);
@@ -151,7 +156,11 @@ export default function NovaVenda() {
     const existing = items.find((i) => i.productId === p.id);
     const currentQty = existing ? existing.quantity : 0;
 
-    if (currentQty + 1 > p.stock) {
+    if (
+      notifications.enableToasts &&
+      notifications.outOfStockWarning &&
+      currentQty + 1 > p.stock
+    ) {
       toast.warning(
         `Atenção: Estoque insuficiente para ${p.name}. (Em estoque: ${p.stock})`,
         {
@@ -185,7 +194,12 @@ export default function NovaVenda() {
     if (qty < 1) return;
 
     const product = products.find((p) => p.id === id);
-    if (product && qty > product.stock) {
+    if (
+      notifications.enableToasts &&
+      notifications.outOfStockWarning &&
+      product &&
+      qty > product.stock
+    ) {
       toast.warning(
         `Atenção: Estoque insuficiente para ${product.name}. (Em estoque: ${product.stock})`,
         {

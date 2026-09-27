@@ -99,12 +99,24 @@ export interface VoucherSettings {
   showContact: boolean;
 }
 
+export interface NotificationSettings {
+  enableToasts: boolean;
+  outOfStockWarning: boolean;
+}
+
+export const defaultNotificationSettings: NotificationSettings = {
+  enableToasts: true,
+  outOfStockWarning: true,
+};
+
 interface SettingsState {
   store: StoreInfo;
   groups: AccessGroup[];
   voucher: VoucherSettings;
+  notifications: NotificationSettings;
   setStore: (s: StoreInfo) => void;
   setVoucher: (v: VoucherSettings) => void;
+  setNotificationSettings: (s: Partial<NotificationSettings>) => void;
   addGroup: (g: Omit<AccessGroup, "id" | "createdAt">) => void;
   updateGroup: (id: string, g: Partial<AccessGroup>) => void;
   removeGroup: (id: string) => void;
@@ -178,8 +190,16 @@ export const useSettingsStore = create<SettingsState>()(
       store: defaultStore,
       groups: defaultGroups,
       voucher: defaultVoucher,
+      notifications: defaultNotificationSettings,
       setStore: (s) => set({ store: s }),
       setVoucher: (v) => set({ voucher: v }),
+      setNotificationSettings: (s) =>
+        set((state) => ({
+          notifications: {
+            ...(state.notifications ?? defaultNotificationSettings),
+            ...s,
+          },
+        })),
       addGroup: (g) =>
         set((state) => ({
           groups: [

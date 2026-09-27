@@ -1,11 +1,23 @@
-"use client"
+"use client";
 
+import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+import { useSettingsStore } from "@/store/useSettingsStore"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const enableToasts = useSettingsStore((s) => s.notifications?.enableToasts ?? true)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (mounted && !enableToasts) {
+    return null
+  }
 
   return (
     <Sonner
