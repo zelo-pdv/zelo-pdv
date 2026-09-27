@@ -12,7 +12,26 @@ export async function GET() {
     const sales = await prisma.sale.findMany({
       where: { lojaId: user.lojaId },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+              },
+            },
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
       },
     });
     return NextResponse.json(sales);
@@ -42,6 +61,7 @@ export async function POST(req: Request) {
       const newSale = await tx.sale.create({
         data: {
           lojaId: user.lojaId,
+          sellerId: user.id,
           clientId: parsed.clientId,
           clientName: parsed.clientName,
           total: parsed.total,
@@ -57,6 +77,25 @@ export async function POST(req: Request) {
               unitPrice: item.unitPrice,
               subtotal: item.quantity * item.unitPrice,
             })),
+          },
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
       });

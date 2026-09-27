@@ -3,7 +3,6 @@ import { Download, FileText, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +17,8 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSettingsStore } from "@/store/useSettingsStore";
-import { currency, dateTime } from "@/lib/format";
+import { useSettingsStore, StoreInfo } from "@/store/useSettingsStore";
+import { currency } from "@/lib/format";
 import { PAYMENT_LABELS, type Sale } from "@/types";
 
 interface Props {
@@ -27,6 +26,67 @@ interface Props {
   open: boolean;
   onClose: () => void;
   clientPhone?: string;
+}
+
+function formatDocument(doc?: string | null): string {
+  if (!doc) return "";
+  const clean = doc.replace(/\D/g, "");
+  if (clean.length === 14) {
+    return `CNPJ : ${clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}`;
+  }
+  if (clean.length === 11) {
+    return `CPF : ${clean.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")}`;
+  }
+  return clean ? `CNPJ/CPF : ${clean}` : "";
+}
+
+function formatPhone(phone?: string | null): string {
+  if (!phone) return "";
+  const clean = phone.replace(/^\+55/, "").replace(/\D/g, "");
+  if (clean.length === 11) {
+    return clean.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  }
+  if (clean.length === 10) {
+    return clean.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+  }
+  return phone;
+}
+
+function formatCep(cep?: string | null): string {
+  if (!cep) return "";
+  const clean = cep.replace(/\D/g, "");
+  if (clean.length === 8) {
+    return clean.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+  }
+  return cep;
+}
+
+function getAddressLines(store: StoreInfo): string[] {
+  const addr = store.addressData;
+  if (addr && (addr.street || addr.city)) {
+    const lines: string[] = [];
+    const line1Parts: string[] = [];
+    if (addr.street) line1Parts.push(addr.street);
+    if (addr.number) line1Parts.push(addr.number);
+    let line1 = line1Parts.join(", ");
+    if (addr.complement) line1 += ` - ${addr.complement}`;
+    if (line1) lines.push(line1);
+
+    const line2Parts: string[] = [];
+    if (addr.neighborhood) line2Parts.push(addr.neighborhood);
+    if (addr.zipCode) line2Parts.push(formatCep(addr.zipCode));
+    const cityState = [addr.city, addr.state].filter(Boolean).join("/");
+    if (cityState) line2Parts.push(cityState);
+    if (line2Parts.length > 0) lines.push(line2Parts.join(" - "));
+
+    return lines;
+  }
+
+  if (store.address && store.address.trim()) {
+    return [store.address.trim()];
+  }
+
+  return [];
 }
 
 export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
@@ -48,7 +108,16 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
               ownerName: res.ownerName || "",
               phone: res.phone || "",
               email: res.email || "",
-              address: res.address || "",
+              address:
+                typeof res.address === "string"
+                  ? res.address
+                  : res.address?.street
+                    ? `${res.address.street}${res.address.number ? `, ${res.address.number}` : ""}`
+                    : "",
+              addressData:
+                res.address && typeof res.address === "object"
+                  ? res.address
+                  : null,
               document: res.document || "",
             });
           }
@@ -57,24 +126,51 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     }
   }, [open, setStore]);
 
-  // Otimização: Memoiza o código para não recalcular a cada render
-  const code = useMemo(
-    () =>
-      sale
-        ? sale.id
-            .replace(/[^a-zA-Z0-9]/g, "")
-            .slice(-6)
-            .toUpperCase()
-        : "",
+  // Código de identificação do pedido/venda
+  const code = useMemo(() => {
+    if (!sale) return "";
+    const clean = sale.id.replace(/[^a-zA-Z0-9]/g, "");
+    return clean.slice(-6).padStart(6, "0").toUpperCase();
+  }, [sale]);
+
+  const addressLines = useMemo(() => getAddressLines(store), [store]);
+  const formattedPhone = useMemo(() => formatPhone(store.phone), [store.phone]);
+  const formattedDoc = useMemo(
+    () => formatDocument(store.document),
+    [store.document],
+  );
+
+  const saleDateObj = useMemo(
+    () => (sale ? new Date(sale.date) : new Date()),
     [sale],
   );
+
+  const formattedDateTime = useMemo(() => {
+    const d = saleDateObj.toLocaleDateString("pt-BR");
+    const t = saleDateObj.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${d} ${t}`;
+  }, [saleDateObj]);
+
+  const saleDateOnly = useMemo(
+    () => saleDateObj.toLocaleDateString("pt-BR"),
+    [saleDateObj],
+  );
+
+  const sellerName = useMemo(() => {
+    return (
+      sale?.seller?.name ||
+      store.ownerName ||
+      "VENDEDOR"
+    ).toUpperCase();
+  }, [sale?.seller?.name, store.ownerName]);
 
   const render = async () => {
     if (!ref.current) throw new Error("sem conteúdo");
     const el = ref.current;
 
-    // TRUQUE: Expande temporariamente o conteúdo para o html-to-image capturar tudo,
-    // evitando que o ScrollArea corte a imagem no PDF/PNG.
     const prevHeight = el.style.height;
     const prevOverflow = el.style.overflow;
     el.style.height = "auto";
@@ -95,7 +191,6 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
         backgroundColor: "#ffffff",
       });
     } finally {
-      // Restaura os estilos originais após a captura
       el.style.height = prevHeight;
       el.style.overflow = prevOverflow;
       if (viewport) {
@@ -177,110 +272,179 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     }
   };
 
-  // 1. Extrair o design do comprovante (O ref fica aqui)
+  // Design do comprovante térmico fiel ao modelo solicitado
   const VoucherDesign = sale ? (
     <div
       ref={ref}
-      className="mx-auto w-full max-w-md bg-white text-slate-900 overflow-hidden font-mono text-[13px] leading-tight"
-      style={{ padding: "24px", boxShadow: "0 0 10px rgba(0,0,0,0.05)" }}
+      className="mx-auto w-full max-w-sm bg-white text-slate-950 overflow-hidden font-mono text-[12px] leading-tight select-none"
+      style={{ padding: "24px 20px", boxShadow: "0 0 10px rgba(0,0,0,0.06)" }}
     >
-      <div className="flex flex-col items-center text-center">
-        <Image 
-          src="/zelo.jpeg" 
-          alt="Zelo Logo" 
-          width={56} 
-          height={56} 
-          className="rounded-lg object-contain mb-3 grayscale"
-        />
-        
-        <div className="font-bold uppercase text-sm">
-          {store.name}
-        </div>
-        {voucher.resellerName && (
-          <div className="uppercase">
-            {voucher.resellerName}
+      {/* 1. Nome da empresa no topo em negrito */}
+      <div className="text-center space-y-1">
+        <h2 className="font-extrabold text-base sm:text-lg uppercase tracking-tight text-slate-950">
+          {store.name || "NOME DA EMPRESA"}
+        </h2>
+
+        {/* 2. Endereço da loja (se cadastrado) */}
+        {addressLines.map((line, idx) => (
+          <div key={idx} className="text-xs uppercase text-slate-800">
+            {line}
           </div>
-        )}
-        {voucher.showContact && (
-          <div className="uppercase mt-1 text-xs">
-            {store.address && <div>{store.address}</div>}
-            {store.phone && <div>TEL: {store.phone}</div>}
-            {store.email && <div>{store.email}</div>}
+        ))}
+
+        {/* 3. Telefone (se cadastrado) */}
+        {formattedPhone && (
+          <div className="text-xs text-slate-800 font-medium">
+            {formattedPhone}
           </div>
         )}
 
-        <div className="mt-4 mb-2 font-bold text-base tracking-widest uppercase border-y border-dashed border-slate-400 py-1 w-full">
-          CUPOM NÃO FISCAL
+        {/* 4. CNPJ (se cadastrado, sem IE) */}
+        {formattedDoc && (
+          <div className="text-xs uppercase text-slate-800 font-medium">
+            {formattedDoc}
+          </div>
+        )}
+      </div>
+
+      {/* 5. Cliente */}
+      <div className="mt-4 text-xs uppercase font-semibold text-slate-950">
+        CLIENTE : {sale.clientName?.toUpperCase() || "CONSUMIDOR FINAL"}
+      </div>
+
+      {/* 6. Data, Horário e Comprovante de Venda */}
+      <div className="flex justify-between items-end mt-3 mb-1.5 text-xs text-slate-950">
+        <div className="font-medium tracking-tight">{formattedDateTime}</div>
+        <div className="text-right">
+          <div className="text-[10px] tracking-wider uppercase font-semibold text-slate-600 leading-none">
+            COMPROVANTE DE VENDA
+          </div>
+          <div className="text-sm sm:text-base font-extrabold tracking-wider leading-tight text-slate-950">
+            Nº {code}
+          </div>
         </div>
       </div>
 
-      <div className="text-left mt-2 space-y-1">
-        <div className="uppercase">DATA: {dateTime(sale.date)}</div>
-        <div className="uppercase">PEDIDO: #{code}</div>
-        <div className="uppercase">CLIENTE: {sale.clientName}</div>
+      {/* Linha separadora */}
+      <div className="border-t-2 border-slate-900 my-1.5" />
+
+      {/* 7. Cabeçalho da Tabela de Itens */}
+      <div className="text-xs text-slate-900 font-bold uppercase tracking-tight">
+        <div className="flex justify-between">
+          <span className="w-16 shrink-0">CODIGO</span>
+          <span className="flex-1 text-left">DESCRIÇÃO</span>
+        </div>
+        <div className="flex justify-between mt-0.5">
+          <span className="w-16 shrink-0" />
+          <span className="flex-1 text-left">QTD x UNIT</span>
+          <span className="shrink-0 text-right">R$ VALOR</span>
+        </div>
       </div>
 
-      <div className="my-3 border-t border-dashed border-slate-400" />
+      <div className="border-t border-slate-900 my-1.5" />
 
-      <div className="mt-2">
-        <div className="mb-2 font-bold uppercase flex justify-between">
-          <span>ITEM</span>
-          <span>VALOR</span>
-        </div>
-        <div className="space-y-2">
-          {sale.items.map((it) => (
-            <div key={it.productId} className="flex flex-col">
-              <span className="uppercase">{it.productName}</span>
-              <div className="flex justify-between w-full">
-                <span>{it.quantity} UN X {currency(it.unitPrice)}</span>
-                <span>{currency(it.unitPrice * it.quantity)}</span>
+      {/* 8. Lista de Itens */}
+      <div className="space-y-2 text-xs text-slate-950">
+        {sale.items.map((it, idx) => {
+          const itemCode =
+            it.product?.code ||
+            (it.productId
+              ? it.productId.replace(/\D/g, "").slice(-5).padStart(5, "0")
+              : String(idx + 1).padStart(5, "0"));
+          const itemTotal = it.unitPrice * it.quantity;
+
+          return (
+            <div key={it.productId || idx} className="space-y-0.5">
+              <div className="flex items-start gap-2">
+                <span className="w-16 shrink-0 font-medium">{itemCode}</span>
+                <span className="flex-1 uppercase font-semibold break-words">
+                  {it.productName}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-800">
+                <span className="w-16 shrink-0" />
+                <span className="flex-1 text-left">
+                  {it.quantity} x{" "}
+                  {currency(it.unitPrice).replace("R$", "").trim()}
+                </span>
+                <span className="shrink-0 font-bold text-slate-950">
+                  {currency(itemTotal).replace("R$", "").trim()}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      <div className="my-3 border-t border-dashed border-slate-400" />
+      <div className="border-t-2 border-slate-900 my-2" />
 
-      <div className="mt-2 space-y-1">
-        <div className="flex items-center justify-between font-bold text-base">
-          <span className="uppercase">TOTAL</span>
-          <span>{currency(sale.total)}</span>
+      {/* 9. Totais */}
+      <div className="space-y-1 text-xs text-slate-950">
+        <div className="flex justify-between items-center text-sm font-extrabold text-slate-950">
+          <span>Total da Nota R$</span>
+          <span>{currency(sale.total).replace("R$", "").trim()}</span>
         </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="uppercase">PAGAMENTO</span>
-          <span className="uppercase">{PAYMENT_LABELS[sale.paymentMethod]}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="uppercase">SITUAÇÃO</span>
-          <span className="uppercase">{sale.status === "PAGO" ? "PAGO" : "PENDENTE"}</span>
-        </div>
+        {sale.status === "PENDENTE" && (
+          <div className="flex justify-between items-center text-xs text-amber-700 font-semibold pt-1">
+            <span>SITUAÇÃO:</span>
+            <span>PENDENTE</span>
+          </div>
+        )}
         {sale.dueDate && (
-          <div className="flex items-center justify-between">
-            <span className="uppercase">VENCIMENTO</span>
+          <div className="flex justify-between items-center text-xs text-slate-700">
+            <span>VENCIMENTO:</span>
             <span>{new Date(sale.dueDate).toLocaleDateString("pt-BR")}</span>
           </div>
         )}
       </div>
 
+      {/* 10. Forma de Pagamento */}
+      <div className="mt-3 pt-2 text-xs text-slate-950">
+        <div className="font-extrabold uppercase mb-1">
+          FORMA DE PGTO. :{" "}
+          {PAYMENT_LABELS[sale.paymentMethod]?.toUpperCase() || "À VISTA"}
+        </div>
+        <div className="flex justify-between font-bold text-[11px] uppercase tracking-tight text-slate-700">
+          <span className="w-1/3 text-left">DATA PGTO</span>
+          <span className="w-1/3 text-center">R$ VALOR</span>
+          <span className="w-1/3 text-right">TIPO PGTO</span>
+        </div>
+        <div className="flex justify-between text-xs text-slate-950 mt-1">
+          <span className="w-1/3 text-left">{saleDateOnly}</span>
+          <span className="w-1/3 text-center font-bold">
+            {currency(sale.total).replace("R$", "").trim()}
+          </span>
+          <span className="w-1/3 text-right uppercase">
+            {PAYMENT_LABELS[sale.paymentMethod]?.toUpperCase()}
+          </span>
+        </div>
+      </div>
+
+      {/* 11. Vendedor */}
+      <div className="border-y-2 border-slate-900 py-1.5 my-3 uppercase font-bold text-xs text-slate-950">
+        VENDEDOR(A) : {sellerName}
+      </div>
+
+      {/* 12. Observações (se houver) */}
       {sale.notes && (
-        <div className="mt-4 p-2 border border-dashed border-slate-400 uppercase text-xs">
+        <div className="my-2 p-1.5 border border-dashed border-slate-400 text-[11px] uppercase text-slate-800">
           OBS: {sale.notes}
         </div>
       )}
 
-      <div className="my-4 border-t border-dashed border-slate-400" />
-
-      <p className="mt-4 text-center text-xs uppercase font-bold">
-        {voucher.footerText || "OBRIGADO PELA PREFERÊNCIA"}
-      </p>
-      <p className="mt-1 text-center text-[10px] uppercase">
-        * DOCUMENTO SEM VALOR FISCAL *
-      </p>
+      {/* 13. Rodapé */}
+      <div className="mt-4 pt-3 border-t border-slate-900 text-center">
+        <div className="font-bold text-xs tracking-wider uppercase text-slate-950">
+          {voucher.footerText || "* OBRIGADO E VOLTE SEMPRE *"}
+        </div>
+        <div className="text-[10px] text-slate-500 uppercase mt-1">
+          * DOCUMENTO SEM VALOR FISCAL *
+        </div>
+      </div>
     </div>
   ) : null;
 
-  // 2. Extrair os botões de ação
+  // Botões de ação
   const ActionButtons = (
     <div className="space-y-2">
       <Button
@@ -312,7 +476,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     </div>
   );
 
-  // 3. Renderização Mobile (Drawer)
+  // Renderização Mobile (Drawer)
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
@@ -323,7 +487,10 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
-                <div tabIndex={0} className="outline-none h-px w-full opacity-0" />
+                <div
+                  tabIndex={0}
+                  className="outline-none h-px w-full opacity-0"
+                />
                 <div className="pb-4">
                   {VoucherDesign}
                   <div className="mt-4">{ActionButtons}</div>
@@ -336,12 +503,10 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     );
   }
 
-  // 4. Renderização Desktop (Modal)
+  // Renderização Desktop (Modal)
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent 
-        className="max-h-[90vh] sm:max-w-sm p-0 gap-0 overflow-hidden" 
-      >
+      <DialogContent className="max-h-[90vh] sm:max-w-sm p-0 gap-0 overflow-hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Comprovante da venda</DialogTitle>
         </DialogHeader>

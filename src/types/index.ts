@@ -14,6 +14,11 @@ export interface SaleItem {
   productName: string;
   quantity: number;
   unitPrice: number;
+  product?: {
+    id?: string;
+    code?: string;
+    name?: string;
+  };
 }
 
 export interface Sale {
@@ -27,6 +32,11 @@ export interface Sale {
   status: SaleStatus;
   dueDate?: string;
   notes?: string;
+  sellerId?: string | null;
+  seller?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export enum PaymentMethod {

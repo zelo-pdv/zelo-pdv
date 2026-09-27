@@ -7,6 +7,8 @@ import {
   Trash2,
   Store as StoreIcon,
   ShieldCheck,
+  MapPin,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlobalLoader } from "@/components/ui/global-loader";
@@ -53,7 +55,11 @@ import {
   updateAccessGroup,
 } from "@/services/accessGroup.service";
 import { createLoja, getLoja, updateLoja } from "@/services/loja.service";
-import { LojaFormData, lojaSchema } from "@/lib/validations/loja";
+import {
+  LojaAddressFormData,
+  LojaFormData,
+  lojaSchema,
+} from "@/lib/validations/loja";
 import { categoriesService } from "@/services/categories.service";
 import { unitsService, Unit, UnitFormData } from "@/services/units.service";
 import { usersService } from "@/services/users.service";
@@ -72,6 +78,17 @@ function StoreSection() {
   const [lojaId, setLojaId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const defaultAddress: LojaAddressFormData = {
+    zipCode: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    state: "",
+  };
 
   const defaultForm: LojaFormData = {
     name: "",
@@ -81,6 +98,7 @@ function StoreSection() {
     email: "",
     logo: "",
     active: true,
+    address: defaultAddress,
   };
 
   const [form, setForm] = useState<LojaFormData>(defaultForm);
@@ -108,7 +126,7 @@ function StoreSection() {
         if (data && (data as { id?: string }).id) {
           setLojaId((data as { id?: string }).id ?? null);
 
-          const storeData = {
+          const storeData: LojaFormData = {
             name: data.name || "",
             ownerName: firstUserName || data.ownerName || "",
             document: data.document ? data.document.replace(/\D/g, "") : "",
@@ -116,6 +134,17 @@ function StoreSection() {
             email: data.email || "",
             logo: data.logo || "",
             active: data.active ?? true,
+            address: {
+              zipCode: data.address?.zipCode
+                ? data.address.zipCode.replace(/\D/g, "")
+                : "",
+              street: data.address?.street || "",
+              number: data.address?.number || "",
+              complement: data.address?.complement || "",
+              neighborhood: data.address?.neighborhood || "",
+              city: data.address?.city || "",
+              state: data.address?.state || "",
+            },
           };
 
           setForm(storeData);
@@ -139,6 +168,50 @@ function StoreSection() {
   const update = <K extends keyof LojaFormData>(k: K, v: LojaFormData[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const updateAddress = (field: keyof LojaAddressFormData, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      address: {
+        ...(prev.address || defaultAddress),
+        [field]: value,
+      },
+    }));
+  };
+
+  const buscarCep = async (cep: string) => {
+    const rawCep = cep.replace(/\D/g, "");
+    if (rawCep.length !== 8) return;
+
+    setCepLoading(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${rawCep}/json/`);
+      if (!response.ok) throw new Error("Erro ao consultar CEP");
+      const data = await response.json();
+      if (data.erro) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        address: {
+          ...(prev.address || defaultAddress),
+          street: data.logradouro || prev.address?.street || "",
+          neighborhood: data.bairro || prev.address?.neighborhood || "",
+          city: data.localidade || prev.address?.city || "",
+          state: data.uf || prev.address?.state || "",
+          complement: data.complemento || prev.address?.complement || "",
+        },
+      }));
+      toast.success("Endereço preenchido automaticamente!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Não foi possível buscar o CEP.");
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
   const dirty = JSON.stringify(form) !== JSON.stringify(original);
 
   // O botão só será habilitado se houve mudança, não estiver salvando e os campos obrigatórios estiverem preenchidos
@@ -147,10 +220,18 @@ function StoreSection() {
 
   const handleSave = async () => {
     // 1. Validação do Zod
-    const dataToSave = {
+    const dataToSave: LojaFormData = {
       ...form,
       phone: form.phone ? "+55" + form.phone.replace(/\D/g, "") : "",
       document: form.document ? form.document.replace(/\D/g, "") : "",
+      address: form.address
+        ? {
+            ...form.address,
+            zipCode: form.address.zipCode
+              ? form.address.zipCode.replace(/\D/g, "")
+              : "",
+          }
+        : undefined,
     };
     const parsed = lojaSchema.safeParse(dataToSave);
 
@@ -222,7 +303,10 @@ function StoreSection() {
             <Label>Documento (CNPJ/CPF)</Label>
             <Input
               value={form.document || ""}
-              onChange={(e) => update("document", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                update("document", e.target.value.replace(/\D/g, ""))
+              }
+              placeholder="00.000.000/0000-00"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -230,7 +314,10 @@ function StoreSection() {
             <Input
               type="tel"
               value={form.phone || ""}
-              onChange={(e) => update("phone", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                update("phone", e.target.value.replace(/\D/g, ""))
+              }
+              placeholder="(00) 00000-0000"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -239,6 +326,7 @@ function StoreSection() {
               type="email"
               value={form.email || ""}
               onChange={(e) => update("email", e.target.value)}
+              placeholder="contato@empresa.com"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -248,6 +336,98 @@ function StoreSection() {
               onChange={(e) => update("logo", e.target.value)}
               placeholder="https://exemplo.com/logo.png"
             />
+          </div>
+        </div>
+
+        {/* Seção de Endereço */}
+        <div className="pt-4 border-t border-border/60">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">
+              Endereço da loja (para cupom e comprovante)
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label>CEP</Label>
+                {cepLoading && (
+                  <span className="flex items-center text-xs text-muted-foreground gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
+                  </span>
+                )}
+              </div>
+              <Input
+                placeholder="00000-000"
+                value={form.address?.zipCode || ""}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  updateAddress("zipCode", val);
+                  if (val.length === 8) {
+                    buscarCep(val);
+                  }
+                }}
+                onBlur={(e) => buscarCep(e.target.value)}
+                maxLength={9}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label>Logradouro (Rua / Av.)</Label>
+              <Input
+                placeholder="Ex.: Rua dos Equipamentos"
+                value={form.address?.street || ""}
+                onChange={(e) => updateAddress("street", e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Número</Label>
+              <Input
+                placeholder="Ex.: 9"
+                value={form.address?.number || ""}
+                onChange={(e) => updateAddress("number", e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Complemento</Label>
+              <Input
+                placeholder="Ex.: Sobreloja 101"
+                value={form.address?.complement || ""}
+                onChange={(e) => updateAddress("complement", e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Bairro</Label>
+              <Input
+                placeholder="Ex.: Centro"
+                value={form.address?.neighborhood || ""}
+                onChange={(e) => updateAddress("neighborhood", e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label>Cidade</Label>
+              <Input
+                placeholder="Ex.: Rio de Janeiro"
+                value={form.address?.city || ""}
+                onChange={(e) => updateAddress("city", e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Estado (UF)</Label>
+              <Input
+                placeholder="Ex.: RJ"
+                maxLength={2}
+                value={form.address?.state || ""}
+                onChange={(e) =>
+                  updateAddress("state", e.target.value.toUpperCase())
+                }
+              />
+            </div>
           </div>
         </div>
 

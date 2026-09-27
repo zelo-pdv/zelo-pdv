@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
   try {
-    // Busca a primeira loja cadastrada (ideal para configurações globais)
-    const loja = await prisma.loja.findFirst();
+    const user = await getCurrentUser();
+    const where = user?.lojaId ? { id: user.lojaId } : {};
+    const loja = await prisma.loja.findFirst({
+      where,
+      include: {
+        address: true,
+      },
+    });
 
     if (!loja) {
       return NextResponse.json(
@@ -13,7 +20,12 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(loja);
+    const firstAddress = Array.isArray(loja.address) && loja.address.length > 0 ? loja.address[0] : null;
+
+    return NextResponse.json({
+      ...loja,
+      address: firstAddress,
+    });
   } catch (error) {
     console.error("Erro ao buscar loja:", error);
     return NextResponse.json(
@@ -26,51 +38,74 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { address, ...lojaData } = body;
+
     const loja = await prisma.loja.create({
       data: {
-        ...body,
+        ...lojaData,
+        ...(address && Object.values(address).some((v) => !!v && String(v).trim() !== "")
+          ? {
+              address: {
+                create: {
+                  street: address.street || "",
+                  number: address.number || "",
+                  complement: address.complement || "",
+                  neighborhood: address.neighborhood || "",
+                  city: address.city || "",
+                  state: address.state || "",
+                  zipCode: address.zipCode || "",
+                },
+              },
+            }
+          : {}),
         accessGroups: {
           create: {
             name: "ADMIN",
             description: "Acesso total ao sistema",
             permissions: {
-              "clientes": [
+              clientes: [
                 "Visualizar",
                 "Adicionar",
                 "Editar",
-                "Excluir"
+                "Excluir",
               ],
-              "produtos": [
+              produtos: [
                 "Visualizar",
                 "Adicionar",
                 "Editar",
-                "Excluir"
+                "Excluir",
               ],
-              "dashboard": [
-                "Visualizar"
-              ],
-              "historico": [
+              dashboard: ["Visualizar"],
+              historico: [
                 "Visualizar",
                 "Editar",
-                "Excluir"
+                "Excluir",
               ],
               "nova-venda": [
                 "Visualizar",
-                "Adicionar"
-              ]
-            }
-          }
+                "Adicionar",
+              ],
+            },
+          },
         },
         clients: {
           create: {
             name: "Ao consumidor",
-            phone: ""
-          }
-        }
+            phone: "",
+          },
+        },
+      },
+      include: {
+        address: true,
       },
     });
 
-    return NextResponse.json(loja);
+    const firstAddress = Array.isArray(loja.address) && loja.address.length > 0 ? loja.address[0] : null;
+
+    return NextResponse.json({
+      ...loja,
+      address: firstAddress,
+    });
   } catch (error) {
     console.error("Erro ao criar loja:", error);
     return NextResponse.json(

@@ -72,12 +72,23 @@ export interface AccessGroup {
   createdAt: string;
 }
 
+export interface StoreAddress {
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+}
+
 export interface StoreInfo {
   name: string;
   ownerName: string;
   phone: string;
   email: string;
   address: string;
+  addressData?: StoreAddress | null;
   document: string;
 }
 

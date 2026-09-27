@@ -18,13 +18,64 @@ export async function PUT(
       );
     }
     const { id } = await params;
+    const { address, ...lojaData } = parsed.data;
+
+    if (address) {
+      const hasAnyValue = Object.values(address).some(
+        (v) => !!v && String(v).trim() !== "",
+      );
+      const existingAddress = await prisma.address.findFirst({
+        where: { lojaId: id },
+      });
+
+      if (hasAnyValue) {
+        if (existingAddress) {
+          await prisma.address.update({
+            where: { id: existingAddress.id },
+            data: {
+              street: address.street || "",
+              number: address.number || "",
+              complement: address.complement || "",
+              neighborhood: address.neighborhood || "",
+              city: address.city || "",
+              state: address.state || "",
+              zipCode: address.zipCode || "",
+            },
+          });
+        } else {
+          await prisma.address.create({
+            data: {
+              lojaId: id,
+              street: address.street || "",
+              number: address.number || "",
+              complement: address.complement || "",
+              neighborhood: address.neighborhood || "",
+              city: address.city || "",
+              state: address.state || "",
+              zipCode: address.zipCode || "",
+            },
+          });
+        }
+      }
+    }
 
     const updatedLoja = await prisma.loja.update({
       where: { id },
-      data: parsed.data,
+      data: lojaData,
+      include: {
+        address: true,
+      },
     });
 
-    return NextResponse.json(updatedLoja);
+    const firstAddress =
+      Array.isArray(updatedLoja.address) && updatedLoja.address.length > 0
+        ? updatedLoja.address[0]
+        : null;
+
+    return NextResponse.json({
+      ...updatedLoja,
+      address: firstAddress,
+    });
   } catch (error) {
     console.error("Erro ao atualizar loja:", error);
     return NextResponse.json(
