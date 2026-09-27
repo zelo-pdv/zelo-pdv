@@ -14,6 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { loginSchema } from "@/lib/validations/auth";
 import { authService } from "@/services/auth.service";
 
+import { ModeToggle } from "@/components/layout/mode-toggle";
+
 const REMEMBER_KEY = "revenda-remember-email-v1";
 
 export function LoginForm() {
@@ -66,68 +68,63 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-background font-sans overflow-x-hidden">
+    <div className="flex min-h-screen w-full bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214] font-sans overflow-x-hidden">
       {/* Lado Esquerdo - Branding/Imagem */}
-      <div className="hidden lg:flex w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground relative overflow-hidden">
-        {/* Fundo com detalhes para dar vida e tom profissional */}
-        <div className="absolute inset-0 z-0 opacity-20 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.8),transparent_50%)]" />
-        <div className="absolute bottom-0 right-0 z-0 opacity-10 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_50%)] w-150 h-150" />
+      <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214] border-r border-border/40">
+        {/* Detalhes sutis de iluminação */}
+        <div className="absolute inset-0 z-0 opacity-40 dark:opacity-20 pointer-events-none bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_50%)]" />
         
         <div className="relative z-10 flex items-center gap-3">
-          <div className="bg-white rounded-xl p-2 shadow-lg">
-            <Image 
-              src="/zelo.jpeg" 
-              alt="Zelo PDV Logo" 
-              width={40} 
-              height={40}
-              className="rounded-lg object-contain"
-            />
-          </div>
-          <span className="text-2xl font-bold tracking-tight">Zelo</span>
+          <Image 
+            src="/zelo.jpeg" 
+            alt="Zelo PDV Logo" 
+            width={44} 
+            height={44}
+            className="rounded-xl object-contain shadow-sm"
+          />
+          <span className="text-2xl font-bold tracking-tight text-foreground">Zelo</span>
         </div>
 
         <div className="relative z-10 max-w-lg mt-auto">
-          <h2 className="text-4xl font-bold mb-6 leading-tight">
+          <h2 className="text-4xl font-bold mb-6 leading-tight text-foreground">
             Gestão inteligente para o seu negócio decolar
           </h2>
-          <p className="text-primary-foreground/80 text-lg mb-8">
+          <p className="text-muted-foreground text-lg mb-8">
             Controle de vendas, estoque e muito mais em uma plataforma simples, rápida e segura.
           </p>
           <div className="flex items-center gap-4 text-sm font-medium">
             <div className="flex -space-x-3">
-              <div className="h-10 w-10 rounded-full border-2 border-primary bg-primary-foreground/20 flex items-center justify-center backdrop-blur-sm">
+              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
                 ⭐
               </div>
-              <div className="h-10 w-10 rounded-full border-2 border-primary bg-primary-foreground/20 flex items-center justify-center backdrop-blur-sm">
+              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
                 🚀
               </div>
-              <div className="h-10 w-10 rounded-full border-2 border-primary bg-primary-foreground/20 flex items-center justify-center backdrop-blur-sm">
+              <div className="h-10 w-10 rounded-full border-2 border-background bg-muted flex items-center justify-center shadow-sm">
                 📈
               </div>
             </div>
-            <span className="text-primary-foreground/90">A escolha inteligente para sua loja</span>
+            <span className="text-muted-foreground font-medium">A escolha inteligente para sua loja</span>
           </div>
         </div>
       </div>
 
       {/* Lado Direito - Formulário */}
-      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative bg-card/50 backdrop-blur-md overflow-hidden">
-        
-        {/* Círculo de cor suave no fundo para o mobile não ficar apenas branco */}
-        <div className="absolute top-[-10%] right-[-5%] z-0 h-75 w-75 rounded-full bg-primary/10 blur-[100px] lg:hidden" />
+      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden bg-linear-to-b from-white via-slate-50 to-slate-100 dark:from-black dark:via-[#09090b] dark:to-[#121214]">
+        <div className="absolute top-4 right-4 z-20">
+          <ModeToggle />
+        </div>
 
         <div className="relative z-10 w-full max-w-100">
           {/* Mobile Logo */}
           <div className="flex lg:hidden flex-col items-center mb-8 gap-3">
-            <div className="bg-white rounded-2xl p-3 shadow-md ring-1 ring-border">
-              <Image 
-                src="/zelo.jpeg" 
-                alt="Zelo PDV Logo" 
-                width={60} 
-                height={60}
-                className="rounded-xl object-contain"
-              />
-            </div>
+            <Image 
+              src="/zelo.jpeg" 
+              alt="Zelo PDV Logo" 
+              width={64} 
+              height={64}
+              className="rounded-2xl object-contain shadow-sm"
+            />
             <span className="text-xl font-bold tracking-tight text-foreground">Zelo PDV</span>
           </div>
 

@@ -12,7 +12,8 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NAV, SECONDARY_NAV } from "@/lib/navigation-data";
-import { Handbag, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -27,9 +28,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="mb-6">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <Handbag className="size-5! text-blue-700 dark:text-blue-600" />
-              <span className="text-base font-bold text-blue-700 dark:text-blue-600">
+            <SidebarMenuButton size="lg" className="data-[slot=sidebar-menu-button]:p-1.5!">
+              <Image
+                src="/zelo.jpeg"
+                alt="Zelo PDV"
+                width={32}
+                height={32}
+                className="size-8 rounded-lg object-contain shrink-0"
+              />
+              <span className="text-base font-bold text-foreground tracking-tight">
                 ZELO
               </span>
             </SidebarMenuButton>
