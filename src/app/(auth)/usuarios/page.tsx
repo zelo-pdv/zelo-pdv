@@ -287,7 +287,7 @@ function UserForm({
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          setForm({ ...emptyForm, ...parsed });
+          setForm({ ...emptyForm, ...parsed, password: "" });
         } catch {
           setForm(emptyForm);
         }
@@ -297,10 +297,12 @@ function UserForm({
     }
   }, [initial, open]);
 
-  // Salvar rascunho (somente se não for edição)
+  // Salvar rascunho (somente se não for edição, e NUNCA salvar senha no localStorage)
   useEffect(() => {
     if (open && !initial) {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+      const draftWithoutPassword = { ...form };
+      delete (draftWithoutPassword as Record<string, unknown>).password;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draftWithoutPassword));
     }
   }, [form, open, initial]);
 
@@ -400,14 +402,22 @@ function UserForm({
         <Label>{isEdit ? "Nova Senha (Opcional)" : "Senha"}</Label>
         <div className="relative">
           <Input
+            id="user-form-password"
+            name="new-password"
             type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            value={form.password ?? ""}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, password: e.target.value }))
+            }
             placeholder={
               isEdit
                 ? "Deixe em branco para manter a atual"
                 : "Mínimo 6 caracteres"
             }
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
             className={cn("pr-10", !isEdit && requiredInputClass)}
           />
           <button
@@ -575,6 +585,7 @@ function ChangePasswordDialog({
   user: AppUser | null;
   onClose: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -586,8 +597,8 @@ function ChangePasswordDialog({
     }
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!user) return;
     if (password.length < 6) {
       return toast.error("A senha deve ter pelo menos 6 caracteres");
@@ -609,6 +620,79 @@ function ChangePasswordDialog({
     }
   };
 
+  const ContentBody = (
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <Label>Nova Senha</Label>
+        <div className="relative">
+          <Input
+            id="change-password-input"
+            name="new-password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((s) => !s)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ActionButtons = (
+    <div className="flex w-full justify-between gap-2">
+      <Button
+        variant="outline"
+        type="button"
+        onClick={onClose}
+        disabled={isSubmitting}
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="button"
+        onClick={() => handleSubmit()}
+        disabled={isSubmitting}
+      >
+        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Salvar nova senha
+      </Button>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={!!user} onOpenChange={(o) => !o && onClose()}>
+        <DrawerContent className="p-4">
+          <DrawerHeader className="px-0">
+            <DrawerTitle>Trocar Senha</DrawerTitle>
+            <p className="text-sm text-muted-foreground">
+              Defina uma nova senha para o usuário <strong>{user?.name}</strong>
+            </p>
+          </DrawerHeader>
+          {ContentBody}
+          <div className="pt-2">{ActionButtons}</div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -619,48 +703,8 @@ function ChangePasswordDialog({
           </p>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nova Senha</Label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="pr-10"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Salvar nova senha
-            </Button>
-          </DialogFooter>
+          {ContentBody}
+          <DialogFooter>{ActionButtons}</DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

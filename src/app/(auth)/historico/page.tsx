@@ -9,6 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +31,7 @@ import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
 
 export default function HistoricoPage() {
+  const isMobile = useIsMobile();
   const { can } = usePermissions();
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,103 +131,202 @@ export default function HistoricoPage() {
     <div className="w-full px-4">
       <SalesDataTable columns={columns} data={sortedSales} />
 
-      {/* Modal de Detalhes da Venda */}
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalhes da venda</DialogTitle>
-          </DialogHeader>
-          {detail && (
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border bg-card p-3">
-                <div className="text-sm font-medium">{detail.clientName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {dateTime(detail.date)}
+      {/* Modal/Drawer de Detalhes da Venda */}
+      {isMobile ? (
+        <Drawer open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+          <DrawerContent className="max-h-[90vh] p-4">
+            <DrawerHeader className="px-0">
+              <DrawerTitle>Detalhes da venda</DrawerTitle>
+            </DrawerHeader>
+            {detail && (
+              <div className="space-y-3 overflow-y-auto min-h-0 flex-1 py-2">
+                <div className="rounded-xl border border-border bg-card p-3">
+                  <div className="text-sm font-medium">{detail.clientName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {dateTime(detail.date)}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <h4 className="mb-1 text-xs font-semibold text-muted-foreground">
-                  Itens
-                </h4>
-                <div className="space-y-1">
-                  {detail.items.map((it) => (
-                    <div
-                      key={it.productId}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <div className="min-w-0 truncate pr-2">
-                        {it.quantity}× {it.productName}
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold text-muted-foreground">
+                    Itens
+                  </h4>
+                  <div className="space-y-1">
+                    {detail.items.map((it) => (
+                      <div
+                        key={it.productId}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div className="min-w-0 truncate pr-2">
+                          {it.quantity}× {it.productName}
+                        </div>
+                        <div className="tabular-nums">
+                          {currency(it.unitPrice * it.quantity)}
+                        </div>
                       </div>
-                      <div className="tabular-nums">
-                        {currency(it.unitPrice * it.quantity)}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Total</div>
-                <div className="text-lg font-semibold tabular-nums">
-                  {currency(detail.total)}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">Total</div>
+                  <div className="text-lg font-semibold tabular-nums">
+                    {currency(detail.total)}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Pagamento</span>
-                <span>{PAYMENT_LABELS[detail.paymentMethod]}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <Badge
-                  variant={detail.status === "PAGO" ? "secondary" : "outline"}
-                  className={
-                    detail.status === "PENDENTE"
-                      ? "border-amber-500/40 text-amber-700"
-                      : ""
-                  }
-                >
-                  {detail.status === "PAGO" ? "Pago" : "Pendente"}
-                </Badge>
-              </div>
-
-              {detail.dueDate && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Vencimento</span>
-                  <span>
-                    {new Date(detail.dueDate).toLocaleDateString("pt-BR")}
-                  </span>
+                  <span className="text-muted-foreground">Pagamento</span>
+                  <span>{PAYMENT_LABELS[detail.paymentMethod]}</span>
                 </div>
-              )}
 
-              {detail.notes && (
-                <div className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
-                  {detail.notes}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    variant={detail.status === "PAGO" ? "secondary" : "outline"}
+                    className={
+                      detail.status === "PENDENTE"
+                        ? "border-amber-500/40 text-amber-700"
+                        : ""
+                    }
+                  >
+                    {detail.status === "PAGO" ? "Pago" : "Pendente"}
+                  </Badge>
                 </div>
-              )}
 
-              <Button
-                className="w-full rounded-full"
-                onClick={() => {
-                  addVoucher({
-                    saleId: detail.id,
-                    code: voucherCode(detail.id),
-                    sale: detail,
-                  });
-                  setVoucherState({ sale: detail });
-                  setDetail(null); // Fecha o de detalhes e abre o de comprovante
-                }}
-              >
-                <Receipt className="mr-2 h-4 w-4" /> Ver comprovante
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                {detail.dueDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Vencimento</span>
+                    <span>
+                      {new Date(detail.dueDate).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                )}
+
+                {detail.notes && (
+                  <div className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
+                    {detail.notes}
+                  </div>
+                )}
+
+                <Button
+                  className="w-full rounded-full"
+                  onClick={() => {
+                    addVoucher({
+                      saleId: detail.id,
+                      code: voucherCode(detail.id),
+                      sale: detail,
+                    });
+                    setVoucherState({ sale: detail });
+                    setDetail(null);
+                  }}
+                >
+                  <Receipt className="mr-2 h-4 w-4" /> Ver comprovante
+                </Button>
+              </div>
+            )}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Detalhes da venda</DialogTitle>
+            </DialogHeader>
+            {detail && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-border bg-card p-3">
+                  <div className="text-sm font-medium">{detail.clientName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {dateTime(detail.date)}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold text-muted-foreground">
+                    Itens
+                  </h4>
+                  <div className="space-y-1">
+                    {detail.items.map((it) => (
+                      <div
+                        key={it.productId}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div className="min-w-0 truncate pr-2">
+                          {it.quantity}× {it.productName}
+                        </div>
+                        <div className="tabular-nums">
+                          {currency(it.unitPrice * it.quantity)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">Total</div>
+                  <div className="text-lg font-semibold tabular-nums">
+                    {currency(detail.total)}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Pagamento</span>
+                  <span>{PAYMENT_LABELS[detail.paymentMethod]}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    variant={detail.status === "PAGO" ? "secondary" : "outline"}
+                    className={
+                      detail.status === "PENDENTE"
+                        ? "border-amber-500/40 text-amber-700"
+                        : ""
+                    }
+                  >
+                    {detail.status === "PAGO" ? "Pago" : "Pendente"}
+                  </Badge>
+                </div>
+
+                {detail.dueDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Vencimento</span>
+                    <span>
+                      {new Date(detail.dueDate).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                )}
+
+                {detail.notes && (
+                  <div className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
+                    {detail.notes}
+                  </div>
+                )}
+
+                <Button
+                  className="w-full rounded-full"
+                  onClick={() => {
+                    addVoucher({
+                      saleId: detail.id,
+                      code: voucherCode(detail.id),
+                      sale: detail,
+                    });
+                    setVoucherState({ sale: detail });
+                    setDetail(null); // Fecha o de detalhes e abre o de comprovante
+                  }}
+                >
+                  <Receipt className="mr-2 h-4 w-4" /> Ver comprovante
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Modal do Comprovante */}
       <SaleVoucher

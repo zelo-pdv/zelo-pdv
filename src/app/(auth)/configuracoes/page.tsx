@@ -9,8 +9,11 @@ import {
   ShieldCheck,
   MapPin,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,6 +114,7 @@ function StoreSection() {
   const [form, setForm] = useState<LojaFormData>(defaultForm);
   // Guardamos o estado original para habilitar/desabilitar o botão de Salvar e Cancelar
   const [original, setOriginal] = useState<LojaFormData>(defaultForm);
+  const [isAddressExpanded, setIsAddressExpanded] = useState(false);
 
   useEffect(() => {
     async function fetchStoreData() {
@@ -342,96 +352,120 @@ function StoreSection() {
           </div>
         </div>
 
-        {/* Seção de Endereço */}
+        {/* Seção de Endereço (Minimizável) */}
         <div className="pt-4 border-t border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold">
-              Endereço da loja (para cupom e comprovante)
-            </h4>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label>CEP</Label>
-                {cepLoading && (
-                  <span className="flex items-center text-xs text-muted-foreground gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
-                  </span>
+          <button
+            type="button"
+            onClick={() => setIsAddressExpanded((prev) => !prev)}
+            className="flex w-full items-center justify-between py-1 text-left cursor-pointer group hover:opacity-80 transition-opacity"
+            aria-expanded={isAddressExpanded}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <MapPin className="h-4 w-4 text-primary shrink-0" />
+              <h4 className="text-sm font-semibold">
+                Endereço da loja (para cupom e comprovante)
+              </h4>
+              {form.address?.city && !isAddressExpanded && (
+                <span className="hidden sm:inline text-xs text-muted-foreground">
+                  • {form.address.street ? `${form.address.street}, ` : ""}{form.address.city}/{form.address.state || ""}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+              <span>{isAddressExpanded ? "Minimizar" : "Ver endereço"}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isAddressExpanded && "rotate-180"
                 )}
+              />
+            </div>
+          </button>
+
+          {isAddressExpanded && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-3 animate-in fade-in-50 duration-150">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>CEP</Label>
+                  {cepLoading && (
+                    <span className="flex items-center text-xs text-muted-foreground gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
+                    </span>
+                  )}
+                </div>
+                <Input
+                  placeholder="00000-000"
+                  value={form.address?.zipCode || ""}
+                  onChange={(e) => {
+                    const val = maskCep(e.target.value);
+                    updateAddress("zipCode", val);
+                    if (val.replace(/\D/g, "").length === 8) {
+                      buscarCep(val);
+                    }
+                  }}
+                  onBlur={(e) => buscarCep(e.target.value)}
+                  maxLength={9}
+                />
               </div>
-              <Input
-                placeholder="00000-000"
-                value={form.address?.zipCode || ""}
-                onChange={(e) => {
-                  const val = maskCep(e.target.value);
-                  updateAddress("zipCode", val);
-                  if (val.replace(/\D/g, "").length === 8) {
-                    buscarCep(val);
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <Label>Logradouro (Rua / Av.)</Label>
+                <Input
+                  placeholder="Ex.: Rua dos Equipamentos"
+                  value={form.address?.street || ""}
+                  onChange={(e) => updateAddress("street", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Número</Label>
+                <Input
+                  placeholder="Ex.: 9"
+                  value={form.address?.number || ""}
+                  onChange={(e) => updateAddress("number", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Complemento</Label>
+                <Input
+                  placeholder="Ex.: Sobreloja 101"
+                  value={form.address?.complement || ""}
+                  onChange={(e) => updateAddress("complement", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Bairro</Label>
+                <Input
+                  placeholder="Ex.: Centro"
+                  value={form.address?.neighborhood || ""}
+                  onChange={(e) => updateAddress("neighborhood", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <Label>Cidade</Label>
+                <Input
+                  placeholder="Ex.: Rio de Janeiro"
+                  value={form.address?.city || ""}
+                  onChange={(e) => updateAddress("city", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Estado (UF)</Label>
+                <Input
+                  placeholder="Ex.: RJ"
+                  maxLength={2}
+                  value={form.address?.state || ""}
+                  onChange={(e) =>
+                    updateAddress("state", e.target.value.toUpperCase())
                   }
-                }}
-                onBlur={(e) => buscarCep(e.target.value)}
-                maxLength={9}
-              />
+                />
+              </div>
             </div>
-
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <Label>Logradouro (Rua / Av.)</Label>
-              <Input
-                placeholder="Ex.: Rua dos Equipamentos"
-                value={form.address?.street || ""}
-                onChange={(e) => updateAddress("street", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Número</Label>
-              <Input
-                placeholder="Ex.: 9"
-                value={form.address?.number || ""}
-                onChange={(e) => updateAddress("number", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Complemento</Label>
-              <Input
-                placeholder="Ex.: Sobreloja 101"
-                value={form.address?.complement || ""}
-                onChange={(e) => updateAddress("complement", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Bairro</Label>
-              <Input
-                placeholder="Ex.: Centro"
-                value={form.address?.neighborhood || ""}
-                onChange={(e) => updateAddress("neighborhood", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <Label>Cidade</Label>
-              <Input
-                placeholder="Ex.: Rio de Janeiro"
-                value={form.address?.city || ""}
-                onChange={(e) => updateAddress("city", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Estado (UF)</Label>
-              <Input
-                placeholder="Ex.: RJ"
-                maxLength={2}
-                value={form.address?.state || ""}
-                onChange={(e) =>
-                  updateAddress("state", e.target.value.toUpperCase())
-                }
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-3 mt-2">
@@ -744,6 +778,163 @@ function GroupForm({
     }
   };
 
+  const isMobile = useIsMobile();
+
+  const FormFields = (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2 flex flex-col gap-2">
+          <Label>Nome</Label>
+          <Input
+            className="border-primary/50 focus:ring-primary/50 bg-primary/3"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Ex.: Vendedor"
+          />
+        </div>
+        <div className="sm:col-span-2 flex flex-col gap-2">
+          <Label>Descrição</Label>
+          <Textarea
+            rows={2}
+            value={form.description}
+            onChange={(e) =>
+              setForm({ ...form, description: e.target.value })
+            }
+            placeholder="Para que serve este grupo?"
+          />
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 sm:col-span-2">
+          <div>
+            <div className="text-sm font-medium">Status</div>
+            <div className="text-xs text-muted-foreground">
+              Grupos inativos não concedem acesso aos usuários.
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {form.active ? "Ativo" : "Inativo"}
+            </span>
+            <Switch
+              checked={form.active}
+              onCheckedChange={(v) => setForm({ ...form, active: v })}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Permissões por módulo</div>
+            <div className="text-xs text-muted-foreground">
+              Selecione as ações permitidas em cada página do sistema.
+            </div>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {totalSelected} selecionada{totalSelected === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {MODULES.map((mod) => {
+            const selected = form.permissions[mod.key] ?? [];
+            const allChecked = selected.length === mod.actions.length;
+            const someChecked = selected.length > 0 && !allChecked;
+            return (
+              <div
+                key={mod.key}
+                className="rounded-lg border border-border/70 p-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={
+                        allChecked ? true : someChecked ? undefined : false
+                      }
+                      onCheckedChange={(v) =>
+                        setAllForModule(mod.key, v === true)
+                      }
+                      aria-label={`Selecionar todas de ${mod.label}`}
+                    />
+                    <div className="text-sm font-medium">{mod.label}</div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {selected.length}/{mod.actions.length}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 pl-6 sm:grid-cols-4">
+                  {mod.actions.map((a) => {
+                    const checked = selected.includes(a.key);
+                    const id = `${mod.key}-${a.key}`;
+                    return (
+                      <label
+                        key={a.key}
+                        htmlFor={id}
+                        className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm hover:border-border"
+                      >
+                        <Checkbox
+                          id={id}
+                          checked={checked}
+                          onCheckedChange={() =>
+                            toggleAction(mod.key, a.key)
+                          }
+                        />
+                        {a.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  const ActionButtons = (
+    <div className="flex w-full justify-between gap-2 sm:justify-end">
+      <Button
+        variant="outline"
+        onClick={() => onOpenChange(false)}
+        disabled={saving}
+      >
+        Cancelar
+      </Button>
+      <LoadingButton
+        onClick={submit}
+        disabled={!form.name.trim() || saving}
+        loading={saving}
+      >
+        Salvar
+      </LoadingButton>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[90vh]">
+          <DrawerHeader className="shrink-0 px-4">
+            <DrawerTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="pb-4 pt-1">{FormFields}</div>
+              </ScrollArea>
+            </div>
+            <div className="shrink-0 pt-4 border-t border-border">
+              {ActionButtons}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
@@ -751,136 +942,17 @@ function GroupForm({
           <DialogTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2 flex flex-col gap-2">
-              <Label>Nome</Label>
-              <Input
-                className="border-primary/50 focus:ring-primary/50 bg-primary/3"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ex.: Vendedor"
-              />
-            </div>
-            <div className="sm:col-span-2 flex flex-col gap-2">
-              <Label>Descrição</Label>
-              <Textarea
-                rows={2}
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                placeholder="Para que serve este grupo?"
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 sm:col-span-2">
-              <div>
-                <div className="text-sm font-medium">Status</div>
-                <div className="text-xs text-muted-foreground">
-                  Grupos inativos não concedem acesso aos usuários.
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {form.active ? "Ativo" : "Inativo"}
-                </span>
-                <Switch
-                  checked={form.active}
-                  onCheckedChange={(v) => setForm({ ...form, active: v })}
-                />
-              </div>
-            </div>
-          </div>
+        {FormFields}
 
-          <Separator />
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">Permissões por módulo</div>
-                <div className="text-xs text-muted-foreground">
-                  Selecione as ações permitidas em cada página do sistema.
-                </div>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {totalSelected} selecionada{totalSelected === 1 ? "" : "s"}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {MODULES.map((mod) => {
-                const selected = form.permissions[mod.key] ?? [];
-                const allChecked = selected.length === mod.actions.length;
-                const someChecked = selected.length > 0 && !allChecked;
-                return (
-                  <div
-                    key={mod.key}
-                    className="rounded-lg border border-border/70 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={
-                            allChecked ? true : someChecked ? undefined : false
-                          }
-                          onCheckedChange={(v) =>
-                            setAllForModule(mod.key, v === true)
-                          }
-                          aria-label={`Selecionar todas de ${mod.label}`}
-                        />
-                        <div className="text-sm font-medium">{mod.label}</div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {selected.length}/{mod.actions.length}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 pl-6 sm:grid-cols-4">
-                      {mod.actions.map((a) => {
-                        const checked = selected.includes(a.key);
-                        const id = `${mod.key}-${a.key}`;
-                        return (
-                          <label
-                            key={a.key}
-                            htmlFor={id}
-                            className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm hover:border-border"
-                          >
-                            <Checkbox
-                              id={id}
-                              checked={checked}
-                              onCheckedChange={() =>
-                                toggleAction(mod.key, a.key)
-                              }
-                            />
-                            {a.label}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            Cancelar
-          </Button>
-          <LoadingButton onClick={submit} disabled={!form.name.trim() || saving} loading={saving}>
-            Salvar
-          </LoadingButton>
-        </DialogFooter>
+        <DialogFooter>{ActionButtons}</DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
 function ProductsConfigSection() {
+  const isMobile = useIsMobile();
+  const [activeProductTab, setActiveProductTab] = useState<"categories" | "units">("categories");
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
   );
@@ -1068,14 +1140,46 @@ function ProductsConfigSection() {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
+        {/* Navegação por Abas no Mobile */}
+        <div className="flex md:hidden rounded-lg bg-muted p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveProductTab("categories")}
+            className={cn(
+              "flex-1 py-1.5 text-xs font-medium rounded-md transition-all text-center",
+              activeProductTab === "categories"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Categorias ({categories.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveProductTab("units")}
+            className={cn(
+              "flex-1 py-1.5 text-xs font-medium rounded-md transition-all text-center",
+              activeProductTab === "units"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Unidades de Medida ({units.length})
+          </button>
+        </div>
+
         {loading ? (
           <GlobalLoader />
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {/* Categorias */}
-
-            <div className="border rounded-md p-4 flex flex-col h-100">
+            <div
+              className={cn(
+                "border rounded-md p-4 flex flex-col h-100",
+                activeProductTab !== "categories" && "hidden md:flex"
+              )}
+            >
               <div className="flex justify-between items-center mb-4 shrink-0">
                 <h3 className="font-semibold text-lg">Categorias</h3>
 
@@ -1129,8 +1233,12 @@ function ProductsConfigSection() {
             </div>
 
             {/* Unidades */}
-
-            <div className="border rounded-md p-4 flex flex-col h-100">
+            <div
+              className={cn(
+                "border rounded-md p-4 flex flex-col h-100",
+                activeProductTab !== "units" && "hidden md:flex"
+              )}
+            >
               <div className="flex justify-between items-center mb-4 shrink-0">
                 <h3 className="font-semibold text-lg">Unidades de Medida</h3>
 
@@ -1192,115 +1300,223 @@ function ProductsConfigSection() {
           </div>
         )}
 
-        {/* Modal Categoria */}
+        {/* Modal / Drawer Categoria */}
+        {isMobile ? (
+          <Drawer
+            open={isCategoryModalOpen}
+            onOpenChange={setIsCategoryModalOpen}
+          >
+            <DrawerContent className="p-4">
+              <DrawerHeader className="px-0">
+                <DrawerTitle>
+                  {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+                </DrawerTitle>
+              </DrawerHeader>
 
-        <Dialog
-          open={isCategoryModalOpen}
-          onOpenChange={setIsCategoryModalOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory ? "Editar Categoria" : "Nova Categoria"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="py-4 space-y-2">
-              <Label>Nome da Categoria</Label>
-
-              <Input
-                className="border-primary/50 focus:ring-primary/50 bg-primary/3"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="Ex: Bebidas"
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsCategoryModalOpen(false)}
-              >
-                Cancelar
-              </Button>
-
-              <LoadingButton onClick={handleSaveCategory} loading={savingCategory}>
-                Salvar
-              </LoadingButton>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal Unidade */}
-
-        <Dialog open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingUnit ? "Editar Unidade" : "Nova Unidade"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-
+              <div className="py-4 space-y-2">
+                <Label>Nome da Categoria</Label>
                 <Input
                   className="border-primary/50 focus:ring-primary/50 bg-primary/3"
-                  value={unitForm.name}
-                  onChange={(e) =>
-                    setUnitForm({ ...unitForm, name: e.target.value })
-                  }
-                  placeholder="Ex: Quilo"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  placeholder="Ex: Bebidas"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Sigla</Label>
+              <div className="flex w-full justify-between gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <LoadingButton
+                  onClick={handleSaveCategory}
+                  loading={savingCategory}
+                >
+                  Salvar
+                </LoadingButton>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog
+            open={isCategoryModalOpen}
+            onOpenChange={setIsCategoryModalOpen}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+                </DialogTitle>
+              </DialogHeader>
 
+              <div className="py-4 space-y-2">
+                <Label>Nome da Categoria</Label>
                 <Input
                   className="border-primary/50 focus:ring-primary/50 bg-primary/3"
-                  value={unitForm.abbreviation}
-                  onChange={(e) =>
-                    setUnitForm({ ...unitForm, abbreviation: e.target.value })
-                  }
-                  placeholder="Ex: KG"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  placeholder="Ex: Bebidas"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Casas Decimais (0 a 3)</Label>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <LoadingButton
+                  onClick={handleSaveCategory}
+                  loading={savingCategory}
+                >
+                  Salvar
+                </LoadingButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
 
-                <Input
-                  type="number"
-                  min="0"
-                  max="3"
-                  value={unitForm.decimalPlaces}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setUnitForm({
-                      ...unitForm,
-                      decimalPlaces: val ? Math.min(3, Number(val)) : 0,
-                    });
-                  }}
-                />
+        {/* Modal / Drawer Unidade */}
+        {isMobile ? (
+          <Drawer open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen}>
+            <DrawerContent className="p-4">
+              <DrawerHeader className="px-0">
+                <DrawerTitle>
+                  {editingUnit ? "Editar Unidade" : "Nova Unidade"}
+                </DrawerTitle>
+              </DrawerHeader>
+
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input
+                    className="border-primary/50 focus:ring-primary/50 bg-primary/3"
+                    value={unitForm.name}
+                    onChange={(e) =>
+                      setUnitForm({ ...unitForm, name: e.target.value })
+                    }
+                    placeholder="Ex: Quilo"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Sigla</Label>
+                  <Input
+                    className="border-primary/50 focus:ring-primary/50 bg-primary/3"
+                    value={unitForm.abbreviation}
+                    onChange={(e) =>
+                      setUnitForm({
+                        ...unitForm,
+                        abbreviation: e.target.value,
+                      })
+                    }
+                    placeholder="Ex: KG"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Casas Decimais (0 a 3)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="3"
+                    value={unitForm.decimalPlaces}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setUnitForm({
+                        ...unitForm,
+                        decimalPlaces: val ? Math.min(3, Number(val)) : 0,
+                      });
+                    }}
+                  />
+                </div>
               </div>
-            </div>
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsUnitModalOpen(false)}
-              >
-                Cancelar
-              </Button>
+              <div className="flex w-full justify-between gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsUnitModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <LoadingButton onClick={handleSaveUnit} loading={savingUnit}>
+                  Salvar
+                </LoadingButton>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingUnit ? "Editar Unidade" : "Nova Unidade"}
+                </DialogTitle>
+              </DialogHeader>
 
-              <LoadingButton onClick={handleSaveUnit} loading={savingUnit}>
-                Salvar
-              </LoadingButton>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input
+                    className="border-primary/50 focus:ring-primary/50 bg-primary/3"
+                    value={unitForm.name}
+                    onChange={(e) =>
+                      setUnitForm({ ...unitForm, name: e.target.value })
+                    }
+                    placeholder="Ex: Quilo"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Sigla</Label>
+                  <Input
+                    className="border-primary/50 focus:ring-primary/50 bg-primary/3"
+                    value={unitForm.abbreviation}
+                    onChange={(e) =>
+                      setUnitForm({
+                        ...unitForm,
+                        abbreviation: e.target.value,
+                      })
+                    }
+                    placeholder="Ex: KG"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Casas Decimais (0 a 3)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="3"
+                    value={unitForm.decimalPlaces}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setUnitForm({
+                        ...unitForm,
+                        decimalPlaces: val ? Math.min(3, Number(val)) : 0,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsUnitModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <LoadingButton onClick={handleSaveUnit} loading={savingUnit}>
+                  Salvar
+                </LoadingButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );

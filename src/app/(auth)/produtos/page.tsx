@@ -339,6 +339,77 @@ function StockEntry({
 }) {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const isMobile = useIsMobile();
+
+  const handleAddStock = async () => {
+    if (!product || qty <= 0) return;
+
+    setBusy(true);
+    try {
+      const updatedProduct = await productsService.addStock(product.id, qty);
+      onSuccess(updatedProduct as ProductFrontend);
+      toast.success(`+${qty} un adicionados`);
+      setQty(1);
+      onClose();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erro ao adicionar estoque.";
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const ContentBody = product && (
+    <div className="space-y-3 py-2">
+      <div className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{product.name}</span> —
+        atual: {product.stock}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Quantidade a adicionar</Label>
+        <Input
+          type="number"
+          min={1}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+          inputMode="numeric"
+          onFocus={(e) => e.target.select()}
+        />
+      </div>
+    </div>
+  );
+
+  const ActionButtons = (
+    <div className="flex w-full justify-between gap-2 sm:justify-end">
+      <Button variant="outline" onClick={onClose} disabled={busy}>
+        Cancelar
+      </Button>
+
+      <LoadingButton
+        loading={busy}
+        disabled={qty <= 0}
+        onClick={handleAddStock}
+      >
+        Adicionar
+      </LoadingButton>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={!!product} onOpenChange={(open) => !open && onClose()}>
+        <DrawerContent className="p-4">
+          <DrawerHeader className="px-0">
+            <DrawerTitle>Entrada de estoque</DrawerTitle>
+          </DrawerHeader>
+          {ContentBody}
+          <div className="pt-2">{ActionButtons}</div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={!!product} onOpenChange={(open) => !open && onClose()}>
@@ -347,69 +418,9 @@ function StockEntry({
           <DialogTitle>Entrada de estoque</DialogTitle>
         </DialogHeader>
 
-        {product && (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {product.name}
-              </span>{" "}
-              — atual: {product.stock}
-            </div>
+        {ContentBody}
 
-            <div className="space-y-2">
-              <Label>Quantidade a adicionar</Label>
-
-              <Input
-                type="number"
-                min={1}
-                value={qty}
-                onChange={(e) => setQty(Number(e.target.value))}
-                inputMode="numeric"
-                onFocus={(e) => e.target.select()}
-              />
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-
-          <LoadingButton
-            loading={busy}
-            disabled={qty <= 0}
-            onClick={async () => {
-              if (!product || qty <= 0) return;
-
-              setBusy(true);
-              try {
-                const updatedProduct = await productsService.addStock(
-                  product.id,
-                  qty,
-                );
-
-                onSuccess(updatedProduct as ProductFrontend);
-
-                toast.success(`+${qty} un adicionados`);
-
-                setQty(1);
-                onClose();
-              } catch (error) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : "Erro ao adicionar estoque.";
-
-                toast.error(message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Adicionar
-          </LoadingButton>
-        </DialogFooter>
+        <DialogFooter>{ActionButtons}</DialogFooter>
       </DialogContent>
     </Dialog>
   );

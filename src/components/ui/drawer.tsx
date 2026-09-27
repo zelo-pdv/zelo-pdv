@@ -100,6 +100,7 @@ function DrawerSwipeHandle({
 function DrawerContent({
   className,
   children,
+  initialFocus = false,
   ...props
 }: DrawerPrimitive.Popup.Props) {
   const { hasSnapPoints, modal, showSwipeHandle, swipeDirection } = useDrawer();
@@ -117,6 +118,7 @@ function DrawerContent({
         className="pointer-events-none fixed inset-0 z-50 select-none data-[modal=true]:pointer-events-auto"
       >
         <DrawerPrimitive.Popup
+          initialFocus={initialFocus}
           data-slot="drawer-popup"
           data-swipe-axis={swipeAxis}
           data-snap-points={hasSnapPoints ? "" : undefined}

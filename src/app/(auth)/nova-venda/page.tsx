@@ -148,19 +148,21 @@ export default function NovaVenda() {
 
   // Funções do carrinho
   const addProduct = (p: Product) => {
+    const existing = items.find((i) => i.productId === p.id);
+    const currentQty = existing ? existing.quantity : 0;
+
+    if (currentQty + 1 > p.stock) {
+      toast.warning(
+        `Atenção: Estoque insuficiente para ${p.name}. (Em estoque: ${p.stock})`,
+        {
+          id: `stock-warning-${p.id}`,
+          duration: 3500,
+        },
+      );
+    }
+
     setItems((prev) => {
       const exists = prev.find((i) => i.productId === p.id);
-      const currentQty = exists ? exists.quantity : 0;
-
-      if (currentQty + 1 > p.stock) {
-        toast.warning(
-          `Atenção: Estoque insuficiente para ${p.name}. (Em estoque: ${p.stock})`,
-          {
-            duration: 4000,
-          },
-        );
-      }
-
       if (exists) {
         return prev.map((i) =>
           i.productId === p.id ? { ...i, quantity: i.quantity + 1 } : i,
@@ -172,7 +174,7 @@ export default function NovaVenda() {
           productId: p.id,
           productName: p.name,
           productImage: p.image,
-          unitPrice: Number(p.salePrice), // Converte o Decimal do Prisma para Number
+          unitPrice: Number(p.salePrice),
           quantity: 1,
         },
       ];
@@ -187,7 +189,8 @@ export default function NovaVenda() {
       toast.warning(
         `Atenção: Estoque insuficiente para ${product.name}. (Em estoque: ${product.stock})`,
         {
-          duration: 4000,
+          id: `stock-warning-${id}`,
+          duration: 3500,
         },
       );
     }

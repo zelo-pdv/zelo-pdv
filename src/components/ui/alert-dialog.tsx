@@ -41,6 +41,7 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  initialFocus = false,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   size?: "default" | "sm"
@@ -49,6 +50,7 @@ function AlertDialogContent({
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Popup
+        initialFocus={initialFocus}
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
