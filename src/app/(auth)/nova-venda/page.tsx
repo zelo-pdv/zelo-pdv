@@ -41,9 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-import { currency, initials } from "@/lib/format";
+import { currency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ProductThumb } from "@/components/product-thumb";
 import { ClientPicker } from "@/components/nova-venda/client-picker";
@@ -60,10 +58,12 @@ import {
   SaleStatus,
 } from "@/types";
 import { maskPhone } from "@/lib/masks";
+import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 type CartItem = {
   productId: string;
   productName: string;
+  productImage?: string | null;
   quantity: number;
   unitPrice: number;
 };
@@ -93,36 +93,51 @@ export default function NovaVenda() {
 
   const checkout = step === "payment";
 
-  // Busca os clientes e produtos ao carregar a página
+  // Busca os clientes e produtos ao carregar a página com suporte a refresh silencioso
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setLoadingData(true);
+      const [clientsData, productsData] = await Promise.all([
+        clientsService.list(),
+        productsService.list(),
+      ]);
+      const typedClients = clientsData as Client[];
+      const typedProducts = productsData as Product[];
+
+      setClients(typedClients);
+      
+      const defaultClient = typedClients.find(c => c.name === "Ao consumidor");
+      if (defaultClient) {
+        setClient(prev => prev || defaultClient);
+      }
+
+      setProducts(typedProducts);
+    } catch (error) {
+      if (!silent) {
+        toast.error("Erro ao carregar dados. Tente atualizar a página.");
+      }
+      console.error(error);
+    } finally {
+      if (!silent) setLoadingData(false);
+    }
+  };
+
   useEffect(() => {
     if (!can("nova-venda", "Visualizar")) {
       setLoadingData(false);
       return;
     }
-    async function loadData() {
-      try {
-        setLoadingData(true);
-        const [clientsData, productsData] = await Promise.all([
-          clientsService.list(),
-          productsService.list(),
-        ]);
-        setClients(clientsData as Client[]);
-        
-        const defaultClient = (clientsData as Client[]).find(c => c.name === "Ao consumidor");
-        if (defaultClient) {
-          setClient(prev => prev || defaultClient);
-        }
-
-        setProducts(productsData as Product[]);
-      } catch (error) {
-        toast.error("Erro ao carregar dados. Tente atualizar a página.");
-        console.error(error);
-      } finally {
-        setLoadingData(false);
-      }
-    }
-    loadData();
+    refreshData(false);
   }, [can]);
+
+  // Sincronização em tempo real de produtos e clientes
+  useDataSync({
+    types: ["products", "clients"],
+    onSync: () => {
+      refreshData(true);
+    },
+    enabled: can("nova-venda", "Visualizar"),
+  });
 
   const total = useMemo(
     () => items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
@@ -156,6 +171,7 @@ export default function NovaVenda() {
         {
           productId: p.id,
           productName: p.name,
+          productImage: p.image,
           unitPrice: Number(p.salePrice), // Converte o Decimal do Prisma para Number
           quantity: 1,
         },
@@ -216,6 +232,9 @@ export default function NovaVenda() {
       });
 
       toast.success("Venda registrada com sucesso!");
+      notifyLocalSync("sales");
+      notifyLocalSync("products");
+      notifyLocalSync("clients");
       clear();
       router.push("/historico");
     } catch (error: any) {
@@ -245,11 +264,6 @@ export default function NovaVenda() {
         <CardContent className="flex items-center gap-2">
           {client ? (
             <>
-              <Avatar className="h-11 w-11">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {initials(client.name)}
-                </AvatarFallback>
-              </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">
                   {client.name}
@@ -321,7 +335,10 @@ export default function NovaVenda() {
               {items.map((it) => (
                 <Card key={it.productId} className="border-border/70">
                   <CardContent className="flex items-center gap-3 p-3">
-                    <ProductThumb name={it.productName} />
+                    <ProductThumb
+                      name={it.productName}
+                      image={it.productImage || products.find((p) => p.id === it.productId)?.image}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
                         {it.productName}
@@ -406,7 +423,6 @@ export default function NovaVenda() {
         cartItems={items}
         onPick={(p) => {
           addProduct(p as any);
-          toast.success(`${p.name} adicionado`);
         }}
       />
 

@@ -80,7 +80,7 @@ export function SalesDataTable({
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por cliente..."
+              placeholder="Buscar vendas..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="rounded-xl pl-9"
@@ -134,8 +134,8 @@ export function SalesDataTable({
 
       <Card className="border-border/70 p-0">
         <CardContent className="p-0">
-          <div className="w-full overflow-x-auto">
-            <Table>
+          <div className="w-full overflow-x-hidden sm:overflow-x-auto">
+            <Table className="table-fixed w-full">
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
                   <TableRow key={hg.id}>

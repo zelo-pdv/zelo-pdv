@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import {
   Drawer,
   DrawerContent,
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { initials } from "@/lib/format";
+
 import { Client } from "@/prisma/client";
 import { maskPhone } from "@/lib/masks";
 
@@ -51,7 +51,7 @@ export function ClientPicker({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar..."
+          placeholder="Buscar clientes..."
           className="rounded-xl pl-9"
         />
       </div>
@@ -65,11 +65,7 @@ export function ClientPicker({
                 onClick={() => onPick(c)}
                 className="flex w-full items-center gap-3 rounded-xl border border-border/60 p-2.5 text-left transition hover:border-primary/40 hover:bg-accent"
               >
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {initials(c.name)}
-                  </AvatarFallback>
-                </Avatar>
+
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{c.name}</div>
                   <div className="truncate text-xs text-muted-foreground">

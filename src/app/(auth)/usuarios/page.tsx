@@ -55,6 +55,7 @@ import {
   type AccessGroupDTO,
 } from "@/services/accessGroup.service";
 import { usePermissions } from "@/components/auth/permissions-provider";
+import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 export type AppUser = {
   id: string;
@@ -64,7 +65,6 @@ export type AppUser = {
   active: boolean;
   password?: string;
   phone?: string | null;
-  avatar?: string | null;
   createdAt?: string | Date;
   updatedAt?: string | Date;
   group?: AccessGroupDTO;
@@ -76,7 +76,6 @@ interface FormData {
   email: string;
   password?: string;
   phone?: string | null;
-  avatar?: string | null;
   groupId: string;
   active: boolean;
 }
@@ -86,7 +85,6 @@ const emptyForm: FormData = {
   email: "",
   password: "",
   phone: "",
-  avatar: "",
   groupId: "",
   active: true,
 };
@@ -97,7 +95,6 @@ const userFormSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().optional(),
   phone: z.string().optional().nullable(),
-  avatar: z.string().optional().nullable(),
   groupId: z.string().min(1, "Selecione um grupo de acesso"),
   active: z.boolean(),
 });
@@ -115,25 +112,36 @@ export default function UsuariosPage() {
     null,
   );
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const [fetchedUsers, fetchedGroups] = await Promise.all([
-          usersService.list(),
-          getAccessGroups(),
-        ]);
-        setUsers(fetchedUsers);
-        setGroups(fetchedGroups);
-      } catch (error) {
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const [fetchedUsers, fetchedGroups] = await Promise.all([
+        usersService.list(),
+        getAccessGroups(),
+      ]);
+      setUsers(fetchedUsers);
+      setGroups(fetchedGroups);
+    } catch (error) {
+      if (!silent) {
         toast.error("Erro ao carregar os dados.");
-        console.error(error);
-      } finally {
-        setIsLoading(false);
       }
+      console.error(error);
+    } finally {
+      if (!silent) setIsLoading(false);
     }
-    loadData();
+  };
+
+  useEffect(() => {
+    refreshData(false);
   }, []);
+
+  // Sincronização em tempo real de usuários
+  useDataSync({
+    types: ["users"],
+    onSync: () => {
+      refreshData(true);
+    },
+  });
 
   const enrichedUsers = useMemo(() => {
     return users.map((u, i) => {
@@ -162,6 +170,7 @@ export default function UsuariosPage() {
               ),
             );
             toast.success("Status atualizado!");
+            notifyLocalSync("users");
 
             if (currentUser && updated.id === currentUser.sub) {
               window.location.reload();
@@ -208,11 +217,13 @@ export default function UsuariosPage() {
                 u.id === updatedUser.id ? { ...u, ...updatedUser } : u,
               ),
             );
+            notifyLocalSync("users");
             if (currentUser && updatedUser.id === currentUser.sub) {
               window.location.reload();
             }
           } else {
             setUsers((prev) => [updatedUser, ...prev]);
+            notifyLocalSync("users");
           }
           setCreating(false);
           setEditing(null);
@@ -225,6 +236,7 @@ export default function UsuariosPage() {
         onSuccess={(id) => {
           setUsers((prev) => prev.filter((u) => u.id !== id));
           setDeleting(null);
+          notifyLocalSync("users");
         }}
       />
 
@@ -267,7 +279,6 @@ function UserForm({
         email: initial.email,
         password: "",
         phone: initial.phone ? maskPhone(initial.phone) : "",
-        avatar: initial.avatar || "",
         groupId: initial.groupId,
         active: initial.active,
       });
@@ -321,7 +332,6 @@ function UserForm({
           email: form.email.trim().toLowerCase(),
           password: form.password ? form.password : undefined,
           phone: form.phone ? "+55" + form.phone.replace(/\D/g, "") : undefined,
-          avatar: form.avatar ? form.avatar.trim() : undefined,
           groupId: form.groupId,
           active: form.active,
         });
@@ -333,7 +343,6 @@ function UserForm({
           email: form.email.trim().toLowerCase(),
           password: form.password!,
           phone: form.phone ? "+55" + form.phone.replace(/\D/g, "") : undefined,
-          avatar: form.avatar ? form.avatar.trim() : undefined,
           groupId: form.groupId,
           active: form.active,
         });
@@ -590,6 +599,7 @@ function ChangePasswordDialog({
         password: password,
       });
       toast.success("Senha alterada com sucesso!");
+      notifyLocalSync("users");
       onClose();
     } catch (error) {
       console.error(error);

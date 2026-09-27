@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 
 import { currency } from "@/lib/format";
+import { ProductThumb } from "@/components/product-thumb";
 
 import type { Category, Product } from "@/prisma/client";
 
@@ -75,26 +76,33 @@ export function getProductColumns({
         const hasMobileActions = hasAnyAction;
 
         return (
-          <div className="min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-medium">
-                  {product.name}
-                </span>
+          <div className="min-w-0 max-w-full">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="flex items-center gap-2.5 min-w-0 max-w-[calc(100vw-130px)] sm:max-w-none">
+                <ProductThumb
+                  name={product.name}
+                  image={product.image}
+                  className="h-9 w-9 rounded-lg text-xs shrink-0"
+                />
+                <div className="min-w-0 flex items-center gap-1.5 flex-1">
+                  <span className="truncate text-sm font-medium">
+                    {product.name}
+                  </span>
 
-                {low && (
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 border-amber-500/40 text-amber-700"
-                  >
-                    <AlertTriangle className="mr-1 h-3 w-3" />
-                    Baixo
-                  </Badge>
-                )}
+                  {low && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 border-amber-500/40 text-amber-700 text-[10px] px-1 h-4"
+                    >
+                      <AlertTriangle className="mr-0.5 h-2.5 w-2.5" />
+                      Baixo
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {hasMobileActions && (
-                <div className="sm:hidden">
+                <div className="sm:hidden shrink-0">
                   <Popover>
                     <PopoverTrigger
                       render={

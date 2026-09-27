@@ -21,6 +21,7 @@ import { salesService } from "@/services/sales.service";
 import { getSaleColumns } from "./columns";
 import { SalesDataTable } from "./data-table";
 import { usePermissions } from "@/components/auth/permissions-provider";
+import { useDataSync } from "@/hooks/use-data-sync";
 
 export default function HistoricoPage() {
   const { can } = usePermissions();
@@ -28,26 +29,37 @@ export default function HistoricoPage() {
   const [isLoading, setIsLoading] = useState(true);
   const addVoucher = useVouchersStore((s) => s.addVoucher);
 
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const fetchedSales = await salesService.list();
+      setSales(fetchedSales);
+    } catch (error) {
+      if (!silent) {
+        toast.error("Erro ao carregar o histórico de vendas.");
+      }
+      console.error("Erro ao carregar vendas:", error);
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!can("historico", "Visualizar")) {
       setIsLoading(false);
       return;
     }
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const fetchedSales = await salesService.list();
-        setSales(fetchedSales);
-      } catch (error) {
-        toast.error("Erro ao carregar o histórico de vendas.");
-        console.error("Erro ao carregar vendas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadData();
+    refreshData(false);
   }, [can]);
+
+  // Sincronização em tempo real do histórico de vendas
+  useDataSync({
+    types: ["sales"],
+    onSync: () => {
+      refreshData(true);
+    },
+    enabled: can("historico", "Visualizar"),
+  });
 
   // Ordena as vendas da mais recente para a mais antiga
   const sortedSales = useMemo(() => {

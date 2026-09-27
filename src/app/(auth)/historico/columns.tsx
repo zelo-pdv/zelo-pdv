@@ -21,7 +21,7 @@ export function getSaleColumns({
       cell: ({ row }) => {
         const s = row.original;
         return (
-          <div className="min-w-0">
+          <div className="min-w-0 max-w-[calc(100vw-130px)] sm:max-w-none">
             <div className="truncate text-sm font-medium">{s.clientName}</div>
             <div className="truncate text-xs text-muted-foreground">
               {dateTime(s.date)}

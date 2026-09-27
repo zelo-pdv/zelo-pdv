@@ -23,11 +23,13 @@ export function maskPhone(value?: string | null): string {
   if (clean.length <= 2) {
     return `(${clean}`;
   }
-  if (clean.length <= 6) {
-    return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+  // Se for um número fixo completo de 10 dígitos (não começa com 9 após DDD)
+  if (clean.length === 10 && clean[2] !== "9") {
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6, 10)}`;
   }
-  if (clean.length <= 10) {
-    return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+  // Padrão celular brasileiro (DDD + 9 dígitos: (XX) 9XXXX-XXXX)
+  if (clean.length <= 7) {
+    return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
   }
   return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
 }

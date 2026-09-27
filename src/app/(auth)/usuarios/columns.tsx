@@ -35,12 +35,12 @@ export function getUserColumns({
       cell: ({ row }) => {
         const u = row.original;
         return (
-          <div className="min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+          <div className="min-w-0 max-w-full">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="flex items-center gap-2 min-w-0 max-w-[calc(100vw-130px)] sm:max-w-none">
                 <span className="truncate text-sm font-medium">{u.name}</span>
               </div>
-              <div className="sm:hidden">
+              <div className="sm:hidden shrink-0">
                 <Popover>
                   <PopoverTrigger
                     render={

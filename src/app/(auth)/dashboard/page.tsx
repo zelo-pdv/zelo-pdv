@@ -17,6 +17,7 @@ import { productsService } from "@/services/products.service";
 import type { Sale } from "@/types";
 import type { ProductFrontend } from "../produtos/columns";
 import { usePermissions } from "@/components/auth/permissions-provider";
+import { useDataSync } from "@/hooks/use-data-sync";
 
 function StatCard({
   icon: Icon,
@@ -68,28 +69,38 @@ export default function Dashboard() {
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const [fetchedSales, fetchedProducts] = await Promise.all([
+        salesService.list(),
+        productsService.list() as Promise<ProductFrontend[]>,
+      ]);
+      setSales(fetchedSales);
+      setProducts(fetchedProducts);
+    } catch (error) {
+      console.error("Erro ao carregar dashboard:", error);
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!can("dashboard", "Visualizar")) {
       setIsLoading(false);
       return;
     }
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const [fetchedSales, fetchedProducts] = await Promise.all([
-          salesService.list(),
-          productsService.list() as Promise<ProductFrontend[]>,
-        ]);
-        setSales(fetchedSales);
-        setProducts(fetchedProducts);
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
+    refreshData(false);
   }, [can]);
+
+  // Sincronização em tempo real do dashboard
+  useDataSync({
+    types: ["sales", "products"],
+    onSync: () => {
+      refreshData(true);
+    },
+    enabled: can("dashboard", "Visualizar"),
+  });
 
   const stats = useMemo(() => {
     const soldToday = sales

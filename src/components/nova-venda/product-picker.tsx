@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, ScanBarcode } from "lucide-react";
+import { ArrowLeft, Search, ScanBarcode, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,16 @@ export function ProductPicker({
 }) {
   const [q, setQ] = useState("");
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  const handlePick = (p: import("@/types").Product) => {
+    setJustAddedId(p.id);
+    onPick(p);
+    setTimeout(() => {
+      setJustAddedId((current) => (current === p.id ? null : current));
+    }, 800);
+  };
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -56,8 +65,7 @@ export function ProductPicker({
   const handleScan = (barcode: string) => {
     const product = products.find((p) => p.barcode === barcode);
     if (product) {
-      onPick(product);
-      toast.success("Produto adicionado!");
+      handlePick(product);
     } else {
       toast.error("Produto não encontrado com este código de barras.");
     }
@@ -71,7 +79,7 @@ export function ProductPicker({
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar..."
+            placeholder="Buscar produtos..."
             className="rounded-xl pl-9"
           />
         </div>
@@ -93,21 +101,44 @@ export function ProductPicker({
               const cartQty =
                 cartItems.find((i) => i.productId === p.id)?.quantity || 0;
               const remaining = p.stock - cartQty;
+              const isAdded = justAddedId === p.id;
+
               return (
                 <button
                   key={p.id}
-                  onClick={() => onPick(p)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-border/60 p-2.5 text-left transition hover:border-primary/40 hover:bg-accent disabled:opacity-50"
+                  onClick={() => handlePick(p)}
+                  className={`flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-all duration-200 disabled:opacity-50 ${
+                    isAdded
+                      ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 ring-2 ring-emerald-500/20 scale-[0.99]"
+                      : "border-border/60 hover:border-primary/40 hover:bg-accent"
+                  }`}
                 >
-                  <ProductThumb name={p.name} />
+                  <ProductThumb name={p.name} image={p.image} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{p.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium">{p.name}</span>
+                      {cartQty > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 px-1.5 text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                        >
+                          {cartQty} no carrinho
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {remaining} em estoque
                     </div>
                   </div>
-                  <div className="text-sm font-semibold tabular-nums">
-                    {currency(p.salePrice as number)}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isAdded && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-in fade-in zoom-in-75">
+                        <Check className="h-3.5 w-3.5" /> +1
+                      </span>
+                    )}
+                    <div className="text-sm font-semibold tabular-nums">
+                      {currency(p.salePrice as number)}
+                    </div>
                   </div>
                   {remaining <= 0 && (
                     <Badge

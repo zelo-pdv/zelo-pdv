@@ -2,8 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { currency, initials } from "@/lib/format";
+import { currency } from "@/lib/format";
 import { ClientWithAddress } from "@/types";
 import { maskPhone } from "@/lib/masks";
 
@@ -32,31 +31,24 @@ export function getClientColumns({
       cell: ({ row }) => {
         const c = row.original;
         return (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                {initials(c.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{c.name}</div>
-              <div className="truncate text-xs text-muted-foreground">
-                {maskPhone(c.phone)}
-              </div>
-              {/* Info resumida para Mobile (escondida no desktop) */}
-              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
-                <span className="font-medium text-foreground">
-                  {currency(c.totalSpent)}
-                </span>
-                {c.pendingAmount > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="h-4 border-amber-500/40 px-1 text-[10px] text-amber-700"
-                  >
-                    Pendente
-                  </Badge>
-                )}
-              </div>
+          <div className="min-w-0 max-w-[calc(100vw-130px)] sm:max-w-none">
+            <div className="truncate text-sm font-medium">{c.name}</div>
+            <div className="truncate text-xs text-muted-foreground">
+              {maskPhone(c.phone)}
+            </div>
+            {/* Info resumida para Mobile (escondida no desktop) */}
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
+              <span className="font-medium text-foreground">
+                {currency(c.totalSpent)}
+              </span>
+              {c.pendingAmount > 0 && (
+                <Badge
+                  variant="outline"
+                  className="h-4 border-amber-500/40 px-1 text-[10px] text-amber-700"
+                >
+                  Pendente
+                </Badge>
+              )}
             </div>
           </div>
         );

@@ -38,6 +38,7 @@ import { productsService } from "@/services/products.service";
 import { categoriesService } from "@/services/categories.service";
 import { unitsService, Unit } from "@/services/units.service";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ProductThumb } from "@/components/product-thumb";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ import { Category } from "@/prisma/client";
 import {  ScanBarcode, Wand2, AlertCircle } from "lucide-react";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 // 1. Estado do Formulário usa NUMBER agora, compatível com frontend
 export type FormState = {
@@ -94,31 +96,41 @@ export default function ProdutosPage() {
   const [stockDialog, setStockDialog] = useState<ProductFrontend | null>(null);
   const [deleting, setDeleting] = useState<ProductFrontend | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
 
-        const [fetchedProducts, fetchedCategories, fetchedUnits] =
-          await Promise.all([
-            productsService.list(),
-            categoriesService.list(),
-            unitsService.getUnits(),
-          ]);
+      const [fetchedProducts, fetchedCategories, fetchedUnits] =
+        await Promise.all([
+          productsService.list(),
+          categoriesService.list(),
+          unitsService.getUnits(),
+        ]);
 
-        setProducts(fetchedProducts as ProductFrontend[]);
-        setCategories(fetchedCategories as Category[]);
-        setUnits(fetchedUnits as Unit[]);
-      } catch (error) {
+      setProducts(fetchedProducts as ProductFrontend[]);
+      setCategories(fetchedCategories as Category[]);
+      setUnits(fetchedUnits as Unit[]);
+    } catch (error) {
+      if (!silent) {
         toast.error("Erro ao carregar dados dos produtos.");
-        console.error("Erro ao carregar produtos ou categorias:", error);
-      } finally {
-        setLoading(false);
       }
+      console.error("Erro ao carregar produtos ou categorias:", error);
+    } finally {
+      if (!silent) setLoading(false);
     }
+  };
 
-    loadData();
+  useEffect(() => {
+    refreshData(false);
   }, []);
+
+  // Sincronização em tempo real entre dispositivos e abas
+  useDataSync({
+    types: ["products", "categories"],
+    onSync: () => {
+      refreshData(true);
+    },
+  });
 
   // Extrai apenas os nomes para alimentar o filtro do Data-table
   const categoryNames = useMemo(
@@ -203,6 +215,7 @@ export default function ProdutosPage() {
               );
 
               toast.success("Produto atualizado com sucesso!");
+              notifyLocalSync("products");
             } else {
               const newProduct = (await productsService.create(
                 data,
@@ -211,6 +224,7 @@ export default function ProdutosPage() {
               setProducts((prev) => [newProduct, ...prev]);
 
               toast.success("Produto cadastrado com sucesso!");
+              notifyLocalSync("products");
             }
 
             setCreating(false);
@@ -237,6 +251,7 @@ export default function ProdutosPage() {
                 : product,
             ),
           );
+          notifyLocalSync("products");
         }}
       />
 
@@ -251,6 +266,7 @@ export default function ProdutosPage() {
 
             toast.success("Produto removido com sucesso!");
             setDeleting(null);
+            notifyLocalSync("products");
           } catch (error) {
             const message =
               error instanceof Error
@@ -776,11 +792,19 @@ function ProductForm({
 
       <div className="col-span-2 space-y-2">
         <Label>URL da Imagem</Label>
-        <Input
-          value={form.image}
-          onChange={(e) => updateString("image", e.target.value)}
-          placeholder="https://exemplo.com/imagem.png"
-        />
+        <div className="flex items-center gap-3">
+          <ProductThumb
+            name={form.name || "P"}
+            image={form.image}
+            className="h-10 w-10 shrink-0 rounded-lg text-xs"
+          />
+          <Input
+            value={form.image}
+            onChange={(e) => updateString("image", e.target.value)}
+            placeholder="https://exemplo.com/imagem.png"
+            className="flex-1"
+          />
+        </div>
       </div>
 
       <div className="col-span-2 space-y-2">

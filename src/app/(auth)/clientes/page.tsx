@@ -14,6 +14,7 @@ import DeleteClient from "@/components/clients/delete-client";
 import type { ClientWithAddress, Sale } from "@/types";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { AlertTriangle } from "lucide-react";
+import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 export default function ClientesPage() {
   const { can } = usePermissions();
@@ -26,32 +27,42 @@ export default function ClientesPage() {
   const [detail, setDetail] = useState<ClientWithAddress | null>(null);
   const [deleting, setDeleting] = useState<ClientWithAddress | null>(null);
 
-  // Busca os dados iniciais assim que o componente é montado no navegador
+  // Carrega ou atualiza os dados (com suporte a atualização silenciosa em tempo real)
+  const refreshData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const [fetchedClients, fetchedSales] = await Promise.all([
+        clientsService.list(),
+        salesService.list(),
+      ]);
+      setClients(fetchedClients);
+      setSales(fetchedSales as Sale[]);
+    } catch (error) {
+      if (!silent) {
+        toast.error("Erro ao carregar a lista de clientes.");
+      }
+      console.error("Erro ao carregar clientes ou vendas:", error);
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!can("clientes", "Visualizar")) {
       setIsLoading(false);
       return;
     }
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        // Faz o fetch em paralelo nas duas APIs
-        const [fetchedClients, fetchedSales] = await Promise.all([
-          clientsService.list(),
-          salesService.list(), // Previne que erro nas vendas quebre os clientes
-        ]);
-        setClients(fetchedClients);
-        setSales(fetchedSales as Sale[]);
-      } catch (error) {
-        toast.error("Erro ao carregar a lista de clientes.");
-        console.error("Erro ao carregar clientes ou vendas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadData();
+    refreshData(false);
   }, [can]);
+
+  // Sincronização em tempo real entre dispositivos e abas
+  useDataSync({
+    types: ["clients", "sales"],
+    onSync: () => {
+      refreshData(true);
+    },
+    enabled: can("clientes", "Visualizar"),
+  });
 
   // Mescla os clientes com os dados das vendas
   const enrichedClients = useMemo(() => {
@@ -128,10 +139,12 @@ export default function ClientesPage() {
                 ),
               );
               toast.success("Cliente atualizado com sucesso!");
+              notifyLocalSync("clients");
             } else {
               const newClient = await clientsService.create(data);
               setClients((prev) => [newClient, ...prev]);
               toast.success("Cliente cadastrado com sucesso!");
+              notifyLocalSync("clients");
             }
             setCreating(false);
             setEditing(null);
@@ -163,6 +176,7 @@ export default function ClientesPage() {
         onConfirm={(id) => {
           setClients((prev) => prev.filter((c) => c.id !== id));
           setDeleting(null);
+          notifyLocalSync("clients");
         }}
       />
     </div>
