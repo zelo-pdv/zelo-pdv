@@ -7,7 +7,10 @@ export function ThemeColorUpdater() {
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const isDark = resolvedTheme === "dark";
+    const isDark =
+      resolvedTheme === "dark" ||
+      (typeof document !== "undefined" &&
+        document.documentElement.classList.contains("dark"));
 
     const updateStatusBar = () => {
       const activeOverlay = document.querySelector(
@@ -27,21 +30,21 @@ export function ThemeColorUpdater() {
 
       const isModalOpen = Boolean(activeOverlay);
 
-      // When modal/drawer is open:
-      // - dark mode: #000000 (deep black matching dimmed backdrop)
-      // - light mode: #262626 (dark dimmed shade matching dimmed blurred backdrop)
-      // When closed:
-      // - dark mode: #171717 (app background in dark mode)
-      // - light mode: #ffffff (white app background in light mode)
+      // Quando aberto (drawer/modal/formulário):
+      // - Modo dark: #000000 (preto profundo igual ao fundo escurecido com desfoque)
+      // - Modo light: #999999 (cinza suave equivalente ao desfoque bg-black/40 sobre branco)
+      // Quando fechado (padrão do app):
+      // - Modo dark: #0a0a0a (cor real de fundo do app em dark mode, oklch(0.145 0 0))
+      // - Modo light: #ffffff (cor de fundo branca do app em light mode)
       const color = isModalOpen
         ? isDark
           ? "#000000"
-          : "#262626"
+          : "#999999"
         : isDark
-        ? "#171717"
+        ? "#0a0a0a"
         : "#ffffff";
 
-      // Update meta[name="theme-color"]
+      // Atualiza meta[name="theme-color"]
       const existingMetas = document.querySelectorAll('meta[name="theme-color"]');
       if (existingMetas.length > 1) {
         existingMetas.forEach((el, index) => {
@@ -59,7 +62,9 @@ export function ThemeColorUpdater() {
         meta.setAttribute("content", color);
       }
 
-      // Update meta[name="apple-mobile-web-app-status-bar-style"]
+      // Atualiza meta[name="apple-mobile-web-app-status-bar-style"]
+      // No modo light mantém "default" (ícones escuros legíveis no branco e no cinza desfoque)
+      // No modo dark utiliza "black-translucent" (ícones claros no fundo escuro)
       let appleMeta = document.querySelector(
         'meta[name="apple-mobile-web-app-status-bar-style"]'
       );
@@ -71,16 +76,16 @@ export function ThemeColorUpdater() {
         );
         document.head.appendChild(appleMeta);
       }
-      const appleContent = isModalOpen || isDark ? "black-translucent" : "default";
+      const appleContent = isDark ? "black-translucent" : "default";
       if (appleMeta.getAttribute("content") !== appleContent) {
         appleMeta.setAttribute("content", appleContent);
       }
     };
 
-    // Run initially
+    // Executa inicialmente
     updateStatusBar();
 
-    // Observe DOM mutations to detect when modal opens or closes
+    // Observa mutações no DOM para detectar abertura/fechamento de formulários/drawers
     const observer = new MutationObserver(() => {
       updateStatusBar();
     });
@@ -98,8 +103,18 @@ export function ThemeColorUpdater() {
       ],
     });
 
+    // Observa alteração de classe de tema no <html>
+    const htmlObserver = new MutationObserver(() => {
+      updateStatusBar();
+    });
+    htmlObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
     return () => {
       observer.disconnect();
+      htmlObserver.disconnect();
     };
   }, [resolvedTheme]);
 
