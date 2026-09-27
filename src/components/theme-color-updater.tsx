@@ -8,7 +8,7 @@ export function ThemeColorUpdater() {
 
   useEffect(() => {
     const isDark = resolvedTheme === "dark";
-    const color = isDark ? "#000000" : "#ffffff";
+    const color = isDark ? "#0a0a0a" : "#ffffff";
 
     // Remove any existing theme-color meta tags to prevent media-query precedence issues
     const existingMetas = document.querySelectorAll('meta[name="theme-color"]');

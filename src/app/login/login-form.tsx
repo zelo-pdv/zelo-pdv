@@ -68,7 +68,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-white dark:bg-black font-sans overflow-x-hidden">
+    <div className="flex min-h-screen w-full bg-background font-sans overflow-x-hidden">
       {/* Lado Esquerdo - Branding & Imagem (somente Desktop) */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between p-10 xl:p-12 relative overflow-hidden bg-linear-to-br from-[#1e40af] via-[#1d4ed8] to-[#1e3a8a] dark:from-[#0b192e] dark:via-[#0f2240] dark:to-[#071120] text-white border-r border-blue-900/30 dark:border-blue-950/60">
         {/* Detalhes sutis de iluminação */}
@@ -106,7 +106,7 @@ export function LoginForm() {
       </div>
 
       {/* Lado Direito - Formulário */}
-      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden bg-white dark:bg-black lg:bg-slate-50/50 dark:lg:bg-[#09090b]">
+      <div className="flex flex-1 flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden bg-background lg:bg-slate-50/50 dark:lg:bg-background">
         <div className="absolute top-4 right-4 z-20">
           <ModeToggle />
         </div>
