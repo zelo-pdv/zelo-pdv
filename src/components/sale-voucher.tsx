@@ -357,7 +357,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
             <div key={it.productId || idx} className="space-y-0.5">
               <div className="flex items-start gap-2">
                 <span className="w-16 shrink-0 font-medium">{itemCode}</span>
-                <span className="flex-1 uppercase font-semibold break-words">
+                <span className="flex-1 uppercase font-semibold wrap-break-word">
                   {it.productName}
                 </span>
               </div>
