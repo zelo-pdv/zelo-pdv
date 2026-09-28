@@ -59,40 +59,68 @@ export async function POST(request: Request) {
             }
           : {}),
         accessGroups: {
-          create: {
-            name: "ADMIN",
-            description: "Acesso total ao sistema",
-            permissions: {
-              clientes: [
-                "Visualizar",
-                "Adicionar",
-                "Editar",
-                "Excluir",
-              ],
-              produtos: [
-                "Visualizar",
-                "Adicionar",
-                "Editar",
-                "Excluir",
-              ],
-              dashboard: ["Visualizar"],
-              historico: [
-                "Visualizar",
-                "Editar",
-                "Excluir",
-              ],
-              "nova-venda": [
-                "Visualizar",
-                "Adicionar",
-              ],
+          create: [
+            {
+              name: "ADMIN",
+              description: "Administrador do Sistema (Acesso Total)",
+              permissions: {
+                dashboard: ["Visualizar"],
+                historico: ["Visualizar", "Editar", "Excluir"],
+                "nova-venda": ["Visualizar", "Adicionar"],
+                clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                configuracoes: ["Visualizar", "Editar", "Excluir"],
+                usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+              },
             },
-          },
+            {
+              name: "Gerente",
+              description: "Acesso gerencial com controle de vendas, produtos e clientes",
+              permissions: {
+                dashboard: ["Visualizar"],
+                historico: ["Visualizar", "Editar", "Excluir"],
+                "nova-venda": ["Visualizar", "Adicionar"],
+                clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+              },
+            },
+            {
+              name: "Operador de Caixa",
+              description: "Pode registrar vendas e consultar produtos e clientes",
+              permissions: {
+                dashboard: ["Visualizar"],
+                "nova-venda": ["Visualizar", "Adicionar"],
+                clientes: ["Visualizar", "Adicionar"],
+                produtos: ["Visualizar"],
+                historico: ["Visualizar"],
+              },
+            },
+          ],
         },
         clients: {
           create: {
             name: "Consumidor Final",
             phone: "",
           },
+        },
+        categories: {
+          create: {
+            name: "Geral",
+          },
+        },
+        units: {
+          create: [
+            { name: "Unidade", abbreviation: "UN", decimalPlaces: 0 },
+            { name: "Quilo", abbreviation: "KG", decimalPlaces: 3 },
+            { name: "Grama", abbreviation: "G", decimalPlaces: 0 },
+            { name: "Litro", abbreviation: "L", decimalPlaces: 3 },
+            { name: "Caixa", abbreviation: "CX", decimalPlaces: 0 },
+            { name: "Pacote", abbreviation: "PCT", decimalPlaces: 0 },
+            { name: "Metro", abbreviation: "M", decimalPlaces: 2 },
+            { name: "Par", abbreviation: "PAR", decimalPlaces: 0 },
+          ],
         },
       },
       include: {

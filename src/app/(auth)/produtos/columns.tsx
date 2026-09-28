@@ -37,11 +37,13 @@ export function isProductLowStock(
   product: ProductFrontend,
   globalThreshold = 5
 ): boolean {
-  const min =
-    product.minStock !== null && product.minStock !== undefined && product.minStock > 0
-      ? product.minStock
-      : globalThreshold;
-  return min > 0 && product.stock <= min;
+  const minStockNum =
+    product.minStock !== null && product.minStock !== undefined
+      ? Number(product.minStock)
+      : 0;
+  const min = minStockNum > 0 ? minStockNum : globalThreshold;
+  const stockNum = Number(product.stock ?? 0);
+  return min > 0 && stockNum <= min;
 }
 
 export type ProductActions = {
@@ -228,7 +230,7 @@ export function getProductColumns({
                         : "",
                     )}
                   >
-                    {product.stock} un
+                    {Number(product.stock)} un
                   </span>
                   {low && (
                     <Badge

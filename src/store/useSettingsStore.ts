@@ -208,8 +208,22 @@ const defaultGroups: AccessGroup[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: "g_vendedor",
-    name: "Vendedor",
+    id: "g_gerente",
+    name: "Gerente",
+    description: "Acesso gerencial com controle de vendas, produtos e clientes.",
+    active: true,
+    permissions: {
+      dashboard: ["Visualizar"],
+      historico: ["Visualizar", "Editar", "Excluir"],
+      "nova-venda": ["Visualizar", "Adicionar"],
+      clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+    },
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "g_operador",
+    name: "Operador de Caixa",
     description: "Pode registrar vendas e consultar produtos e clientes.",
     active: true,
     permissions: {

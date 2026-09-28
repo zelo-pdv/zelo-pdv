@@ -360,11 +360,13 @@ export default function Dashboard() {
 
     const threshold = productsSettings.globalLowStockThreshold ?? 5;
     const low = products.filter((p) => {
-      const min =
-        p.minStock !== null && p.minStock !== undefined && p.minStock > 0
-          ? p.minStock
-          : threshold;
-      return min > 0 && p.stock <= min;
+      const minStockNum =
+        p.minStock !== null && p.minStock !== undefined
+          ? Number(p.minStock)
+          : 0;
+      const min = minStockNum > 0 ? minStockNum : threshold;
+      const stockNum = Number(p.stock ?? 0);
+      return min > 0 && stockNum <= min;
     });
 
     return { soldInPeriod, countInPeriod, pending, pendingCount, low };
@@ -578,7 +580,10 @@ export default function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{p.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {p.stock} em estoque · mínimo {p.minStock ?? productsSettings.globalLowStockThreshold ?? 5}
+                      {Number(p.stock)} em estoque · mínimo{" "}
+                      {p.minStock !== null && p.minStock !== undefined
+                        ? Number(p.minStock)
+                        : (productsSettings.globalLowStockThreshold ?? 5)}
                     </div>
                   </div>
                   <Badge

@@ -1,5 +1,146 @@
+import "dotenv/config";
 import prisma from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
+
+const defaultUnits = [
+  { name: "Unidade", abbreviation: "UN", decimalPlaces: 0 },
+  { name: "Quilo", abbreviation: "KG", decimalPlaces: 3 },
+  { name: "Grama", abbreviation: "G", decimalPlaces: 0 },
+  { name: "Litro", abbreviation: "L", decimalPlaces: 3 },
+  { name: "Caixa", abbreviation: "CX", decimalPlaces: 0 },
+  { name: "Pacote", abbreviation: "PCT", decimalPlaces: 0 },
+  { name: "Metro", abbreviation: "M", decimalPlaces: 2 },
+  { name: "Par", abbreviation: "PAR", decimalPlaces: 0 },
+];
+
+const defaultGroups = [
+  {
+    name: "ADMIN",
+    description: "Administrador do Sistema (Acesso Total)",
+    active: true,
+    permissions: {
+      dashboard: ["Visualizar"],
+      historico: ["Visualizar", "Editar", "Excluir"],
+      "nova-venda": ["Visualizar", "Adicionar"],
+      clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      configuracoes: ["Visualizar", "Editar", "Excluir"],
+      usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+    },
+  },
+  {
+    name: "Gerente",
+    description: "Acesso gerencial com controle de vendas, produtos e clientes",
+    active: true,
+    permissions: {
+      dashboard: ["Visualizar"],
+      historico: ["Visualizar", "Editar", "Excluir"],
+      "nova-venda": ["Visualizar", "Adicionar"],
+      clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+      categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+    },
+  },
+  {
+    name: "Operador de Caixa",
+    description: "Pode registrar vendas e consultar produtos e clientes",
+    active: true,
+    permissions: {
+      dashboard: ["Visualizar"],
+      "nova-venda": ["Visualizar", "Adicionar"],
+      clientes: ["Visualizar", "Adicionar"],
+      produtos: ["Visualizar"],
+      historico: ["Visualizar"],
+    },
+  },
+];
+
+async function setupDefaultDataForLoja(lojaId: string) {
+  // 1. Cliente padrão Consumidor Final
+  const existingClient = await prisma.client.findFirst({
+    where: { lojaId, name: "Consumidor Final" },
+  });
+  if (!existingClient) {
+    await prisma.client.create({
+      data: {
+        lojaId,
+        name: "Consumidor Final",
+        phone: "",
+      },
+    });
+  }
+
+  // 2. Grupos de acesso padrão
+  let adminGroup: any = null;
+  for (const group of defaultGroups) {
+    const upserted = await prisma.accessGroup.upsert({
+      where: {
+        lojaId_name: {
+          lojaId,
+          name: group.name,
+        },
+      },
+      update: {
+        description: group.description,
+        permissions: group.permissions,
+      },
+      create: {
+        lojaId,
+        name: group.name,
+        description: group.description,
+        active: group.active,
+        permissions: group.permissions,
+      },
+    });
+    if (group.name === "ADMIN") {
+      adminGroup = upserted;
+    }
+  }
+
+  // 3. Unidades padrão
+  for (const unit of defaultUnits) {
+    await prisma.unit.upsert({
+      where: {
+        lojaId_abbreviation: {
+          lojaId,
+          abbreviation: unit.abbreviation,
+        },
+      },
+      update: {},
+      create: {
+        lojaId,
+        name: unit.name,
+        abbreviation: unit.abbreviation,
+        decimalPlaces: unit.decimalPlaces,
+      },
+    });
+  }
+
+  // 4. Categoria padrão "Geral" (migra "Diversos" se existir)
+  const diversosCat = await prisma.category.findFirst({
+    where: { lojaId, name: "Diversos" },
+  });
+  const geralCat = await prisma.category.findFirst({
+    where: { lojaId, name: "Geral" },
+  });
+
+  if (diversosCat && !geralCat) {
+    await prisma.category.update({
+      where: { id: diversosCat.id },
+      data: { name: "Geral" },
+    });
+  } else if (!geralCat) {
+    await prisma.category.create({
+      data: {
+        lojaId,
+        name: "Geral",
+      },
+    });
+  }
+
+  return { adminGroup };
+}
 
 async function main() {
   console.log("Iniciando o seed...");
@@ -17,102 +158,9 @@ async function main() {
 
   console.log(`Loja configurada: ${loja.name} (${loja.id})`);
 
-  // Cliente padrão
-  const existingClient = await prisma.client.findFirst({
-    where: { lojaId: loja.id, name: "Consumidor Final" }
-  });
-  if (!existingClient) {
-    await prisma.client.create({
-      data: {
-        lojaId: loja.id,
-        name: "Consumidor Final",
-        phone: ""
-      }
-    });
-  }
-
-  // 2. Criar ou atualizar o grupo ADMIN para a loja
-  const adminGroup = await prisma.accessGroup.upsert({
-    where: {
-      lojaId_name: {
-        lojaId: loja.id,
-        name: "ADMIN",
-      },
-    },
-    update: {
-      permissions: {
-        dashboard: ["Visualizar"],
-        historico: ["Visualizar", "Editar", "Excluir"],
-        "nova-venda": ["Visualizar", "Adicionar"],
-        clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        configuracoes: ["Visualizar", "Editar", "Excluir"],
-        usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-      },
-    },
-    create: {
-      lojaId: loja.id,
-      name: "ADMIN",
-      description: "Administrador do Sistema (Acesso Total)",
-      active: true,
-      permissions: {
-        dashboard: ["Visualizar"],
-        historico: ["Visualizar", "Editar", "Excluir"],
-        "nova-venda": ["Visualizar", "Adicionar"],
-        clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        configuracoes: ["Visualizar", "Editar", "Excluir"],
-        usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-      },
-    },
-  });
-
-  console.log(`Grupo configurado: ${adminGroup.name} (${adminGroup.id})`);
-
-  // 3. Unidades padrão
-  const defaultUnits = [
-    { name: "Unidade", abbreviation: "UN", decimalPlaces: 0 },
-    { name: "Quilo", abbreviation: "KG", decimalPlaces: 3 },
-    { name: "Grama", abbreviation: "G", decimalPlaces: 0 },
-    { name: "Litro", abbreviation: "L", decimalPlaces: 3 },
-    { name: "Caixa", abbreviation: "CX", decimalPlaces: 0 },
-    { name: "Pacote", abbreviation: "PCT", decimalPlaces: 0 },
-  ];
-
-  for (const unit of defaultUnits) {
-    await prisma.unit.upsert({
-      where: {
-        lojaId_abbreviation: {
-          lojaId: loja.id,
-          abbreviation: unit.abbreviation,
-        },
-      },
-      update: {},
-      create: {
-        lojaId: loja.id,
-        name: unit.name,
-        abbreviation: unit.abbreviation,
-        decimalPlaces: unit.decimalPlaces,
-      },
-    });
-  }
-
-  // 4. Categoria Padrão
-  await prisma.category.upsert({
-    where: {
-      lojaId_name: {
-        lojaId: loja.id,
-        name: "Diversos",
-      },
-    },
-    update: {},
-    create: {
-      lojaId: loja.id,
-      name: "Diversos",
-    },
-  });
+  // Configurar dados padrão para Zelo Shop
+  const { adminGroup } = await setupDefaultDataForLoja(loja.id);
+  console.log(`Grupo ADMIN configurado: ${adminGroup.name} (${adminGroup.id})`);
 
   // Usuário Admin
   const email = "zelopdv@gmail.com";
@@ -155,89 +203,8 @@ async function main() {
 
   console.log(`Loja Demo configurada: ${demoLoja.name} (${demoLoja.id})`);
 
-  // Cliente padrão demo
-  const existingDemoClient = await prisma.client.findFirst({
-    where: { lojaId: demoLoja.id, name: "Consumidor Final" }
-  });
-  if (!existingDemoClient) {
-    await prisma.client.create({
-      data: {
-        lojaId: demoLoja.id,
-        name: "Consumidor Final",
-        phone: ""
-      }
-    });
-  }
-
-  // 2. Criar ou atualizar o grupo ADMIN para a Loja Demo
-  const demoAdminGroup = await prisma.accessGroup.upsert({
-    where: {
-      lojaId_name: {
-        lojaId: demoLoja.id,
-        name: "ADMIN",
-      },
-    },
-    update: {
-      permissions: {
-        dashboard: ["Visualizar"],
-        historico: ["Visualizar", "Editar", "Excluir"],
-        "nova-venda": ["Visualizar", "Adicionar"],
-        clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        configuracoes: ["Visualizar", "Editar", "Excluir"],
-        usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-      },
-    },
-    create: {
-      lojaId: demoLoja.id,
-      name: "ADMIN",
-      description: "Administrador da Demo (Acesso Total)",
-      active: true,
-      permissions: {
-        dashboard: ["Visualizar"],
-        historico: ["Visualizar", "Editar", "Excluir"],
-        "nova-venda": ["Visualizar", "Adicionar"],
-        clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-        configuracoes: ["Visualizar", "Editar", "Excluir"],
-        usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-      },
-    },
-  });
-
-  for (const unit of defaultUnits) {
-    await prisma.unit.upsert({
-      where: {
-        lojaId_abbreviation: {
-          lojaId: demoLoja.id,
-          abbreviation: unit.abbreviation,
-        },
-      },
-      update: {},
-      create: {
-        lojaId: demoLoja.id,
-        name: unit.name,
-        abbreviation: unit.abbreviation,
-        decimalPlaces: unit.decimalPlaces,
-      },
-    });
-  }
-
-  await prisma.category.upsert({
-    where: {
-      lojaId_name: {
-        lojaId: demoLoja.id,
-        name: "Diversos",
-      },
-    },
-    update: {},
-    create: {
-      lojaId: demoLoja.id,
-      name: "Diversos",
-    },
-  });
+  // Configurar dados padrão para Loja Demo
+  const { adminGroup: demoAdminGroup } = await setupDefaultDataForLoja(demoLoja.id);
 
   const demoEmail = "demo@zelopdv.com";
   const demoPassword = "demo";
@@ -261,6 +228,18 @@ async function main() {
   });
 
   console.log(`Usuário demo configurado: ${demoUser.email} (${demoUser.id})`);
+
+  // 3. Garantir dados padrão em todas as outras lojas existentes no banco
+  const otherLojas = await prisma.loja.findMany({
+    where: {
+      id: { notIn: [loja.id, demoLoja.id] },
+    },
+  });
+
+  for (const otherLoja of otherLojas) {
+    await setupDefaultDataForLoja(otherLoja.id);
+    console.log(`Dados padrão aplicados para a loja existente: ${otherLoja.name} (${otherLoja.id})`);
+  }
 
   console.log("Seed finalizado com sucesso!");
 }

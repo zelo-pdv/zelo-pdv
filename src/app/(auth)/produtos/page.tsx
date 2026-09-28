@@ -186,8 +186,8 @@ export default function ProdutosPage() {
                 description: editing.description || "",
                 costPrice: editing.costPrice,
                 salePrice: editing.salePrice,
-                stock: editing.stock,
-                minStock: editing.minStock,
+                stock: Number(editing.stock ?? 0),
+                minStock: Number(editing.minStock ?? 0),
                 notes: editing.notes || "",
                 barcode: editing.barcode || "",
                 code: editing.code || "",
@@ -197,7 +197,7 @@ export default function ProdutosPage() {
             : {
                 ...emptyForm,
                 categoryId:
-                  categories.find((c) => c.name === "Diversos")?.id || "",
+                  categories.find((c) => c.name === "Geral" || c.name === "Diversos")?.id || categories[0]?.id || "",
               }
         }
         isEdit={!!editing}
@@ -371,7 +371,7 @@ function StockEntry({
     <div className="space-y-3 py-2">
       <div className="text-sm text-muted-foreground">
         <span className="font-medium text-foreground">{product.name}</span> —
-        atual: {product.stock}
+        atual: {Number(product.stock)}
       </div>
 
       <div className="space-y-2">
