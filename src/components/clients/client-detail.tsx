@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { currency, dateTime } from "@/lib/format";
 import { Client } from "@/prisma/client";
@@ -9,7 +9,13 @@ import { Button } from "../ui/button";
 import { ChevronDown, MessageCircle, Pencil, Receipt } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
 import Link from "next/link";
 import { PAYMENT_LABELS, type Sale } from "@/types";
 import { cn } from "@/lib/utils";
@@ -112,11 +118,42 @@ export default function ClientDetail({
   onEdit: (c: Client) => void;
 }) {
   const isMobile = useIsMobile();
+  const [cachedClient, setCachedClient] = useState<Client | null>(client);
 
-  if (!client) return null;
+  useEffect(() => {
+    if (client) {
+      setCachedClient(client);
+    }
+  }, [client]);
+
+  const activeClient = client || cachedClient;
+  const isOpen = Boolean(client);
+
+  if (!activeClient) {
+    if (isMobile) {
+      return (
+        <Drawer open={false} onOpenChange={() => {}} blur>
+          <DrawerContent className="h-[90vh]">
+            <DrawerHeader className="shrink-0 px-4">
+              <DrawerTitle className="sr-only">Detalhes do cliente</DrawerTitle>
+            </DrawerHeader>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+    return (
+      <Dialog open={false} onOpenChange={() => {}} blur>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Detalhes do cliente</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const clientSales = sales
-    .filter((s) => s.clientId === client.id)
+    .filter((s) => s.clientId === activeClient.id)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const total = clientSales.reduce((s, v) => s + Number(v.total), 0);
@@ -127,18 +164,19 @@ export default function ClientDetail({
 
   // Conteúdo compartilhado entre Desktop e Mobile
   const DetailContent = (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-2">
       <div className="rounded-xl border border-border bg-card p-3 text-sm">
         <div>
           <span className="text-muted-foreground">Telefone:</span>{" "}
-          {maskPhone(client.phone)}
+          {maskPhone(activeClient.phone)}
         </div>
         <div>
-          <span className="text-muted-foreground">Email:</span> {client.email}
+          <span className="text-muted-foreground">Email:</span>{" "}
+          {activeClient.email || "Não informado"}
         </div>
-        {client.notes && (
+        {activeClient.notes && (
           <div className="mt-2 text-xs text-muted-foreground">
-            {client.notes}
+            {activeClient.notes}
           </div>
         )}
       </div>
@@ -182,24 +220,29 @@ export default function ClientDetail({
     </div>
   );
 
-  // Botões fixos no rodapé
-  const FooterButtons = (
-    <div className="shrink-0 pt-4 border-t border-border flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        render={
-          <Link
-            href={`https://wa.me/${client.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${client.name.split(' ')[0]}!`)}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <MessageCircle className="mr-1 h-4 w-4" /> WhatsApp
-          </Link>
-        }
-      ></Button>
-      <Button size="sm" variant="outline" onClick={() => onEdit(client)}>
-        <Pencil className="mr-1 h-4 w-4" /> Editar
+  // Botões de ação compartilhados
+  const ActionButtons = (
+    <div className="flex w-full items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          render={
+            <Link
+              href={`https://wa.me/${activeClient.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${activeClient.name.split(" ")[0]}!`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MessageCircle className="mr-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" /> WhatsApp
+            </Link>
+          }
+        />
+        <Button size="sm" variant="outline" onClick={() => onEdit(activeClient)}>
+          <Pencil className="mr-1.5 h-4 w-4" /> Editar
+        </Button>
+      </div>
+      <Button size="sm" variant="ghost" onClick={onClose}>
+        Fechar
       </Button>
     </div>
   );
@@ -207,10 +250,10 @@ export default function ClientDetail({
   // Renderização Mobile (Drawer Bottom)
   if (isMobile) {
     return (
-      <Drawer open={!!client} onOpenChange={(o) => !o && onClose()}>
+      <Drawer open={isOpen} onOpenChange={(o) => !o && onClose()} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
-            <DrawerTitle>{client.name}</DrawerTitle>
+            <DrawerTitle>{activeClient.name}</DrawerTitle>
           </DrawerHeader>
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -218,43 +261,30 @@ export default function ClientDetail({
                 <div className="pb-4">{DetailContent}</div>
               </ScrollArea>
             </div>
-            {FooterButtons}
+            <div className="shrink-0 pt-4 mt-2 border-t border-border">
+              {ActionButtons}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
     );
   }
 
-  // Renderização Desktop (Sheet Lateral Padrão)
+  // Renderização Desktop (Dialog Centralizado)
   return (
-    <Sheet open={!!client} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="right" className="w-full flex flex-col sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{client.name}</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 px-4 pb-6">
+    <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()} blur>
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{activeClient.name}</DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
           {DetailContent}
-          <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              render={
-                <Link
-                  href={`https://wa.me/${client.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${client.name.split(' ')[0]}!`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MessageCircle className="mr-1 h-4 w-4" /> WhatsApp
-                </Link>
-              }
-            ></Button>
-            <Button size="sm" variant="outline" onClick={() => onEdit(client)}>
-              <Pencil className="mr-1 h-4 w-4" /> Editar
-            </Button>
-          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        <DialogFooter className="mt-2 flex-row items-center justify-between sm:justify-between">
+          {ActionButtons}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
