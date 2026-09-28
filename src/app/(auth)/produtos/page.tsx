@@ -51,6 +51,7 @@ import {  ScanBarcode, Wand2, AlertCircle } from "lucide-react";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 // 1. Estado do Formulário usa NUMBER agora, compatível com frontend
 export type FormState = {
@@ -86,6 +87,10 @@ const emptyForm: FormState = {
 
 export default function ProdutosPage() {
   const { can } = usePermissions();
+  const productsSettings = useSettingsStore((s) => s.products) ?? {
+    globalLowStockThreshold: 5,
+    hideCostPrice: false,
+  };
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -145,8 +150,9 @@ export default function ProdutosPage() {
         onEdit: setEditing,
         onDelete: setDeleting,
         can,
+        globalLowStockThreshold: productsSettings.globalLowStockThreshold,
       }),
-    [can],
+    [can, productsSettings.globalLowStockThreshold],
   );
 
   if (loading) {
@@ -477,6 +483,7 @@ function ProductForm({
   onSubmit: (data: FormState) => Promise<void>;
 }) {
   const isMobile = useIsMobile();
+  const productsSettings = useSettingsStore((s) => s.products);
   const [form, setForm] = useState<FormState>(initial);
   const [busy, setBusy] = useState(false);
   const [rawValues, setRawValues] = useState<Record<string, string>>({
@@ -768,16 +775,18 @@ function ProductForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Preço de custo</Label>
-        <Input
-          inputMode="decimal"
-          value={rawValues.costPrice}
-          onChange={(e) => handleNumericChange("costPrice", e.target.value)}
-          onBlur={() => handleNumericBlur("costPrice")}
-          placeholder="00,00"
-        />
-      </div>
+      {!productsSettings?.hideCostPrice && (
+        <div className="space-y-2">
+          <Label>Preço de custo</Label>
+          <Input
+            inputMode="decimal"
+            value={rawValues.costPrice}
+            onChange={(e) => handleNumericChange("costPrice", e.target.value)}
+            onBlur={() => handleNumericBlur("costPrice")}
+            placeholder="00,00"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Estoque atual</Label>

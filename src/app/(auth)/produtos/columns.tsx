@@ -21,6 +21,7 @@ import {
 
 import { currency } from "@/lib/format";
 import { ProductThumb } from "@/components/product-thumb";
+import { cn } from "@/lib/utils";
 
 import type { Category, Product } from "@/prisma/client";
 
@@ -32,11 +33,23 @@ export type ProductFrontend = Omit<Product, "costPrice" | "salePrice"> & {
   category?: Category | null;
 };
 
+export function isProductLowStock(
+  product: ProductFrontend,
+  globalThreshold = 5
+): boolean {
+  const min =
+    product.minStock !== null && product.minStock !== undefined && product.minStock > 0
+      ? product.minStock
+      : globalThreshold;
+  return min > 0 && product.stock <= min;
+}
+
 export type ProductActions = {
   onStock: (product: ProductFrontend) => void;
   onEdit: (product: ProductFrontend) => void;
   onDelete: (product: ProductFrontend) => void;
   can: PermissionChecker;
+  globalLowStockThreshold?: number;
 };
 
 export function getProductColumns({
@@ -44,6 +57,7 @@ export function getProductColumns({
   onEdit,
   onDelete,
   can,
+  globalLowStockThreshold = 5,
 }: ProductActions): ColumnDef<ProductFrontend>[] {
   const canStock = can("produtos", "Editar");
   const canEdit = can("produtos", "Editar");
@@ -69,9 +83,7 @@ export function getProductColumns({
 
       cell: ({ row }) => {
         const product = row.original;
-        const low =
-          (product.minStock ?? 0) > 0 &&
-          product.stock <= (product.minStock ?? 0);
+        const low = isProductLowStock(product, globalLowStockThreshold);
 
         const hasMobileActions = hasAnyAction;
 
@@ -92,7 +104,7 @@ export function getProductColumns({
                   {low && (
                     <Badge
                       variant="outline"
-                      className="shrink-0 border-amber-500/40 text-amber-700 text-[10px] px-1 h-4"
+                      className="shrink-0 border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1 h-4"
                     >
                       <AlertTriangle className="mr-0.5 h-2.5 w-2.5" />
                       Baixo
@@ -199,11 +211,30 @@ export function getProductColumns({
 
       header: () => <div className="text-right">Estoque</div>,
 
-      cell: ({ row }) => (
-        <div className="text-right text-sm tabular-nums">
-          {row.original.stock} un
-        </div>
-      ),
+      cell: ({ row }) => {
+        const product = row.original;
+        const low = isProductLowStock(product, globalLowStockThreshold);
+        return (
+          <div className="flex items-center justify-end gap-1.5 text-right text-sm tabular-nums">
+            <span
+              className={cn(
+                "tabular-nums",
+                low ? "font-semibold text-amber-600 dark:text-amber-400" : ""
+              )}
+            >
+              {product.stock} un
+            </span>
+            {low && (
+              <Badge
+                variant="outline"
+                className="hidden sm:inline-flex border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1.5 h-4.5"
+              >
+                Baixo
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
 
     {

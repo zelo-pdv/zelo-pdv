@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { PaymentMethod } from "@/types";
+import { PaymentMethod, SaleStatus } from "@/types";
 
 export type ModuleKey =
   | "dashboard"
@@ -114,12 +114,38 @@ export interface SalesSettings {
   requireClient: boolean;
   blockOutOfStock: boolean;
   defaultPaymentMethod: PaymentMethod;
+  defaultSaleStatus: SaleStatus;
 }
 
 export const defaultSalesSettings: SalesSettings = {
   requireClient: false,
   blockOutOfStock: false,
   defaultPaymentMethod: PaymentMethod.DINHEIRO,
+  defaultSaleStatus: SaleStatus.PAGO,
+};
+
+export type DashboardPeriod = "today" | "week" | "month";
+
+export interface DashboardSettings {
+  defaultPeriod: DashboardPeriod;
+  recentSalesCount: number;
+  hideLowStockCard: boolean;
+}
+
+export const defaultDashboardSettings: DashboardSettings = {
+  defaultPeriod: "today",
+  recentSalesCount: 5,
+  hideLowStockCard: false,
+};
+
+export interface ProductsSettings {
+  globalLowStockThreshold: number;
+  hideCostPrice: boolean;
+}
+
+export const defaultProductsSettings: ProductsSettings = {
+  globalLowStockThreshold: 5,
+  hideCostPrice: false,
 };
 
 interface SettingsState {
@@ -128,10 +154,14 @@ interface SettingsState {
   voucher: VoucherSettings;
   notifications: NotificationSettings;
   sales: SalesSettings;
+  dashboard: DashboardSettings;
+  products: ProductsSettings;
   setStore: (s: StoreInfo) => void;
   setVoucher: (v: VoucherSettings) => void;
   setNotificationSettings: (s: Partial<NotificationSettings>) => void;
   setSalesSettings: (s: Partial<SalesSettings>) => void;
+  setDashboardSettings: (s: Partial<DashboardSettings>) => void;
+  setProductsSettings: (s: Partial<ProductsSettings>) => void;
   addGroup: (g: Omit<AccessGroup, "id" | "createdAt">) => void;
   updateGroup: (id: string, g: Partial<AccessGroup>) => void;
   removeGroup: (id: string) => void;
@@ -207,6 +237,8 @@ export const useSettingsStore = create<SettingsState>()(
       voucher: defaultVoucher,
       notifications: defaultNotificationSettings,
       sales: defaultSalesSettings,
+      dashboard: defaultDashboardSettings,
+      products: defaultProductsSettings,
       setStore: (s) => set({ store: s }),
       setVoucher: (v) => set({ voucher: v }),
       setNotificationSettings: (s) =>
@@ -220,6 +252,20 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({
           sales: {
             ...(state.sales ?? defaultSalesSettings),
+            ...s,
+          },
+        })),
+      setDashboardSettings: (s) =>
+        set((state) => ({
+          dashboard: {
+            ...(state.dashboard ?? defaultDashboardSettings),
+            ...s,
+          },
+        })),
+      setProductsSettings: (s) =>
+        set((state) => ({
+          products: {
+            ...(state.products ?? defaultProductsSettings),
             ...s,
           },
         })),

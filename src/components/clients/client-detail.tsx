@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { currency, dateTime } from "@/lib/format";
 import { Client } from "@/prisma/client";
@@ -5,11 +6,99 @@ import { maskPhone } from "@/lib/masks";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { MessageCircle, Pencil } from "lucide-react";
+import { ChevronDown, MessageCircle, Pencil, Receipt } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import Link from "next/link";
+import { PAYMENT_LABELS, type Sale } from "@/types";
+import { cn } from "@/lib/utils";
+
+function ClientSaleCard({ sale }: { sale: Sale }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-card/60 transition hover:border-border">
+      <div
+        onClick={() => setExpanded((prev) => !prev)}
+        className="flex items-center justify-between p-2.5 text-sm cursor-pointer select-none"
+      >
+        <div className="min-w-0 flex items-center gap-2">
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+              expanded && "rotate-180"
+            )}
+          />
+          <div>
+            <div className="text-xs font-medium text-foreground">
+              {dateTime(sale.date)}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {sale.items.length} {sale.items.length === 1 ? "item" : "itens"} ·{" "}
+              {PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-semibold tabular-nums text-sm">
+            {currency(Number(sale.total))}
+          </span>
+          <Badge
+            variant={sale.status === "PAGO" ? "secondary" : "outline"}
+            className={
+              sale.status === "PENDENTE"
+                ? "border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1.5 h-4.5"
+                : "text-[10px] px-1.5 h-4.5"
+            }
+          >
+            {sale.status === "PAGO" ? "Pago" : "Pendente"}
+          </Badge>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-border/50 px-3 py-2 text-xs bg-muted/20 space-y-2 animate-in fade-in-50 duration-150">
+          <div className="space-y-1">
+            {sale.items.map((it, idx) => (
+              <div
+                key={`${it.productId}-${idx}`}
+                className="flex items-center justify-between text-muted-foreground"
+              >
+                <span className="truncate pr-2 text-foreground">
+                  {it.quantity}x {it.productName}
+                </span>
+                <span className="tabular-nums shrink-0 font-medium">
+                  {currency(it.quantity * it.unitPrice)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {typeof sale.discount === "number" && sale.discount > 0 && (
+            <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-medium pt-1 border-t border-border/40">
+              <span>Desconto</span>
+              <span className="tabular-nums">- {currency(sale.discount)}</span>
+            </div>
+          )}
+
+          <div className="pt-1 flex items-center justify-between">
+            <span className="text-muted-foreground text-[11px]">
+              Forma: {PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod}
+            </span>
+            <Link
+              href={`/historico?saleId=${sale.id}`}
+              className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1"
+            >
+              <Receipt className="h-3 w-3" /> Ver no histórico
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ClientDetail({
   client,
@@ -47,10 +136,6 @@ export default function ClientDetail({
         <div>
           <span className="text-muted-foreground">Email:</span> {client.email}
         </div>
-        {/* <div>
-          <span className="text-muted-foreground">Endereço:</span>{" "}
-          {client.address || "—"}
-        </div> */}
         {client.notes && (
           <div className="mt-2 text-xs text-muted-foreground">
             {client.notes}
@@ -74,40 +159,22 @@ export default function ClientDetail({
       <Separator />
 
       <div>
-        <h4 className="mb-2 text-xs font-semibold text-muted-foreground">
-          Histórico
-        </h4>
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="text-xs font-semibold text-muted-foreground">
+            Histórico de Compras ({clientSales.length})
+          </h4>
+          <span className="text-[11px] text-muted-foreground">
+            Clique para ver itens
+          </span>
+        </div>
         {clientSales.length === 0 ? (
           <div className="text-sm text-muted-foreground">
             Nenhuma compra ainda.
           </div>
         ) : (
-          <div className="space-y-1">
-            {clientSales.slice(0, 8).map((v) => (
-              <Link
-                key={v.id}
-                href={`/historico?saleId=${v.id}`}
-                className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-              >
-                <div className="text-xs text-muted-foreground">
-                  {dateTime(v.date)}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums">
-                    {currency(Number(v.total))}
-                  </span>
-                  <Badge
-                    variant={v.status === "PAGO" ? "secondary" : "outline"}
-                    className={
-                      v.status === "PENDENTE"
-                        ? "border-amber-500/40 text-amber-700"
-                        : ""
-                    }
-                  >
-                    {v.status === "PAGO" ? "Pago" : "Pendente"}
-                  </Badge>
-                </div>
-              </Link>
+          <div className="space-y-1.5">
+            {clientSales.map((v) => (
+              <ClientSaleCard key={v.id} sale={v} />
             ))}
           </div>
         )}

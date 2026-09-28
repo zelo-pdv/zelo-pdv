@@ -12,7 +12,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, ListFilter, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, ListFilter, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { currency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -85,6 +87,70 @@ export function ClientsDataTable({
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
 
+  // Item #24: Exportar lista de clientes para CSV
+  const handleExportCSV = () => {
+    const rowsToExport = table.getFilteredRowModel().rows.map((r) => r.original);
+
+    if (rowsToExport.length === 0) {
+      toast.warning("Nenhum cliente para exportar.");
+      return;
+    }
+
+    const headers = [
+      "Nome",
+      "Telefone",
+      "Email",
+      "Cidade/UF",
+      "Endereço",
+      "Total Comprado",
+      "Saldo Pendente",
+      "Status",
+    ];
+
+    const csvRows = rowsToExport.map((c) => {
+      const addr = Array.isArray(c.address) ? c.address[0] : c.address;
+      const cityUf = addr
+        ? `${addr.city || ""}${addr.state ? `/${addr.state}` : ""}`.trim()
+        : "";
+      const streetFull = addr
+        ? `${addr.street || ""}${addr.number ? `, ${addr.number}` : ""}${addr.neighborhood ? ` - ${addr.neighborhood}` : ""}`.trim()
+        : "";
+
+      return [
+        c.name,
+        c.phone || "",
+        c.email || "",
+        cityUf,
+        streetFull,
+        currency(c.totalSpent || 0),
+        currency(c.pendingAmount || 0),
+        (c.pendingAmount || 0) > 0 ? "Com pendências" : "Sem pendências",
+      ];
+    });
+
+    const csvContent =
+      "\uFEFF" +
+      [
+        headers.join(";"),
+        ...csvRows.map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")
+        ),
+      ].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const todayStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `clientes_zelo_${todayStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(`${rowsToExport.length} cliente(s) exportado(s) com sucesso!`);
+  };
+
   return (
     <div>
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center w-full">
@@ -143,26 +209,50 @@ export function ClientsDataTable({
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Item #24: Botão de exportação Mobile */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-xl shrink-0 sm:hidden"
+            onClick={handleExportCSV}
+            title="Exportar CSV"
+            aria-label="Exportar CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
 
-        {canAdd !== false && (
-          <>
-            <Button
-              onClick={onCreateClick}
-              size="lg"
-              className="w-full rounded-full sm:hidden"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar
-            </Button>
-            <Button
-              onClick={onCreateClick}
-              size="sm"
-              className="rounded-full hidden sm:flex shrink-0"
-            >
-              <Plus className="mr-1 h-4 w-4" /> Adicionar
-            </Button>
-          </>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Item #24: Botão de exportação Desktop */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full hidden sm:flex shrink-0 gap-1.5"
+            onClick={handleExportCSV}
+          >
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+
+          {canAdd !== false && (
+            <>
+              <Button
+                onClick={onCreateClick}
+                size="lg"
+                className="w-full rounded-full sm:hidden"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Adicionar
+              </Button>
+              <Button
+                onClick={onCreateClick}
+                size="sm"
+                className="rounded-full hidden sm:flex shrink-0"
+              >
+                <Plus className="mr-1 h-4 w-4" /> Adicionar
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Card className="border-border/70 p-0">

@@ -91,6 +91,7 @@ export default function NovaVenda() {
     requireClient: false,
     blockOutOfStock: false,
     defaultPaymentMethod: PaymentMethod.DINHEIRO,
+    defaultSaleStatus: SaleStatus.PAGO,
   };
 
   // Dados do BD (substitui o useDataStore)
@@ -105,7 +106,9 @@ export default function NovaVenda() {
   const [payment, setPayment] = useState<PaymentMethod>(
     salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO
   );
-  const [status, setStatus] = useState<SaleStatus>(SaleStatus.PAGO);
+  const [status, setStatus] = useState<SaleStatus>(
+    salesSettings.defaultSaleStatus || SaleStatus.PAGO
+  );
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -161,12 +164,15 @@ export default function NovaVenda() {
     }
   }, [items, client, discountType, discountValue, notes]);
 
-  // Item #2: Atualiza forma de pagamento com a padrão caso seja alterada nas configurações
+  // Item #2 e Item #3: Atualiza forma de pagamento e status padrão caso alterados nas configurações
   useEffect(() => {
     if (salesSettings.defaultPaymentMethod && step === "cart") {
       setPayment(salesSettings.defaultPaymentMethod);
     }
-  }, [salesSettings.defaultPaymentMethod, step]);
+    if (salesSettings.defaultSaleStatus && step === "cart") {
+      setStatus(salesSettings.defaultSaleStatus);
+    }
+  }, [salesSettings.defaultPaymentMethod, salesSettings.defaultSaleStatus, step]);
 
   // Busca os clientes e produtos ao carregar a página com suporte a refresh silencioso
   const refreshData = async (silent = false) => {
@@ -340,7 +346,7 @@ export default function NovaVenda() {
     setDiscountValue("");
     setStep("cart");
     setPayment(salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO);
-    setStatus(SaleStatus.PAGO);
+    setStatus(salesSettings.defaultSaleStatus || SaleStatus.PAGO);
     setDueDate("");
     setNotes("");
   };

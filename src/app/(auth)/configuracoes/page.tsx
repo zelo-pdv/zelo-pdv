@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Bell,
   ShoppingCart,
+  LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ import {
   type Permissions,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import { PaymentMethod, PAYMENT_LABELS } from "@/types";
+import { PaymentMethod, PAYMENT_LABELS, SaleStatus } from "@/types";
 import {
   createAccessGroup,
   deleteAccessGroup,
@@ -84,6 +85,7 @@ export default function ConfiguracoesPage() {
       <StoreSection />
       <NotificationsSection />
       <SalesConfigSection />
+      <DashboardConfigSection />
       <ProductsConfigSection />
       <GroupsSection />
     </div>
@@ -692,6 +694,136 @@ function SalesConfigSection() {
             </select>
           </div>
         </div>
+
+        {/* Item #3: Status padrão da venda */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label className="text-sm font-medium">
+              Status padrão da venda
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Define se uma nova venda já abre com status &quot;Pago&quot; ou &quot;Pendente&quot;.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <select
+              value={salesSettings.defaultSaleStatus || SaleStatus.PAGO}
+              onChange={(e) => {
+                const newStatus = e.target.value as SaleStatus;
+                setSalesSettings({ defaultSaleStatus: newStatus });
+                toast.success(
+                  `Status padrão da venda: ${newStatus === SaleStatus.PAGO ? "Pago" : "Pendente"}`
+                );
+              }}
+              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+            >
+              <option value={SaleStatus.PAGO}>Pago</option>
+              <option value={SaleStatus.PENDENTE}>Pendente</option>
+            </select>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DashboardConfigSection() {
+  const dashboard = useSettingsStore((s) => s.dashboard) ?? {
+    defaultPeriod: "today",
+    recentSalesCount: 5,
+    hideLowStockCard: false,
+  };
+  const setDashboardSettings = useSettingsStore((s) => s.setDashboardSettings);
+
+  return (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <LayoutDashboard className="h-4 w-4 text-primary" />
+          Configurações do Dashboard
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Item #5: Período de referência padrão dos cards */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label className="text-sm font-medium">
+              Período de referência padrão dos cards
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Define o período padrão exibido nos cards de métricas do dashboard ao entrar no sistema.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <select
+              value={dashboard.defaultPeriod || "today"}
+              onChange={(e) => {
+                const val = e.target.value as "today" | "week" | "month";
+                setDashboardSettings({ defaultPeriod: val });
+                toast.success("Período padrão do dashboard atualizado");
+              }}
+              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+            >
+              <option value="today">Hoje (Dia atual)</option>
+              <option value="week">Últimos 7 dias</option>
+              <option value="month">Este mês</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Item #6: Número de vendas recentes */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label className="text-sm font-medium">
+              Número de vendas recentes
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Quantidade de vendas listadas na seção &quot;Últimas vendas&quot; do dashboard.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <select
+              value={String(dashboard.recentSalesCount || 5)}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setDashboardSettings({ recentSalesCount: val });
+                toast.success(`Exibindo até ${val} vendas recentes no dashboard`);
+              }}
+              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+            >
+              <option value="5">5 vendas</option>
+              <option value="10">10 vendas</option>
+              <option value="20">20 vendas</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Item #7: Ocultar card Estoque Baixo */}
+        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+          <div className="space-y-0.5 pr-4">
+            <Label
+              className="text-sm font-medium cursor-pointer"
+              htmlFor="toggle-hide-low-stock"
+            >
+              Ocultar indicador de estoque baixo
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Oculta o card e a lista de produtos com estoque baixo no dashboard (ideal para quem não controla estoque mínimo).
+            </p>
+          </div>
+          <Switch
+            id="toggle-hide-low-stock"
+            checked={dashboard.hideLowStockCard}
+            onCheckedChange={(checked) => {
+              setDashboardSettings({ hideLowStockCard: checked });
+              if (checked) {
+                toast.info("Card de estoque baixo ocultado no dashboard");
+              } else {
+                toast.success("Card de estoque baixo visível no dashboard");
+              }
+            }}
+          />
+        </div>
       </CardContent>
     </Card>
   );
@@ -1154,6 +1286,12 @@ function GroupForm({
 
 function ProductsConfigSection() {
   const isMobile = useIsMobile();
+  const productsSettings = useSettingsStore((s) => s.products) ?? {
+    globalLowStockThreshold: 5,
+    hideCostPrice: false,
+  };
+  const setProductsSettings = useSettingsStore((s) => s.setProductsSettings);
+
   const [activeProductTab, setActiveProductTab] = useState<"categories" | "units">("categories");
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
@@ -1343,6 +1481,59 @@ function ProductsConfigSection() {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Item #8 & Item #9: Parâmetros de Produtos */}
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/70 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-sm font-medium">
+                Alerta global de estoque baixo (unidades)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Quantidade padrão para alertar estoque baixo em produtos que não possuem estoque mínimo específico configurado.
+              </p>
+            </div>
+            <div className="w-32 shrink-0">
+              <Input
+                type="number"
+                min={0}
+                value={productsSettings.globalLowStockThreshold ?? 5}
+                onChange={(e) => {
+                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                  setProductsSettings({ globalLowStockThreshold: val });
+                }}
+              />
+            </div>
+          </div>
+
+          <Separator className="my-1" />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-hide-cost-price"
+              >
+                Ocultar campo &quot;Preço de Custo&quot;
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Esconde o campo de preço de custo nos formulários de cadastro e edição de produtos.
+              </p>
+            </div>
+            <Switch
+              id="toggle-hide-cost-price"
+              checked={productsSettings.hideCostPrice}
+              onCheckedChange={(checked) => {
+                setProductsSettings({ hideCostPrice: checked });
+                if (checked) {
+                  toast.info("Campo de preço de custo ocultado nos formulários");
+                } else {
+                  toast.success("Campo de preço de custo visível nos formulários");
+                }
+              }}
+            />
+          </div>
+        </div>
+
         {/* Navegação por Abas no Mobile */}
         <div className="flex md:hidden rounded-lg bg-muted p-1 gap-1">
           <button

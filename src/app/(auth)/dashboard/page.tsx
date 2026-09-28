@@ -6,11 +6,13 @@ import {
   Clock,
   DollarSign,
   Package,
+  ShoppingCart,
   TrendingUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { currency, dateTime, isToday } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { currency, dateTime } from "@/lib/format";
 import Link from "next/link";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { salesService } from "@/services/sales.service";
@@ -20,6 +22,7 @@ import type { ProductFrontend } from "../produtos/columns";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
 import { cn } from "@/lib/utils";
+import { useSettingsStore, DashboardPeriod } from "@/store/useSettingsStore";
 
 function StatCard({
   icon: Icon,
@@ -266,6 +269,26 @@ function SalesWeekChart({
 
 export default function Dashboard() {
   const { can, user } = usePermissions();
+  const dashboardSettings = useSettingsStore((s) => s.dashboard) ?? {
+    defaultPeriod: "today",
+    recentSalesCount: 5,
+    hideLowStockCard: false,
+  };
+  const productsSettings = useSettingsStore((s) => s.products) ?? {
+    globalLowStockThreshold: 5,
+    hideCostPrice: false,
+  };
+
+  const [period, setPeriod] = useState<DashboardPeriod>(
+    dashboardSettings.defaultPeriod || "today"
+  );
+
+  useEffect(() => {
+    if (dashboardSettings.defaultPeriod) {
+      setPeriod(dashboardSettings.defaultPeriod);
+    }
+  }, [dashboardSettings.defaultPeriod]);
+
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -303,18 +326,49 @@ export default function Dashboard() {
     enabled: can("dashboard", "Visualizar"),
   });
 
+  // Itens #5, #8 e #13: Cálculo dinâmico conforme período e threshold global
   const stats = useMemo(() => {
-    const soldToday = sales
-      .filter((s) => isToday(s.date) && s.status === "PAGO")
+    const now = new Date();
+    const periodStart = new Date();
+
+    if (period === "today") {
+      periodStart.setHours(0, 0, 0, 0);
+    } else if (period === "week") {
+      periodStart.setDate(now.getDate() - 7);
+      periodStart.setHours(0, 0, 0, 0);
+    } else if (period === "month") {
+      periodStart.setDate(1);
+      periodStart.setHours(0, 0, 0, 0);
+    }
+
+    const filteredSales = sales.filter((s) => {
+      const d = new Date(s.date);
+      return d >= periodStart && d <= now;
+    });
+
+    const soldInPeriod = filteredSales
+      .filter((s) => s.status === "PAGO")
       .reduce((sum, s) => sum + Number(s.total), 0);
+
+    const countInPeriod = filteredSales.filter((s) => s.status === "PAGO").length;
+
     const pending = sales
       .filter((s) => s.status === "PENDENTE")
       .reduce((sum, s) => sum + Number(s.total), 0);
-    const low = products.filter(
-      (p) => (p.minStock ?? 0) > 0 && p.stock <= (p.minStock ?? 0)
-    );
-    return { soldToday, pending, low };
-  }, [sales, products]);
+
+    const pendingCount = sales.filter((s) => s.status === "PENDENTE").length;
+
+    const threshold = productsSettings.globalLowStockThreshold ?? 5;
+    const low = products.filter((p) => {
+      const min =
+        p.minStock !== null && p.minStock !== undefined && p.minStock > 0
+          ? p.minStock
+          : threshold;
+      return min > 0 && p.stock <= min;
+    });
+
+    return { soldInPeriod, countInPeriod, pending, pendingCount, low };
+  }, [sales, products, period, productsSettings.globalLowStockThreshold]);
 
   // Item #12: Dados dos últimos 7 dias para o gráfico
   const last7DaysData = useMemo(() => {
@@ -374,7 +428,9 @@ export default function Dashboard() {
     );
   }, [sales]);
 
-  const latest = sortedSales.slice(0, 5);
+  // Item #6: Limite de vendas recentes configurável
+  const recentCount = dashboardSettings.recentSalesCount || 5;
+  const latest = sortedSales.slice(0, recentCount);
 
   if (isLoading) {
     return <GlobalLoader />;
@@ -395,38 +451,119 @@ export default function Dashboard() {
 
   return (
     <div className="px-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Olá, {firstName}</h1>
-        <p className="text-sm text-muted-foreground">
-          Aqui está o resumo da sua loja hoje.
-        </p>
+      {/* Header com Saudação e Item #14: Atalho rápido Nova Venda */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Olá, {firstName}</h1>
+          <p className="text-sm text-muted-foreground">
+            Aqui está o resumo da sua loja.
+          </p>
+        </div>
+        {can("nova-venda", "Adicionar") && (
+          <Link href="/nova-venda">
+            <Button
+              size="lg"
+              className="rounded-full shadow-xs gap-2 font-medium shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground px-5 h-10 cursor-pointer"
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Nova Venda
+            </Button>
+          </Link>
+        )}
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+      {/* Item #13: Filtro de período nos cards */}
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center rounded-lg bg-muted p-1 gap-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setPeriod("today")}
+            className={cn(
+              "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
+              period === "today"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Hoje
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriod("week")}
+            className={cn(
+              "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
+              period === "week"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriod("month")}
+            className={cn(
+              "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
+              period === "month"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Mês
+          </button>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {period === "today"
+            ? "Exibindo dados de hoje"
+            : period === "week"
+            ? "Exibindo dados dos últimos 7 dias"
+            : "Exibindo dados deste mês"}
+        </span>
+      </div>
+
+      {/* Item #5 & Item #7: StatCards dinâmicos com opção de ocultar Estoque Baixo */}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-3 sm:grid-cols-2",
+          dashboardSettings.hideLowStockCard ? "lg:grid-cols-2" : "lg:grid-cols-3"
+        )}
+      >
         <StatCard
           icon={DollarSign}
-          label="Vendido hoje"
-          value={currency(stats.soldToday)}
+          label={
+            period === "today"
+              ? "Vendido hoje"
+              : period === "week"
+              ? "Vendido na semana"
+              : "Vendido no mês"
+          }
+          value={currency(stats.soldInPeriod)}
+          hint={`${stats.countInPeriod} venda${stats.countInPeriod === 1 ? "" : "s"} no período`}
           tone="success"
         />
         <StatCard
           icon={Clock}
           label="A receber"
           value={currency(stats.pending)}
-          hint="Vendas pendentes"
+          hint={`${stats.pendingCount} venda${stats.pendingCount === 1 ? "" : "s"} pendente${stats.pendingCount === 1 ? "" : "s"}`}
+          tone={stats.pending > 0 ? "warn" : "default"}
         />
-        <StatCard
-          icon={AlertTriangle}
-          label="Estoque baixo"
-          value={`${stats.low.length} produto${stats.low.length === 1 ? "" : "s"}`}
-          tone="warn"
-          hint={stats.low.length ? "Reponha em breve" : "Tudo em ordem"}
-        />
+        {!dashboardSettings.hideLowStockCard && (
+          <StatCard
+            icon={AlertTriangle}
+            label="Estoque baixo"
+            value={`${stats.low.length} produto${stats.low.length === 1 ? "" : "s"}`}
+            tone="warn"
+            hint={stats.low.length ? "Reponha em breve" : "Tudo em ordem"}
+          />
+        )}
       </div>
 
       {/* Item #12: Gráfico de vendas dos últimos 7 dias */}
       <SalesWeekChart data={last7DaysData} />
 
-      {products.length > 0 && stats.low.length > 0 && (
+      {/* Item #7: Ocultar seção de Estoque Baixo se configurado */}
+      {!dashboardSettings.hideLowStockCard && products.length > 0 && stats.low.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
             Produtos com estoque baixo
@@ -441,7 +578,7 @@ export default function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{p.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {p.stock} em estoque · mínimo {p.minStock}
+                      {p.stock} em estoque · mínimo {p.minStock ?? productsSettings.globalLowStockThreshold ?? 5}
                     </div>
                   </div>
                   <Badge

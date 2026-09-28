@@ -35,7 +35,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ProductFrontend } from "./columns";
+import { cn } from "@/lib/utils";
+import { isProductLowStock, ProductFrontend } from "./columns";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 interface ProductsDataTableProps {
   columns: ColumnDef<ProductFrontend>[];
@@ -50,6 +52,10 @@ export function ProductsDataTable({
   categories,
   onCreateClick,
 }: ProductsDataTableProps) {
+  const productsSettings = useSettingsStore((s) => s.products) ?? {
+    globalLowStockThreshold: 5,
+    hideCostPrice: false,
+  };
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -196,25 +202,37 @@ export function ProductsDataTable({
               </TableHeader>
               <TableBody>
                 {rows.length ? (
-                  rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={
-                            cell.column.id === "name"
-                              ? undefined
-                              : "hidden sm:table-cell"
-                          }
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  rows.map((row) => {
+                    const isLow = isProductLowStock(
+                      row.original,
+                      productsSettings.globalLowStockThreshold
+                    );
+                    return (
+                      <TableRow
+                        key={row.id}
+                        className={cn(
+                          isLow &&
+                            "bg-amber-500/5 hover:bg-amber-500/10 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
+                        )}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={
+                              cell.column.id === "name"
+                                ? undefined
+                                : "hidden sm:table-cell"
+                            }
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
