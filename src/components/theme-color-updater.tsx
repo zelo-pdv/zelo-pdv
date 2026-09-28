@@ -19,30 +19,24 @@ export function ThemeColorUpdater() {
     const updateStatusBar = () => {
       const isDark = checkIsDark();
 
-      const activeOverlay = document.querySelector(
+      const activeFormOverlay = document.querySelector(
         [
-          '[data-slot="drawer-overlay"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="dialog-overlay"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="alert-dialog-overlay"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="sheet-overlay"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="drawer-popup"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="dialog-content"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="alert-dialog-content"]:not([data-closed]):not([data-ending-style])',
-          '[data-slot="sheet-content"]:not([data-closed]):not([data-ending-style])',
-          '[role="dialog"]:not([data-closed]):not([data-ending-style])',
-          '[role="alertdialog"]:not([data-closed]):not([data-ending-style])',
+          '[data-slot="drawer-overlay"][data-blur]:not([data-closed]):not([data-ending-style])',
+          '[data-slot="dialog-overlay"][data-blur]:not([data-closed]):not([data-ending-style])',
+          '[data-slot="drawer-popup"][data-blur]:not([data-closed]):not([data-ending-style])',
+          '[data-slot="dialog-content"][data-blur]:not([data-closed]):not([data-ending-style])',
         ].join(", ")
       );
 
-      const isModalOpen = Boolean(activeOverlay);
+      const isFormOpen = Boolean(activeFormOverlay);
 
-      // Quando aberto (drawer/modal/formulário):
+      // Quando aberto formulário com desfoque (drawer/dialog com blur):
       // - Modo dark: #000000 (preto profundo igual ao fundo escurecido com desfoque)
       // - Modo light: #999999 (cinza suave equivalente ao desfoque bg-black/40 sobre branco)
-      // Quando fechado (padrão do app):
+      // Quando fechado ou componente sem desfoque (ex: filtros, detalhes, comprovantes):
       // - Modo dark: #0a0a0a (cor real de fundo do app em dark mode, oklch(0.145 0 0))
       // - Modo light: #ffffff (cor de fundo branca do app em light mode)
-      const color = isModalOpen
+      const color = isFormOpen
         ? isDark
           ? "#000000"
           : "#999999"
@@ -105,6 +99,7 @@ export function ThemeColorUpdater() {
         "data-closed",
         "data-ending-style",
         "data-open",
+        "data-blur",
         "open",
         "style",
       ],

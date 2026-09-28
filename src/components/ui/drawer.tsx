@@ -91,6 +91,7 @@ function DrawerOverlay({
   return (
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
+      data-blur={isBlurActive ? "" : undefined}
       className={cn(
         "fixed inset-0 z-50 min-h-dvh bg-black/40 opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0",
         isBlurActive && "supports-backdrop-filter:backdrop-blur-sm",
@@ -129,7 +130,8 @@ function DrawerContent({
   blur?: boolean;
   isForm?: boolean;
 }) {
-  const { hasSnapPoints, modal, showSwipeHandle, swipeDirection } = useDrawer();
+  const { hasSnapPoints, modal, showSwipeHandle, swipeDirection, blur: contextBlur } = useDrawer();
+  const isBlurActive = blur ?? isForm ?? contextBlur ?? false;
   const swipeAxis =
     swipeDirection === "down" || swipeDirection === "up" ? "y" : "x";
 
@@ -150,6 +152,7 @@ function DrawerContent({
         <DrawerPrimitive.Popup
           initialFocus={initialFocus}
           data-slot="drawer-popup"
+          data-blur={isBlurActive ? "" : undefined}
           data-swipe-axis={swipeAxis}
           data-snap-points={hasSnapPoints ? "" : undefined}
           className={cn(
