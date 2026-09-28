@@ -213,6 +213,7 @@ model Product {
 
 model Sale {
   id            String        @id @default(cuid())
+  saleNumber    Int?
   date          DateTime      @default(now())
   total         Decimal       @db.Decimal(10, 2)
   discount      Decimal?      @default(0.00) @db.Decimal(10, 2)
@@ -238,6 +239,7 @@ model Sale {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([lojaId, saleNumber])
   @@index([lojaId])
   @@index([lojaId, date])
   @@index([lojaId, updatedAt])

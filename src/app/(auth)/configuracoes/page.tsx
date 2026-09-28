@@ -13,6 +13,7 @@ import {
   Bell,
   ShoppingCart,
   LayoutDashboard,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,7 @@ function StoreSection() {
   const [form, setForm] = useState<LojaFormData>(defaultForm);
   // Guardamos o estado original para habilitar/desabilitar o botão de Salvar e Cancelar
   const [original, setOriginal] = useState<LojaFormData>(defaultForm);
+  const [isSectionExpanded, setIsSectionExpanded] = useState(false);
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
 
   useEffect(() => {
@@ -291,13 +293,35 @@ function StoreSection() {
 
   return (
     <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <StoreIcon className="h-4 w-4 text-primary" />
-          Dados da loja
-        </CardTitle>
+      <CardHeader className="py-4">
+        <button
+          type="button"
+          onClick={() => setIsSectionExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+          aria-expanded={isSectionExpanded}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <StoreIcon className="h-4 w-4 text-primary shrink-0" />
+            <CardTitle className="text-base font-semibold">Dados da loja</CardTitle>
+            {!isSectionExpanded && form.name && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                • {form.name}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+            <span>{isSectionExpanded ? "Minimizar" : "Ver dados da loja"}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isSectionExpanded && "rotate-180"
+              )}
+            />
+          </div>
+        </button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      {isSectionExpanded && (
+        <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label>Nome da loja</Label>
@@ -499,11 +523,15 @@ function StoreSection() {
           </div>
         </div>
       </CardContent>
+      )}
     </Card>
   );
 }
 
 function NotificationsSection() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const productsSettings = useSettingsStore((s) => s.products);
+  const trackStock = productsSettings?.trackStock ?? true;
   const notifications = useSettingsStore((s) => s.notifications) ?? {
     enableToasts: true,
     outOfStockWarning: true,
@@ -532,66 +560,94 @@ function NotificationsSection() {
 
   return (
     <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Bell className="h-4 w-4 text-primary" />
-          Notificações e Avisos
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Toggle Global de Notificações / Toasts */}
-        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label
-              className="text-sm font-medium cursor-pointer"
-              htmlFor="toggle-toasts"
-            >
-              Notificações do sistema (Toasts)
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Ativa ou desativa os alertas visuais em toast exibidos no sistema.
-            </p>
-          </div>
-          <Switch
-            id="toggle-toasts"
-            checked={notifications.enableToasts}
-            onCheckedChange={handleToggleEnableToasts}
-          />
-        </div>
-
-        {/* Toggle Específico para Produtos Sem Estoque */}
-        <div
-          className={cn(
-            "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
-            !notifications.enableToasts && "opacity-50 pointer-events-none",
-          )}
+      <CardHeader className="py-4">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+          aria-expanded={isExpanded}
         >
-          <div className="space-y-0.5 pr-4">
-            <Label
-              className="text-sm font-medium cursor-pointer"
-              htmlFor="toggle-stock-warning"
-            >
-              Avisos de produto sem estoque
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Exibe um aviso em toast ao selecionar ou alterar a quantidade de um produto com estoque insuficiente.
-            </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Bell className="h-4 w-4 text-primary shrink-0" />
+            <CardTitle className="text-base font-semibold">Notificações e Avisos</CardTitle>
+            {!isExpanded && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                • Toasts {notifications.enableToasts ? "ativados" : "desativados"}
+              </span>
+            )}
           </div>
-          <Switch
-            id="toggle-stock-warning"
-            disabled={!notifications.enableToasts}
-            checked={
-              notifications.enableToasts && notifications.outOfStockWarning
-            }
-            onCheckedChange={handleToggleOutOfStockWarning}
-          />
-        </div>
-      </CardContent>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+            <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isExpanded && "rotate-180"
+              )}
+            />
+          </div>
+        </button>
+      </CardHeader>
+      {isExpanded && (
+        <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
+          {/* Toggle Global de Notificações / Toasts */}
+          <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-toasts"
+              >
+                Notificações do sistema (Toasts)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Ativa ou desativa os alertas visuais em toast exibidos no sistema.
+              </p>
+            </div>
+            <Switch
+              id="toggle-toasts"
+              checked={notifications.enableToasts}
+              onCheckedChange={handleToggleEnableToasts}
+            />
+          </div>
+
+          {/* Toggle Específico para Produtos Sem Estoque */}
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
+              (!notifications.enableToasts || !trackStock) && "opacity-50 pointer-events-none",
+            )}
+          >
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-stock-warning"
+              >
+                Avisos de produto sem estoque
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {!trackStock
+                  ? "Controle de estoque desativado nas configurações de produtos."
+                  : "Exibe um aviso em toast ao selecionar ou alterar a quantidade de um produto com estoque insuficiente."}
+              </p>
+            </div>
+            <Switch
+              id="toggle-stock-warning"
+              disabled={!notifications.enableToasts || !trackStock}
+              checked={
+                notifications.enableToasts && trackStock && notifications.outOfStockWarning
+              }
+              onCheckedChange={handleToggleOutOfStockWarning}
+            />
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }
 
 function SalesConfigSection() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const productsSettings = useSettingsStore((s) => s.products);
+  const trackStock = productsSettings?.trackStock ?? true;
   const salesSettings = useSettingsStore((s) => s.sales) ?? {
     requireClient: false,
     blockOutOfStock: false,
@@ -619,115 +675,149 @@ function SalesConfigSection() {
 
   return (
     <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ShoppingCart className="h-4 w-4 text-primary" />
-          Configurações de Venda
-        </CardTitle>
+      <CardHeader className="py-4">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+          aria-expanded={isExpanded}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <ShoppingCart className="h-4 w-4 text-primary shrink-0" />
+            <CardTitle className="text-base font-semibold">Configurações de Venda</CardTitle>
+            {!isExpanded && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                • Pgto padrão: {PAYMENT_LABELS[salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO]}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+            <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isExpanded && "rotate-180"
+              )}
+            />
+          </div>
+        </button>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Forçar seleção de cliente */}
-        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label
-              className="text-sm font-medium cursor-pointer"
-              htmlFor="toggle-require-client"
-            >
-              Forçar seleção de cliente
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Torna obrigatório vincular um cliente cadastrado antes de finalizar a venda. Quando desativado, permite vendas rápidas para &quot;Consumidor Final&quot;.
-            </p>
+      {isExpanded && (
+        <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
+          {/* Forçar seleção de cliente */}
+          <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-require-client"
+              >
+                Forçar seleção de cliente
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Torna obrigatório vincular um cliente cadastrado antes de finalizar a venda. Quando desativado, permite vendas rápidas para &quot;Consumidor Final&quot;.
+              </p>
+            </div>
+            <Switch
+              id="toggle-require-client"
+              checked={salesSettings.requireClient}
+              onCheckedChange={handleToggleRequireClient}
+            />
           </div>
-          <Switch
-            id="toggle-require-client"
-            checked={salesSettings.requireClient}
-            onCheckedChange={handleToggleRequireClient}
-          />
-        </div>
 
-        {/* Item #1: Bloquear venda com estoque zerado */}
-        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label
-              className="text-sm font-medium cursor-pointer"
-              htmlFor="toggle-block-out-of-stock"
-            >
-              Bloquear venda com estoque zerado
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Proíbe adicionar ao carrinho ou vender produtos sem estoque disponível. Quando desativado, apenas exibe um aviso em toast.
-            </p>
+          {/* Item #1: Bloquear venda com estoque zerado */}
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
+              !trackStock && "opacity-50 pointer-events-none"
+            )}
+          >
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-block-out-of-stock"
+              >
+                Bloquear venda com estoque zerado
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {!trackStock
+                  ? "Controle de estoque desativado nas configurações de produtos."
+                  : "Proíbe adicionar ao carrinho ou vender produtos sem estoque disponível. Quando desativado, apenas exibe um aviso em toast."}
+              </p>
+            </div>
+            <Switch
+              id="toggle-block-out-of-stock"
+              disabled={!trackStock}
+              checked={trackStock && salesSettings.blockOutOfStock}
+              onCheckedChange={handleToggleBlockOutOfStock}
+            />
           </div>
-          <Switch
-            id="toggle-block-out-of-stock"
-            checked={salesSettings.blockOutOfStock}
-            onCheckedChange={handleToggleBlockOutOfStock}
-          />
-        </div>
 
-        {/* Item #2: Forma de pagamento padrão */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label className="text-sm font-medium">
-              Forma de pagamento padrão
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Define qual método de pagamento já vem pré-selecionado ao abrir o checkout de nova venda.
-            </p>
+          {/* Item #2: Forma de pagamento padrão */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-sm font-medium">
+                Forma de pagamento padrão
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Define qual método de pagamento já vem pré-selecionado ao abrir o checkout de nova venda.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <select
+                value={salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO}
+                onChange={(e) => {
+                  const method = e.target.value as PaymentMethod;
+                  setSalesSettings({ defaultPaymentMethod: method });
+                  toast.success(`Forma de pagamento padrão: ${PAYMENT_LABELS[method] || method}`);
+                }}
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+              >
+                {Object.values(PaymentMethod).map((pm) => (
+                  <option key={pm} value={pm}>
+                    {PAYMENT_LABELS[pm] || pm}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="shrink-0">
-            <select
-              value={salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO}
-              onChange={(e) => {
-                const method = e.target.value as PaymentMethod;
-                setSalesSettings({ defaultPaymentMethod: method });
-                toast.success(`Forma de pagamento padrão: ${PAYMENT_LABELS[method] || method}`);
-              }}
-              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              {Object.values(PaymentMethod).map((pm) => (
-                <option key={pm} value={pm}>
-                  {PAYMENT_LABELS[pm] || pm}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        {/* Item #3: Status padrão da venda */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label className="text-sm font-medium">
-              Status padrão da venda
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Define se uma nova venda já abre com status &quot;Pago&quot; ou &quot;Pendente&quot;.
-            </p>
+          {/* Item #3: Status padrão da venda */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-sm font-medium">
+                Status padrão da venda
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Define se uma nova venda já abre com status &quot;Pago&quot; ou &quot;Pendente&quot;.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <select
+                value={salesSettings.defaultSaleStatus || SaleStatus.PAGO}
+                onChange={(e) => {
+                  const newStatus = e.target.value as SaleStatus;
+                  setSalesSettings({ defaultSaleStatus: newStatus });
+                  toast.success(
+                    `Status padrão da venda: ${newStatus === SaleStatus.PAGO ? "Pago" : "Pendente"}`
+                  );
+                }}
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+              >
+                <option value={SaleStatus.PAGO}>Pago</option>
+                <option value={SaleStatus.PENDENTE}>Pendente</option>
+              </select>
+            </div>
           </div>
-          <div className="shrink-0">
-            <select
-              value={salesSettings.defaultSaleStatus || SaleStatus.PAGO}
-              onChange={(e) => {
-                const newStatus = e.target.value as SaleStatus;
-                setSalesSettings({ defaultSaleStatus: newStatus });
-                toast.success(
-                  `Status padrão da venda: ${newStatus === SaleStatus.PAGO ? "Pago" : "Pendente"}`
-                );
-              }}
-              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              <option value={SaleStatus.PAGO}>Pago</option>
-              <option value={SaleStatus.PENDENTE}>Pendente</option>
-            </select>
-          </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }
 
 function DashboardConfigSection() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const productsSettings = useSettingsStore((s) => s.products);
+  const trackStock = productsSettings?.trackStock ?? true;
   const dashboard = useSettingsStore((s) => s.dashboard) ?? {
     defaultPeriod: "today",
     recentSalesCount: 5,
@@ -737,99 +827,131 @@ function DashboardConfigSection() {
 
   return (
     <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <LayoutDashboard className="h-4 w-4 text-primary" />
-          Configurações do Dashboard
-        </CardTitle>
+      <CardHeader className="py-4">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+          aria-expanded={isExpanded}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <LayoutDashboard className="h-4 w-4 text-primary shrink-0" />
+            <CardTitle className="text-base font-semibold">Configurações do Dashboard</CardTitle>
+            {!isExpanded && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                • Período: {dashboard.defaultPeriod === "month" ? "Este mês" : dashboard.defaultPeriod === "week" ? "Últimos 7 dias" : "Hoje"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+            <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isExpanded && "rotate-180"
+              )}
+            />
+          </div>
+        </button>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Item #5: Período de referência padrão dos cards */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label className="text-sm font-medium">
-              Período de referência padrão dos cards
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Define o período padrão exibido nos cards de métricas do dashboard ao entrar no sistema.
-            </p>
+      {isExpanded && (
+        <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
+          {/* Item #5: Período de referência padrão dos cards */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-sm font-medium">
+                Período de referência padrão dos cards
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Define o período padrão exibido nos cards de métricas do dashboard ao entrar no sistema.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <select
+                value={dashboard.defaultPeriod || "today"}
+                onChange={(e) => {
+                  const val = e.target.value as "today" | "week" | "month";
+                  setDashboardSettings({ defaultPeriod: val });
+                  toast.success("Período padrão do dashboard atualizado");
+                }}
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+              >
+                <option value="today">Hoje (Dia atual)</option>
+                <option value="week">Últimos 7 dias</option>
+                <option value="month">Este mês</option>
+              </select>
+            </div>
           </div>
-          <div className="shrink-0">
-            <select
-              value={dashboard.defaultPeriod || "today"}
-              onChange={(e) => {
-                const val = e.target.value as "today" | "week" | "month";
-                setDashboardSettings({ defaultPeriod: val });
-                toast.success("Período padrão do dashboard atualizado");
-              }}
-              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              <option value="today">Hoje (Dia atual)</option>
-              <option value="week">Últimos 7 dias</option>
-              <option value="month">Este mês</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Item #6: Número de vendas recentes */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label className="text-sm font-medium">
-              Número de vendas recentes
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Quantidade de vendas listadas na seção &quot;Últimas vendas&quot; do dashboard.
-            </p>
+          {/* Item #6: Número de vendas recentes */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-sm font-medium">
+                Número de vendas recentes
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Quantidade de vendas listadas na seção &quot;Últimas vendas&quot; do dashboard.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <select
+                value={String(dashboard.recentSalesCount || 5)}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setDashboardSettings({ recentSalesCount: val });
+                  toast.success(`Exibindo até ${val} vendas recentes no dashboard`);
+                }}
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+              >
+                <option value="5">5 vendas</option>
+                <option value="10">10 vendas</option>
+                <option value="20">20 vendas</option>
+              </select>
+            </div>
           </div>
-          <div className="shrink-0">
-            <select
-              value={String(dashboard.recentSalesCount || 5)}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setDashboardSettings({ recentSalesCount: val });
-                toast.success(`Exibindo até ${val} vendas recentes no dashboard`);
-              }}
-              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              <option value="5">5 vendas</option>
-              <option value="10">10 vendas</option>
-              <option value="20">20 vendas</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Item #7: Ocultar card Estoque Baixo */}
-        <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
-          <div className="space-y-0.5 pr-4">
-            <Label
-              className="text-sm font-medium cursor-pointer"
-              htmlFor="toggle-hide-low-stock"
-            >
-              Ocultar indicador de estoque baixo
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Oculta o card e a lista de produtos com estoque baixo no dashboard (ideal para quem não controla estoque mínimo).
-            </p>
+          {/* Item #7: Ocultar card Estoque Baixo */}
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
+              !trackStock && "opacity-50 pointer-events-none"
+            )}
+          >
+            <div className="space-y-0.5 pr-4">
+              <Label
+                className="text-sm font-medium cursor-pointer"
+                htmlFor="toggle-hide-low-stock"
+              >
+                Ocultar indicador de estoque baixo
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {!trackStock
+                  ? "Controle de estoque desativado nas configurações de produtos (card já ocultado automaticamente)."
+                  : "Oculta o card e a lista de produtos com estoque baixo no dashboard (ideal para quem não controla estoque mínimo)."}
+              </p>
+            </div>
+            <Switch
+              id="toggle-hide-low-stock"
+              disabled={!trackStock}
+              checked={!trackStock || dashboard.hideLowStockCard}
+              onCheckedChange={(checked) => {
+                setDashboardSettings({ hideLowStockCard: checked });
+                if (checked) {
+                  toast.info("Card de estoque baixo ocultado no dashboard");
+                } else {
+                  toast.success("Card de estoque baixo visível no dashboard");
+                }
+              }}
+            />
           </div>
-          <Switch
-            id="toggle-hide-low-stock"
-            checked={dashboard.hideLowStockCard}
-            onCheckedChange={(checked) => {
-              setDashboardSettings({ hideLowStockCard: checked });
-              if (checked) {
-                toast.info("Card de estoque baixo ocultado no dashboard");
-              } else {
-                toast.success("Card de estoque baixo visível no dashboard");
-              }
-            }}
-          />
-        </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }
 
 function GroupsSection() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [groups, setGroups] = useState<AccessGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AccessGroup | null>(null);
@@ -882,109 +1004,136 @@ function GroupsSection() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          Grupos de acesso
-        </CardTitle>
-        <Button
-          size="sm"
-          className="rounded-full"
-          onClick={() => setCreating(true)}
-        >
-          <Plus className="mr-1 h-4 w-4" /> Adicionar
-        </Button>
+    <Card className="mb-4">
+      <CardHeader className="py-4">
+        <div className="flex items-center justify-between w-full">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="flex flex-1 items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity mr-3"
+            aria-expanded={isExpanded}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              <CardTitle className="text-base font-semibold">Grupos de acesso</CardTitle>
+              {!isExpanded && (
+                <span className="hidden sm:inline text-xs text-muted-foreground">
+                  • {groups.length} grupo{groups.length === 1 ? "" : "s"} configurado{groups.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+              <span>{isExpanded ? "Minimizar" : "Gerenciar"}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </div>
+          </button>
+          {isExpanded && (
+            <Button
+              size="sm"
+              className="rounded-full shrink-0"
+              onClick={() => setCreating(true)}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Adicionar
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {loading ? (
-          <GlobalLoader />
-        ) : groups.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            Nenhum grupo cadastrado.
-          </div>
-        ) : (
-          groups.map((g) => {
-            const total = totalPermissions(g.permissions as Permissions);
-            return (
-              <div
-                key={g.id}
-                className="flex flex-col gap-3 rounded-xl border border-border/70 p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="truncate text-sm font-medium">{g.name}</div>
-                    <Badge
-                      variant="outline"
-                      className={
-                        g.active
-                          ? "border-emerald-500/40 text-emerald-700"
-                          : "border-muted-foreground/30 text-muted-foreground"
-                      }
+      {isExpanded && (
+        <CardContent className="space-y-2 pt-0 animate-in fade-in-50 duration-150">
+          {loading ? (
+            <GlobalLoader />
+          ) : groups.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              Nenhum grupo cadastrado.
+            </div>
+          ) : (
+            groups.map((g) => {
+              const total = totalPermissions(g.permissions as Permissions);
+              return (
+                <div
+                  key={g.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border/70 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="truncate text-sm font-medium">{g.name}</div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          g.active
+                            ? "border-emerald-500/40 text-emerald-700"
+                            : "border-muted-foreground/30 text-muted-foreground"
+                        }
+                      >
+                        {g.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {total} permiss{total === 1 ? "ão" : "ões"}
+                      </span>
+                    </div>
+                    {g.description && (
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {g.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <div className="flex items-center gap-2 pr-2">
+                      <Switch
+                        checked={g.active}
+                        onCheckedChange={() => handleToggleActive(g)}
+                        aria-label="Ativar grupo"
+                      />
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => setEditing(g)}
+                      aria-label="Editar"
                     >
-                      {g.active ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {total} permiss{total === 1 ? "ão" : "ões"}
-                    </span>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger
+                        render={
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      ></AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover grupo?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {g.name} será removido. Esta ação não pode ser
+                            desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(g.id)}>
+                            Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                  {g.description && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                      {g.description}
-                    </p>
-                  )}
                 </div>
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <div className="flex items-center gap-2 pr-2">
-                    <Switch
-                      checked={g.active}
-                      onCheckedChange={() => handleToggleActive(g)}
-                      aria-label="Ativar grupo"
-                    />
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => setEditing(g)}
-                    aria-label="Editar"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger
-                      render={
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      }
-                    ></AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remover grupo?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {g.name} será removido. Esta ação não pode ser
-                          desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(g.id)}>
-                          Remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </CardContent>
+              );
+            })
+          )}
+        </CardContent>
+      )}
 
       <GroupForm
         open={creating || !!editing}
@@ -1286,7 +1435,9 @@ function GroupForm({
 
 function ProductsConfigSection() {
   const isMobile = useIsMobile();
+  const [isExpanded, setIsExpanded] = useState(false);
   const productsSettings = useSettingsStore((s) => s.products) ?? {
+    trackStock: true,
     globalLowStockThreshold: 5,
     hideCostPrice: false,
   };
@@ -1473,66 +1624,123 @@ function ProductsConfigSection() {
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold flex items-center gap-2">
-          Configurações de Produtos
-        </CardTitle>
+    <Card className="mb-4">
+      <CardHeader className="py-4">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+          aria-expanded={isExpanded}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <Package className="h-4 w-4 text-primary shrink-0" />
+            <CardTitle className="text-base font-semibold">Configurações de Produtos</CardTitle>
+            {!isExpanded && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                • Estoque: {(productsSettings.trackStock ?? true) ? "Ativo" : "Desativado"} • {categories.length} categoria{categories.length === 1 ? "" : "s"} • {units.length} unidade{units.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+            <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isExpanded && "rotate-180"
+              )}
+            />
+          </div>
+        </button>
       </CardHeader>
-
-      <CardContent className="space-y-4">
-        {/* Item #8 & Item #9: Parâmetros de Produtos */}
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/70 p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5 pr-4">
-              <Label className="text-sm font-medium">
-                Alerta global de estoque baixo (unidades)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Quantidade padrão para alertar estoque baixo em produtos que não possuem estoque mínimo específico configurado.
-              </p>
+      {isExpanded && (
+        <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
+          {/* Parâmetros de Produtos */}
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/70 p-4">
+            {/* Toggle Controlar Estoque */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-4">
+                <Label
+                  className="text-sm font-medium cursor-pointer"
+                  htmlFor="toggle-track-stock"
+                >
+                  Controlar estoque de produtos
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Ativa o controle e rastreamento de estoque. Ao desativar, oculta o estoque atual e mínimo, entradas de mercadoria e alertas em todo o sistema.
+                </p>
+              </div>
+              <Switch
+                id="toggle-track-stock"
+                checked={productsSettings.trackStock ?? true}
+                onCheckedChange={(checked) => {
+                  setProductsSettings({ trackStock: checked });
+                  if (checked) {
+                    toast.success("Controle de estoque ativado");
+                  } else {
+                    toast.info("Controle de estoque desativado. Dados e ações de estoque foram ocultados.");
+                  }
+                }}
+              />
             </div>
-            <div className="w-32 shrink-0">
-              <Input
-                type="number"
-                min={0}
-                value={productsSettings.globalLowStockThreshold ?? 5}
-                onChange={(e) => {
-                  const val = Math.max(0, parseInt(e.target.value) || 0);
-                  setProductsSettings({ globalLowStockThreshold: val });
+
+            <Separator className="my-1" />
+
+            {/* Alerta global de estoque baixo (visível apenas se controle de estoque ativo) */}
+            {(productsSettings.trackStock ?? true) && (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5 pr-4">
+                    <Label className="text-sm font-medium">
+                      Alerta global de estoque baixo (unidades)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Quantidade padrão para alertar estoque baixo em produtos que não possuem estoque mínimo específico configurado.
+                    </p>
+                  </div>
+                  <div className="w-32 shrink-0">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={productsSettings.globalLowStockThreshold ?? 5}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                        setProductsSettings({ globalLowStockThreshold: val });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-1" />
+              </>
+            )}
+
+            {/* Ocultar campo Preço de Custo */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-4">
+                <Label
+                  className="text-sm font-medium cursor-pointer"
+                  htmlFor="toggle-hide-cost-price"
+                >
+                  Ocultar campo &quot;Preço de Custo&quot;
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Esconde o campo de preço de custo nos formulários de cadastro e edição de produtos.
+                </p>
+              </div>
+              <Switch
+                id="toggle-hide-cost-price"
+                checked={productsSettings.hideCostPrice}
+                onCheckedChange={(checked) => {
+                  setProductsSettings({ hideCostPrice: checked });
+                  if (checked) {
+                    toast.info("Campo de preço de custo ocultado nos formulários");
+                  } else {
+                    toast.success("Campo de preço de custo visível nos formulários");
+                  }
                 }}
               />
             </div>
           </div>
-
-          <Separator className="my-1" />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5 pr-4">
-              <Label
-                className="text-sm font-medium cursor-pointer"
-                htmlFor="toggle-hide-cost-price"
-              >
-                Ocultar campo &quot;Preço de Custo&quot;
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Esconde o campo de preço de custo nos formulários de cadastro e edição de produtos.
-              </p>
-            </div>
-            <Switch
-              id="toggle-hide-cost-price"
-              checked={productsSettings.hideCostPrice}
-              onCheckedChange={(checked) => {
-                setProductsSettings({ hideCostPrice: checked });
-                if (checked) {
-                  toast.info("Campo de preço de custo ocultado nos formulários");
-                } else {
-                  toast.success("Campo de preço de custo visível nos formulários");
-                }
-              }}
-            />
-          </div>
-        </div>
 
         {/* Navegação por Abas no Mobile */}
         <div className="flex md:hidden rounded-lg bg-muted p-1 gap-1">
@@ -1913,6 +2121,7 @@ function ProductsConfigSection() {
           </Dialog>
         )}
       </CardContent>
+      )}
     </Card>
   );
 }

@@ -57,11 +57,31 @@ export async function POST(req: Request) {
 
     // Usa $transaction para garantir que a venda e o desconto no estoque ocorram juntos
     const sale = await prisma.$transaction(async (tx) => {
+      // Determina o próximo número sequencial da venda da loja (ordem crescente iniciando em 1)
+      const lastSale = await tx.sale.findFirst({
+        where: { lojaId: user.lojaId, saleNumber: { not: null } },
+        orderBy: { saleNumber: "desc" },
+        select: { saleNumber: true },
+      });
+
+      let nextNumber = (lastSale?.saleNumber ?? 0) + 1;
+
+      // Validação: garante que não existe nenhuma venda com essa numeração dentro da loja
+      while (
+        await tx.sale.findFirst({
+          where: { lojaId: user.lojaId, saleNumber: nextNumber },
+          select: { id: true },
+        })
+      ) {
+        nextNumber++;
+      }
+
       // 1. Cria a venda e os itens da venda
       const newSale = await tx.sale.create({
         data: {
           lojaId: user.lojaId,
           sellerId: user.id,
+          saleNumber: nextNumber,
           clientId: parsed.clientId,
           clientName: parsed.clientName,
           total: parsed.total,

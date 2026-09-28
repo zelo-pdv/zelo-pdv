@@ -24,6 +24,8 @@ import { currency } from "@/lib/format";
 import { ProductThumb } from "@/components/product-thumb";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 
+import { useSettingsStore } from "@/store/useSettingsStore";
+
 export function ProductPicker({
   open,
   onClose,
@@ -41,6 +43,7 @@ export function ProductPicker({
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const trackStock = useSettingsStore((s) => s.products?.trackStock ?? true);
 
   const handlePick = (p: import("@/types").Product) => {
     setJustAddedId(p.id);
@@ -126,9 +129,11 @@ export function ProductPicker({
                         </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {remaining} em estoque
-                    </div>
+                    {trackStock && (
+                      <div className="text-xs text-muted-foreground">
+                        {remaining} em estoque
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {isAdded && (
@@ -140,7 +145,7 @@ export function ProductPicker({
                       {currency(p.salePrice as number)}
                     </div>
                   </div>
-                  {remaining <= 0 && (
+                  {trackStock && remaining <= 0 && (
                     <Badge
                       variant="outline"
                       className="text-amber-600 border-amber-600/30"

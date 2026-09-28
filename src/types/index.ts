@@ -23,6 +23,7 @@ export interface SaleItem {
 
 export interface Sale {
   id: string;
+  saleNumber?: number | null;
   clientId?: string | null;
   clientName?: string | null;
   date: string; // ISO

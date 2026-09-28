@@ -50,6 +50,7 @@ export type ProductActions = {
   onDelete: (product: ProductFrontend) => void;
   can: PermissionChecker;
   globalLowStockThreshold?: number;
+  trackStock?: boolean;
 };
 
 export function getProductColumns({
@@ -58,8 +59,9 @@ export function getProductColumns({
   onDelete,
   can,
   globalLowStockThreshold = 5,
+  trackStock = true,
 }: ProductActions): ColumnDef<ProductFrontend>[] {
-  const canStock = can("produtos", "Editar");
+  const canStock = trackStock && can("produtos", "Editar");
   const canEdit = can("produtos", "Editar");
   const canDelete = can("produtos", "Excluir");
 
@@ -83,7 +85,7 @@ export function getProductColumns({
 
       cell: ({ row }) => {
         const product = row.original;
-        const low = isProductLowStock(product, globalLowStockThreshold);
+        const low = trackStock && isProductLowStock(product, globalLowStockThreshold);
 
         const hasMobileActions = hasAnyAction;
 
@@ -185,7 +187,7 @@ export function getProductColumns({
             </div>
 
             <div className="mt-0.5 text-xs text-muted-foreground sm:hidden">
-              {product.stock} un · {currency(product.salePrice)}
+              {trackStock ? `${product.stock} un · ` : ""}{currency(product.salePrice)}
             </div>
           </div>
         );
@@ -206,36 +208,42 @@ export function getProductColumns({
       filterFn: (row, _id, value) => row.original.category?.name === value,
     },
 
-    {
-      accessorKey: "stock",
+    ...(trackStock
+      ? [
+          {
+            accessorKey: "stock",
 
-      header: () => <div className="text-right">Estoque</div>,
+            header: () => <div className="text-right">Estoque</div>,
 
-      cell: ({ row }) => {
-        const product = row.original;
-        const low = isProductLowStock(product, globalLowStockThreshold);
-        return (
-          <div className="flex items-center justify-end gap-1.5 text-right text-sm tabular-nums">
-            <span
-              className={cn(
-                "tabular-nums",
-                low ? "font-semibold text-amber-600 dark:text-amber-400" : ""
-              )}
-            >
-              {product.stock} un
-            </span>
-            {low && (
-              <Badge
-                variant="outline"
-                className="hidden sm:inline-flex border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1.5 h-4.5"
-              >
-                Baixo
-              </Badge>
-            )}
-          </div>
-        );
-      },
-    },
+            cell: ({ row }: any) => {
+              const product = row.original;
+              const low = isProductLowStock(product, globalLowStockThreshold);
+              return (
+                <div className="flex items-center justify-end gap-1.5 text-right text-sm tabular-nums">
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      low
+                        ? "font-semibold text-amber-600 dark:text-amber-400"
+                        : "",
+                    )}
+                  >
+                    {product.stock} un
+                  </span>
+                  {low && (
+                    <Badge
+                      variant="outline"
+                      className="hidden sm:inline-flex border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1.5 h-4.5"
+                    >
+                      Baixo
+                    </Badge>
+                  )}
+                </div>
+              );
+            },
+          } as ColumnDef<ProductFrontend>,
+        ]
+      : []),
 
     {
       accessorKey: "salePrice",

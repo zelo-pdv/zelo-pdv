@@ -93,6 +93,7 @@ export default function NovaVenda() {
     defaultPaymentMethod: PaymentMethod.DINHEIRO,
     defaultSaleStatus: SaleStatus.PAGO,
   };
+  const trackStock = useSettingsStore((s) => s.products?.trackStock ?? true);
 
   // Dados do BD (substitui o useDataStore)
   const [clients, setClients] = useState<Client[]>([]);
@@ -187,9 +188,13 @@ export default function NovaVenda() {
 
       setClients(typedClients);
       
-      const defaultClient = typedClients.find(c => c.name === "Ao consumidor");
+      const defaultClient = typedClients.find(
+        (c) =>
+          c.name.toLowerCase() === "consumidor final" ||
+          c.name.toLowerCase() === "ao consumidor",
+      );
       if (defaultClient && salesSettings.requireClient) {
-        setClient(prev => prev || defaultClient);
+        setClient((prev) => prev || defaultClient);
       }
 
       setProducts(typedProducts);
@@ -249,8 +254,8 @@ export default function NovaVenda() {
     const existing = items.find((i) => i.productId === p.id);
     const currentQty = existing ? existing.quantity : 0;
 
-    // Item #1: Bloquear venda com estoque zerado
-    if (salesSettings.blockOutOfStock && currentQty + 1 > p.stock) {
+    // Item #1: Bloquear venda com estoque zerado (se controle de estoque ativo)
+    if (trackStock && salesSettings.blockOutOfStock && currentQty + 1 > p.stock) {
       toast.error(
         `Venda bloqueada: Estoque insuficiente para ${p.name}. (Disponível: ${p.stock})`,
         {
@@ -262,6 +267,7 @@ export default function NovaVenda() {
     }
 
     if (
+      trackStock &&
       notifications.enableToasts &&
       notifications.outOfStockWarning &&
       currentQty + 1 > p.stock
@@ -300,8 +306,8 @@ export default function NovaVenda() {
 
     const product = products.find((p) => p.id === id);
 
-    // Item #1: Bloquear venda com estoque zerado
-    if (salesSettings.blockOutOfStock && product && qty > product.stock) {
+    // Item #1: Bloquear venda com estoque zerado (se controle de estoque ativo)
+    if (trackStock && salesSettings.blockOutOfStock && product && qty > product.stock) {
       toast.error(
         `Venda bloqueada: Estoque insuficiente para ${product.name}. (Disponível: ${product.stock})`,
         {
@@ -313,6 +319,7 @@ export default function NovaVenda() {
     }
 
     if (
+      trackStock &&
       notifications.enableToasts &&
       notifications.outOfStockWarning &&
       product &&

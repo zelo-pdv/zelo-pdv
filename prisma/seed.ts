@@ -19,13 +19,13 @@ async function main() {
 
   // Cliente padrão
   const existingClient = await prisma.client.findFirst({
-    where: { lojaId: loja.id, name: "Ao consumidor" }
+    where: { lojaId: loja.id, name: "Consumidor Final" }
   });
   if (!existingClient) {
     await prisma.client.create({
       data: {
         lojaId: loja.id,
-        name: "Ao consumidor",
+        name: "Consumidor Final",
         phone: ""
       }
     });
@@ -157,13 +157,13 @@ async function main() {
 
   // Cliente padrão demo
   const existingDemoClient = await prisma.client.findFirst({
-    where: { lojaId: demoLoja.id, name: "Ao consumidor" }
+    where: { lojaId: demoLoja.id, name: "Consumidor Final" }
   });
   if (!existingDemoClient) {
     await prisma.client.create({
       data: {
         lojaId: demoLoja.id,
-        name: "Ao consumidor",
+        name: "Consumidor Final",
         phone: ""
       }
     });

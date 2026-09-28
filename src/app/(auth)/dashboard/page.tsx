@@ -562,8 +562,8 @@ export default function Dashboard() {
       {/* Item #12: Gráfico de vendas dos últimos 7 dias */}
       <SalesWeekChart data={last7DaysData} />
 
-      {/* Item #7: Ocultar seção de Estoque Baixo se configurado */}
-      {!dashboardSettings.hideLowStockCard && products.length > 0 && stats.low.length > 0 && (
+      {/* Item #7: Ocultar seção de Estoque Baixo se configurado ou se controle de estoque estiver desativado */}
+      {!dashboardSettings.hideLowStockCard && (productsSettings?.trackStock ?? true) && products.length > 0 && stats.low.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
             Produtos com estoque baixo

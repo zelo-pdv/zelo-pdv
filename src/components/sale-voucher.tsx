@@ -126,11 +126,17 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     }
   }, [open, setStore]);
 
-  // Código de identificação do pedido/venda
+  // Código numérico de identificação do pedido/venda
   const code = useMemo(() => {
     if (!sale) return "";
-    const clean = sale.id.replace(/[^a-zA-Z0-9]/g, "");
-    return clean.slice(-6).padStart(6, "0").toUpperCase();
+    if (typeof sale.saleNumber === "number" && !isNaN(sale.saleNumber)) {
+      return String(sale.saleNumber);
+    }
+    const numericOnly = sale.id.replace(/\D/g, "");
+    if (numericOnly) {
+      return String(parseInt(numericOnly.slice(-6), 10) || 1);
+    }
+    return "1";
   }, [sale]);
 
   const addressLines = useMemo(() => getAddressLines(store), [store]);

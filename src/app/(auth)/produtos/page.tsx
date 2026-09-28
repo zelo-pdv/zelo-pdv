@@ -151,8 +151,9 @@ export default function ProdutosPage() {
         onDelete: setDeleting,
         can,
         globalLowStockThreshold: productsSettings.globalLowStockThreshold,
+        trackStock: productsSettings.trackStock ?? true,
       }),
-    [can, productsSettings.globalLowStockThreshold],
+    [can, productsSettings.globalLowStockThreshold, productsSettings.trackStock],
   );
 
   if (loading) {
@@ -788,27 +789,31 @@ function ProductForm({
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label>Estoque atual</Label>
-        <Input
-          inputMode="decimal"
-          value={rawValues.stock}
-          onChange={(e) => handleNumericChange("stock", e.target.value)}
-          onBlur={() => handleNumericBlur("stock")}
-          placeholder="0"
-        />
-      </div>
+      {(productsSettings?.trackStock ?? true) && (
+        <>
+          <div className="space-y-2">
+            <Label>Estoque atual</Label>
+            <Input
+              inputMode="decimal"
+              value={rawValues.stock}
+              onChange={(e) => handleNumericChange("stock", e.target.value)}
+              onBlur={() => handleNumericBlur("stock")}
+              placeholder="0"
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label>Estoque mínimo</Label>
-        <Input
-          inputMode="decimal"
-          value={rawValues.minStock}
-          onChange={(e) => handleNumericChange("minStock", e.target.value)}
-          onBlur={() => handleNumericBlur("minStock")}
-          placeholder="0"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label>Estoque mínimo</Label>
+            <Input
+              inputMode="decimal"
+              value={rawValues.minStock}
+              onChange={(e) => handleNumericChange("minStock", e.target.value)}
+              onBlur={() => handleNumericBlur("minStock")}
+              placeholder="0"
+            />
+          </div>
+        </>
+      )}
 
       <div className="col-span-2 space-y-2">
         <Label>URL da Imagem</Label>
