@@ -7,8 +7,23 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+interface DialogContextValue {
+  blur?: boolean
+}
+
+const DialogContext = React.createContext<DialogContextValue>({ blur: false })
+
+function Dialog({
+  blur = false,
+  isForm = false,
+  ...props
+}: DialogPrimitive.Root.Props & { blur?: boolean; isForm?: boolean }) {
+  const shouldBlur = blur || isForm
+  return (
+    <DialogContext.Provider value={{ blur: shouldBlur }}>
+      <DialogPrimitive.Root data-slot="dialog" {...props} />
+    </DialogContext.Provider>
+  )
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -25,13 +40,19 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  blur: blurProp,
+  isForm: isFormProp,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
+}: DialogPrimitive.Backdrop.Props & { blur?: boolean; isForm?: boolean }) {
+  const context = React.useContext(DialogContext)
+  const isBlurActive = blurProp ?? isFormProp ?? context.blur ?? false
+
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/40 duration-200 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/40 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        isBlurActive && "supports-backdrop-filter:backdrop-blur-sm",
         className
       )}
       {...props}
@@ -44,13 +65,17 @@ function DialogContent({
   children,
   showCloseButton = true,
   initialFocus = false,
+  blur,
+  isForm,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  blur?: boolean
+  isForm?: boolean
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay blur={blur} isForm={isForm} />
       <DialogPrimitive.Popup
         initialFocus={initialFocus}
         data-slot="dialog-content"

@@ -1249,7 +1249,7 @@ function GroupForm({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={onOpenChange} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
             <DrawerTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DrawerTitle>
@@ -1270,7 +1270,7 @@ function GroupForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DialogTitle>
@@ -1698,6 +1698,7 @@ function ProductsConfigSection() {
           <Drawer
             open={isCategoryModalOpen}
             onOpenChange={setIsCategoryModalOpen}
+            blur
           >
             <DrawerContent className="p-4">
               <DrawerHeader className="px-0">
@@ -1736,6 +1737,7 @@ function ProductsConfigSection() {
           <Dialog
             open={isCategoryModalOpen}
             onOpenChange={setIsCategoryModalOpen}
+            blur
           >
             <DialogContent>
               <DialogHeader>
@@ -1774,7 +1776,7 @@ function ProductsConfigSection() {
 
         {/* Modal / Drawer Unidade */}
         {isMobile ? (
-          <Drawer open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen}>
+          <Drawer open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen} blur>
             <DrawerContent className="p-4">
               <DrawerHeader className="px-0">
                 <DrawerTitle>
@@ -1842,7 +1844,7 @@ function ProductsConfigSection() {
             </DrawerContent>
           </Drawer>
         ) : (
-          <Dialog open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen}>
+          <Dialog open={isUnitModalOpen} onOpenChange={setIsUnitModalOpen} blur>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>

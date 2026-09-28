@@ -494,7 +494,7 @@ function UserForm({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={onOpenChange} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
             <DrawerTitle>{isEdit ? "Editar usuário" : "Adicionar"}</DrawerTitle>
@@ -515,7 +515,7 @@ function UserForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar usuário" : "Adicionar"}</DialogTitle>
@@ -678,7 +678,7 @@ function ChangePasswordDialog({
 
   if (isMobile) {
     return (
-      <Drawer open={!!user} onOpenChange={(o) => !o && onClose()}>
+      <Drawer open={!!user} onOpenChange={(o) => !o && onClose()} blur>
         <DrawerContent className="p-4">
           <DrawerHeader className="px-0">
             <DrawerTitle>Trocar Senha</DrawerTitle>
@@ -694,7 +694,7 @@ function ChangePasswordDialog({
   }
 
   return (
-    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()} blur>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Trocar Senha</DialogTitle>

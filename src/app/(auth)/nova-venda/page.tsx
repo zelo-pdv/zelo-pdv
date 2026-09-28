@@ -610,6 +610,7 @@ export default function NovaVenda() {
       {isMobile ? (
         <Drawer
           open={checkout}
+          blur
           onOpenChange={(o) => {
             if (!o) setStep("cart");
           }}
@@ -817,6 +818,7 @@ export default function NovaVenda() {
       ) : (
         <Dialog
           open={checkout}
+          blur
           onOpenChange={(o) => {
             if (!o) setStep("cart");
           }}

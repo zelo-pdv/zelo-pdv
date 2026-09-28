@@ -405,7 +405,7 @@ function StockEntry({
 
   if (isMobile) {
     return (
-      <Drawer open={!!product} onOpenChange={(open) => !open && onClose()}>
+      <Drawer open={!!product} onOpenChange={(open) => !open && onClose()} blur>
         <DrawerContent className="p-4">
           <DrawerHeader className="px-0">
             <DrawerTitle>Entrada de estoque</DrawerTitle>
@@ -418,7 +418,7 @@ function StockEntry({
   }
 
   return (
-    <Dialog open={!!product} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!product} onOpenChange={(open) => !open && onClose()} blur>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Entrada de estoque</DialogTitle>
@@ -866,7 +866,7 @@ function ProductForm({
   if (isMobile) {
     return (
       <>
-        <Drawer open={open} onOpenChange={handleFormOpenChange}>
+        <Drawer open={open} onOpenChange={handleFormOpenChange} blur>
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="shrink-0 px-4">
               <DrawerTitle>
@@ -902,7 +902,7 @@ function ProductForm({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleFormOpenChange}>
+      <Dialog open={open} onOpenChange={handleFormOpenChange} blur>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{isEdit ? "Editar produto" : "Adicionar"}</DialogTitle>

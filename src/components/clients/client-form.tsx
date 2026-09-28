@@ -430,7 +430,7 @@ export function ClientForm({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={onOpenChange} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
             <DrawerTitle>{isEdit ? "Editar cliente" : "Adicionar"}</DrawerTitle>
@@ -451,7 +451,7 @@ export function ClientForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar cliente" : "Adicionar"}</DialogTitle>
