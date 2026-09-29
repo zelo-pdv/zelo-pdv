@@ -44,6 +44,9 @@ export function ProductPicker({
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const trackStock = useSettingsStore((s) => s.products?.trackStock ?? true);
+  const blockOutOfStock = useSettingsStore(
+    (s) => s.sales?.blockOutOfStock ?? false,
+  );
 
   const handlePick = (p: import("@/types").Product) => {
     setJustAddedId(p.id);
@@ -53,20 +56,27 @@ export function ProductPicker({
     }, 800);
   };
 
+  const availableProducts = useMemo(() => {
+    if (trackStock && blockOutOfStock) {
+      return products.filter((p) => p.stock > 0);
+    }
+    return products;
+  }, [products, trackStock, blockOutOfStock]);
+
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     return t
-      ? products.filter(
+      ? availableProducts.filter(
           (p) =>
             p.name.toLowerCase().includes(t) ||
             p.category?.toLowerCase().includes(t) ||
-            p.barcode?.toLowerCase() === t
+            p.barcode?.toLowerCase() === t,
         )
-      : products;
-  }, [q, products]);
+      : availableProducts;
+  }, [q, availableProducts]);
 
   const handleScan = (barcode: string) => {
-    const product = products.find((p) => p.barcode === barcode);
+    const product = availableProducts.find((p) => p.barcode === barcode);
     if (product) {
       handlePick(product);
     } else {

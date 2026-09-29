@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 // [GET] /api/clients - Lista todos os clientes com seus endereços
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("clientes", "Visualizar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const clients = await prisma.client.findMany({
       where: { lojaId: user.lojaId },
@@ -42,8 +43,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("clientes", "Adicionar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     // Validação de unicidade de e-mail e telefone cruzada (clientes e usuários)
     if (email && email.trim() !== "") {

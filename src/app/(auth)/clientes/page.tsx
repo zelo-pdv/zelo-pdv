@@ -185,10 +185,6 @@ export default function ClientesPage() {
         client={detail}
         sales={sales}
         onClose={() => setDetail(null)}
-        onEdit={(c) => {
-          setDetail(null);
-          setEditing(c as ClientWithAddress);
-        }}
       />
 
       <DeleteClient

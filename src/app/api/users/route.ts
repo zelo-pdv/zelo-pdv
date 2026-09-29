@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 const userSchema = z.object({
@@ -16,8 +16,9 @@ const userSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const users = await prisma.user.findMany({
       where: { lojaId: user.lojaId },
@@ -36,8 +37,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const currentUser = auth.user;
 
     const body = await request.json();
     const data = userSchema.parse(body);

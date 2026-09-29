@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hash } from "bcrypt";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 const updateUserSchema = z.object({
@@ -28,8 +29,25 @@ export async function PATCH(
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
     const { id } = await params;
+
+    // Apenas administrador pode editar outros usuários
+    if (!currentUser.isAdmin && currentUser.id !== id) {
+      return NextResponse.json(
+        { error: "Acesso restrito ao administrador." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const data = updateUserSchema.parse(body);
+
+    // Usuário não-admin não pode alterar seu próprio grupo ou status
+    if (!currentUser.isAdmin && (data.groupId !== undefined || data.active !== undefined)) {
+      return NextResponse.json(
+        { error: "Você não tem permissão para alterar grupo ou status." },
+        { status: 403 },
+      );
+    }
 
     if (data.email) {
       const emailConflict = await checkEmailConflict({
@@ -80,10 +98,20 @@ export async function PATCH(
 
       const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
+      const firstUser = await prisma.user.findFirst({
+        where: { lojaId: user.lojaId },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      const isFirstUser = firstUser?.id === user.id;
+      const isAdmin = user.group?.name === "ADMIN" || isFirstUser;
+
       const payload = {
         sub: user.id,
         email: user.email,
         name: user.name,
+        groupName: user.group?.name || "",
+        isAdmin,
         permissions: user.group?.permissions || {},
       };
 
@@ -139,9 +167,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const currentUser = auth.user;
 
     const { id } = await params;
 

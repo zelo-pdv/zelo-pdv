@@ -4,17 +4,28 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { NAV } from "@/lib/navigation-data";
+import { usePermissions } from "@/components/auth/permissions-provider";
 
 export function BottomNavigation() {
   const pathname = usePathname();
+  const { can } = usePermissions();
+
+  const visibleNav = NAV.filter(
+    (n) => !n.module || can(n.module, "Visualizar"),
+  );
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/80 backdrop-blur-lg md:hidden">
-      <div className="mx-auto grid max-w-lg grid-cols-5 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-1">
-        {NAV.map((n) => {
+      <div
+        className="mx-auto grid max-w-lg pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-1"
+        style={{
+          gridTemplateColumns: `repeat(${Math.max(1, visibleNav.length)}, minmax(0, 1fr))`,
+        }}
+      >
+        {visibleNav.map((n) => {
           const Icon = n.icon;
           const active = isActive(n.to);
           if (n.primary) {

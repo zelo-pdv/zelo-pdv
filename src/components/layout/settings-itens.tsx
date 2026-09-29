@@ -21,10 +21,12 @@ import {
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import { usePermissions } from "@/components/auth/permissions-provider";
 
 export default function SettingsItem() {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
+  const { isAdmin } = usePermissions();
 
   const isDark = resolvedTheme === "dark";
 
@@ -56,23 +58,27 @@ export default function SettingsItem() {
             )}
             {resolvedTheme === "dark" ? "Tema claro" : "Tema escuro"}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            render={
-              <Link href="/usuarios">
-                <UserCog className="mr-2 h-4 w-4" />
-                Usuários
-              </Link>
-            }
-          />
+          {isAdmin && (
+            <>
+              <DropdownMenuItem
+                render={
+                  <Link href="/usuarios">
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Usuários
+                  </Link>
+                }
+              />
 
-          <DropdownMenuItem
-            render={
-              <Link href="/configuracoes">
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
-              </Link>
-            }
-          />
+              <DropdownMenuItem
+                render={
+                  <Link href="/configuracoes">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </Link>
+                }
+              />
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

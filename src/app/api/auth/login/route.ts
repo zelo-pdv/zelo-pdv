@@ -33,10 +33,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Este usuário está inativo." }, { status: 403 });
     }
 
+    const firstUser = await prisma.user.findFirst({
+      where: { lojaId: user.lojaId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    const isFirstUser = firstUser?.id === user.id;
+    const isAdmin = user.group?.name === "ADMIN" || isFirstUser;
+
     const payload = {
       sub: user.id,
       email: user.email,
       name: user.name,
+      groupName: user.group?.name || "",
+      isAdmin,
       permissions: user.group?.permissions || {},
     };
 

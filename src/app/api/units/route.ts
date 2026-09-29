@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-permission";
 
 export async function GET() {
   try {
@@ -24,9 +25,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const body = await req.json();
     const { name, abbreviation, decimalPlaces } = body;

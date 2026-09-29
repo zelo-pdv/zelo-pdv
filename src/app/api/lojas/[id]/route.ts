@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { lojaSchema } from "@/lib/validations/loja";
+import { requireAdmin } from "@/lib/require-permission";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+
+    const { id } = await params;
+    if (auth.user.lojaId !== id) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado para esta loja." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
 
     // Validação com Zod no back-end
@@ -17,7 +29,6 @@ export async function PUT(
         { status: 400 },
       );
     }
-    const { id } = await params;
     const { address, ...lojaData } = parsed.data;
 
     if (address) {

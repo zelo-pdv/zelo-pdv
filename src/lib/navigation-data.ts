@@ -7,12 +7,16 @@ import {
   DollarSign,
 } from "lucide-react";
 
-type NavItem = {
+import type { ModuleKey } from "@/store/useSettingsStore";
+
+export type NavItem = {
   to: string;
   label: string;
   short: string;
   icon: typeof LayoutDashboard;
   primary?: boolean;
+  module?: ModuleKey;
+  adminOnly?: boolean;
 };
 
 type TitlePage = {
@@ -26,17 +30,37 @@ export const NAV: NavItem[] = [
     label: "Dashboard",
     short: "Início",
     icon: LayoutDashboard,
+    module: "dashboard",
   },
-  { to: "/produtos", label: "Produtos", short: "Produtos", icon: Package },
+  {
+    to: "/produtos",
+    label: "Produtos",
+    short: "Produtos",
+    icon: Package,
+    module: "produtos",
+  },
   {
     to: "/nova-venda",
     label: "Nova Venda",
     short: "Vender",
     icon: DollarSign,
     primary: true,
+    module: "nova-venda",
   },
-  { to: "/clientes", label: "Clientes", short: "Clientes", icon: Users },
-  { to: "/historico", label: "Histórico", short: "Vendas", icon: Receipt },
+  {
+    to: "/clientes",
+    label: "Clientes",
+    short: "Clientes",
+    icon: Users,
+    module: "clientes",
+  },
+  {
+    to: "/historico",
+    label: "Histórico",
+    short: "Vendas",
+    icon: Receipt,
+    module: "historico",
+  },
 ];
 
 export const SECONDARY_NAV: NavItem[] = [
@@ -45,12 +69,14 @@ export const SECONDARY_NAV: NavItem[] = [
     label: "Usuários",
     short: "Usuários",
     icon: Users,
+    adminOnly: true,
   },
   {
     to: "/configuracoes",
     label: "Configurações",
     short: "Config",
     icon: Settings,
+    adminOnly: true,
   },
 ];
 

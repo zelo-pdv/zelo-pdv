@@ -10,6 +10,8 @@ interface UserContext {
   sub?: string;
   email?: string;
   name?: string;
+  groupName?: string;
+  isAdmin?: boolean;
 }
 
 function getUserContext(): UserContext | null {
@@ -50,7 +52,13 @@ export function PermissionsProviderWrapper({
 
   const permissions = context?.permissions ?? {};
   const user = context?.sub
-    ? { sub: context.sub, email: context.email || "", name: context.name || "" }
+    ? {
+        sub: context.sub,
+        email: context.email || "",
+        name: context.name || "",
+        groupName: context.groupName,
+        isAdmin: context.isAdmin,
+      }
     : undefined;
 
   return (

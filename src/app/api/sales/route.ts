@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Ajuste o caminho do seu prisma se necessário
 import { saleSchema } from "@/lib/validations/sale";
-import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/require-permission";
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("historico", "Visualizar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const sales = await prisma.sale.findMany({
       where: { lojaId: user.lojaId },
@@ -46,9 +46,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("nova-venda", "Adicionar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const body = await req.json();
 
@@ -88,7 +88,11 @@ export async function POST(req: Request) {
           discount: parsed.discount ?? 0,
           paymentMethod: parsed.paymentMethod,
           status: parsed.status,
-          dueDate: parsed.dueDate ? new Date(parsed.dueDate) : null,
+          dueDate: parsed.dueDate
+            ? parsed.dueDate.includes("T")
+              ? new Date(parsed.dueDate)
+              : new Date(`${parsed.dueDate}T12:00:00.000Z`)
+            : null,
           notes: parsed.notes,
           items: {
             create: parsed.items.map((item) => ({

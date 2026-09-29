@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-permission";
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const resolvedParams = await params;
     const body = await req.json();
@@ -47,9 +47,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const resolvedParams = await params;
     const unit = await prisma.unit.deleteMany({

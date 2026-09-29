@@ -11,7 +11,6 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { AlertTriangle } from "lucide-react";
 
@@ -80,7 +79,6 @@ type CartItem = {
 };
 
 export default function NovaVenda() {
-  const router = useRouter();
   const { can } = usePermissions();
   const isMobile = useIsMobile();
   const notifications = useSettingsStore((s) => s.notifications) ?? {
@@ -135,7 +133,6 @@ export default function NovaVenda() {
           if (parsed.discountType) setDiscountType(parsed.discountType);
           if (parsed.discountValue) setDiscountValue(parsed.discountValue);
           if (parsed.notes) setNotes(parsed.notes);
-          toast.info("Rascunho de venda anterior recuperado automaticamente.");
         }
       }
     } catch (err) {
@@ -349,7 +346,12 @@ export default function NovaVenda() {
     try {
       localStorage.removeItem("zelo_cart_draft");
     } catch {}
-    setClient(null);
+    const defaultClient = clients.find(
+      (c) =>
+        c.name.toLowerCase() === "consumidor final" ||
+        c.name.toLowerCase() === "ao consumidor",
+    );
+    setClient(salesSettings.requireClient && defaultClient ? defaultClient : null);
     setItems([]);
     setDiscountType("fixed");
     setDiscountValue("");
@@ -394,7 +396,6 @@ export default function NovaVenda() {
       notifyLocalSync("products");
       notifyLocalSync("clients");
       clear();
-      router.push("/historico");
     } catch (error: any) {
       toast.error(error.message || "Erro ao registrar venda.");
     } finally {
@@ -605,6 +606,7 @@ export default function NovaVenda() {
             <AlertDialogAction
               onClick={() => {
                 clear();
+                setShowClearConfirm(false);
                 toast.info("Carrinho esvaziado.");
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

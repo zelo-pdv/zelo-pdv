@@ -94,8 +94,28 @@ import { salesService } from "@/services/sales.service";
 import { currency, dateTime } from "@/lib/format";
 import { notifyLocalSync } from "@/hooks/use-data-sync";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
+import { useRouter } from "next/navigation";
+import { usePermissions } from "@/components/auth/permissions-provider";
 
 export default function ConfiguracoesPage() {
+  const { isAdmin } = usePermissions();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAdmin) {
+      toast.error("Acesso restrito ao administrador.");
+      router.replace("/dashboard");
+    }
+  }, [isAdmin, router]);
+
+  if (!isAdmin) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full px-4">
       <StoreSection />

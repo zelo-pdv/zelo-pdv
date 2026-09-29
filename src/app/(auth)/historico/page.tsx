@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { SaleVoucher } from "@/components/sale-voucher";
 import { useVouchersStore, voucherCode } from "@/store/useVouchersStore";
-import { currency, dateTime } from "@/lib/format";
+import { currency, dateTime, formatDateOnly } from "@/lib/format";
 import { PAYMENT_LABELS, type Sale, SaleStatus } from "@/types";
 import { salesService } from "@/services/sales.service";
 import { getSaleColumns } from "./columns";
@@ -257,7 +257,7 @@ export default function HistoricoPage() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Vencimento</span>
                     <span>
-                      {new Date(detail.dueDate).toLocaleDateString("pt-BR")}
+                      {formatDateOnly(detail.dueDate)}
                     </span>
                   </div>
                 )}
@@ -389,7 +389,7 @@ export default function HistoricoPage() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Vencimento</span>
                     <span>
-                      {new Date(detail.dueDate).toLocaleDateString("pt-BR")}
+                      {formatDateOnly(detail.dueDate)}
                     </span>
                   </div>
                 )}

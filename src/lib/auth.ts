@@ -11,6 +11,8 @@ export interface AuthenticatedUser {
   email: string;
   active: boolean;
   groupId: string | null;
+  groupName: string;
+  isAdmin: boolean;
   permissions: Permissions;
   lojaId: string;
 }
@@ -47,12 +49,22 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       return null;
     }
 
+    const firstUser = await prisma.user.findFirst({
+      where: { lojaId: user.lojaId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    const isFirstUser = firstUser?.id === user.id;
+    const isAdmin = user.group.name === "ADMIN" || isFirstUser;
+
     return {
       id: user.id,
       name: user.name,
       email: user.email,
       active: user.active,
       groupId: user.groupId,
+      groupName: user.group.name,
+      isAdmin,
       permissions: user.group.permissions as unknown as Permissions,
       lojaId: user.lojaId,
     };

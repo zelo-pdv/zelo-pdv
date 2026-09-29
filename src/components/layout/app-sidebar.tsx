@@ -16,10 +16,20 @@ import { LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { usePermissions } from "@/components/auth/permissions-provider";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const router = useRouter();
+  const { can, isAdmin } = usePermissions();
+
+  const visibleNav = NAV.filter(
+    (item) => !item.module || can(item.module, "Visualizar"),
+  );
+
+  const visibleSecondaryNav = SECONDARY_NAV.filter(
+    (item) => !item.adminOnly || isAdmin,
+  );
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -47,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV.map((item) => {
+              {visibleNav.map((item) => {
                 const active = isActive(item.to);
                 return (
                   <SidebarMenuItem className="pb-1" key={item.to}>
@@ -74,7 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {SECONDARY_NAV.map((item) => {
+              {visibleSecondaryNav.map((item) => {
                 const active = isActive(item.to);
                 return (
                   <SidebarMenuItem className="pb-1" key={item.to}>

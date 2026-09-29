@@ -12,11 +12,14 @@ import type {
 
 interface PermissionsContextValue {
   permissions: Permissions;
+  isAdmin: boolean;
   can: (module: ModuleKey, action: ActionKey) => boolean;
   user?: {
     sub: string;
     email: string;
     name: string;
+    groupName?: string;
+    isAdmin?: boolean;
   };
 }
 
@@ -28,6 +31,8 @@ interface PermissionsProviderProps {
     sub: string;
     email: string;
     name: string;
+    groupName?: string;
+    isAdmin?: boolean;
   };
   children: ReactNode;
 }
@@ -37,13 +42,16 @@ export function PermissionsProvider({
   user,
   children,
 }: PermissionsProviderProps) {
+  const isAdmin = Boolean(user?.isAdmin || user?.groupName === "ADMIN");
+
   const value = useMemo<PermissionsContextValue>(
     () => ({
       permissions,
+      isAdmin,
       user,
-      can: (module, action) => hasPermission(permissions, module, action),
+      can: (module, action) => hasPermission(permissions, module, action, isAdmin),
     }),
-    [permissions, user],
+    [permissions, user, isAdmin],
   );
 
   return (

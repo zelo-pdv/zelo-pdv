@@ -18,7 +18,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSettingsStore, StoreInfo } from "@/store/useSettingsStore";
-import { currency } from "@/lib/format";
+import { currency, formatDateOnly } from "@/lib/format";
 import { PAYMENT_LABELS, type Sale } from "@/types";
 
 interface Props {
@@ -425,7 +425,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
         {sale.dueDate && (
           <div className="flex justify-between items-center text-xs text-slate-700">
             <span>VENCIMENTO:</span>
-            <span>{new Date(sale.dueDate).toLocaleDateString("pt-BR")}</span>
+            <span>{formatDateOnly(sale.dueDate)}</span>
           </div>
         )}
       </div>

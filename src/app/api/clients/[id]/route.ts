@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 // [GET] /api/clients/[id] - Busca um cliente específico
@@ -11,8 +11,9 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("clientes", "Visualizar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const client = await prisma.client.findUnique({
       where: { id, lojaId: user.lojaId },
@@ -46,8 +47,9 @@ export async function PATCH(
     const body = await req.json();
     const { name, phone, email, notes, address, active } = body;
 
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("clientes", "Editar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     // Validate that client belongs to user's loja before updating
     const existingClient = await prisma.client.findUnique({ where: { id, lojaId: user.lojaId } });
@@ -125,8 +127,9 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("clientes", "Excluir");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     // Validate that client belongs to user's loja before deleting
     const existingClient = await prisma.client.findUnique({ where: { id, lojaId: user.lojaId } });

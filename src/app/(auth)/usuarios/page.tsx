@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -100,10 +101,18 @@ const userFormSchema = z.object({
 });
 
 export default function UsuariosPage() {
-  const { user: currentUser } = usePermissions();
+  const router = useRouter();
+  const { user: currentUser, isAdmin } = usePermissions();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [groups, setGroups] = useState<AccessGroupDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      toast.error("Acesso restrito ao administrador.");
+      router.replace("/dashboard");
+    }
+  }, [isAdmin, router]);
 
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [creating, setCreating] = useState(false);
@@ -185,6 +194,10 @@ export default function UsuariosPage() {
       }),
     [users, currentUser],
   );
+
+  if (!isAdmin) {
+    return <GlobalLoader />;
+  }
 
   if (isLoading) {
     return <GlobalLoader />;

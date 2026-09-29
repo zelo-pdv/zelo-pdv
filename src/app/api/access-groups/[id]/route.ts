@@ -1,14 +1,25 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-permission";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+
     const { id } = await params;
     const body = await request.json();
     const { name, description, active, permissions } = body;
+
+    const existing = await prisma.accessGroup.findFirst({
+      where: { id, lojaId: auth.user.lojaId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Grupo não encontrado." }, { status: 404 });
+    }
 
     const group = await prisma.accessGroup.update({
       where: { id },
@@ -44,7 +55,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) return auth.response;
+
     const { id } = await params;
+
+    const existing = await prisma.accessGroup.findFirst({
+      where: { id, lojaId: auth.user.lojaId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Grupo não encontrado." }, { status: 404 });
+    }
 
     const usersCount = await prisma.user.count({
       where: { groupId: id },

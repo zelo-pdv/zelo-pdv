@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { categorySchema } from "../../../lib/validations/product";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/require-permission";
 
 export async function GET() {
   try {
@@ -25,9 +26,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user)
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const auth = await requirePermission("produtos", "Adicionar");
+    if (!auth.authorized) return auth.response;
+    const user = auth.user;
 
     const body = await request.json();
     const data = categorySchema.parse(body);

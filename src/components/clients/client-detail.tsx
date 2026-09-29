@@ -6,7 +6,7 @@ import { maskPhone } from "@/lib/masks";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { ChevronDown, MessageCircle, Pencil, Receipt } from "lucide-react";
+import { ChevronDown, MessageCircle, Receipt } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
 import {
@@ -110,12 +110,10 @@ export default function ClientDetail({
   client,
   sales,
   onClose,
-  onEdit,
 }: {
   client: Client | null;
   sales: import("@/types").Sale[];
   onClose: () => void;
-  onEdit: (c: Client) => void;
 }) {
   const isMobile = useIsMobile();
   const [cachedClient, setCachedClient] = useState<Client | null>(client);
@@ -166,6 +164,10 @@ export default function ClientDetail({
   const DetailContent = (
     <div className="space-y-4 pb-2">
       <div className="rounded-xl border border-border bg-card p-3 text-sm">
+        <div>
+          <span className="text-muted-foreground">Nome:</span>{" "}
+          {activeClient.name}
+        </div>
         <div>
           <span className="text-muted-foreground">Telefone:</span>{" "}
           {maskPhone(activeClient.phone)}
@@ -237,9 +239,6 @@ export default function ClientDetail({
             </Link>
           }
         />
-        <Button size="sm" variant="outline" onClick={() => onEdit(activeClient)}>
-          <Pencil className="mr-1.5 h-4 w-4" /> Editar
-        </Button>
       </div>
       <Button size="sm" variant="ghost" onClick={onClose}>
         Fechar
@@ -253,7 +252,7 @@ export default function ClientDetail({
       <Drawer open={isOpen} onOpenChange={(o) => !o && onClose()} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
-            <DrawerTitle>{activeClient.name}</DrawerTitle>
+            <DrawerTitle>Detalhes do cliente</DrawerTitle>
           </DrawerHeader>
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -275,7 +274,7 @@ export default function ClientDetail({
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{activeClient.name}</DialogTitle>
+          <DialogTitle>Detalhes do cliente</DialogTitle>
         </DialogHeader>
         <div className="py-2">
           {DetailContent}
