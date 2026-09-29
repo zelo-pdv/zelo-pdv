@@ -196,15 +196,6 @@ export function SalesDataTable({
             <PopoverContent align="end" className="w-80 p-4 space-y-4">
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-semibold text-sm">Filtros de Vendas</span>
-                {activeFiltersCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="text-xs text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
-                  >
-                    Limpar todos
-                  </button>
-                )}
               </div>
 
               {/* Item #20: Filtro por Status */}
@@ -352,13 +343,16 @@ export function SalesDataTable({
                 )}
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div className="pt-2">
                 <Button
+                  type="button"
+                  variant="destructive"
                   size="sm"
-                  className="w-full"
-                  onClick={() => setIsFilterOpen(false)}
+                  className="w-full text-xs font-medium"
+                  onClick={clearAllFilters}
+                  disabled={activeFiltersCount === 0}
                 >
-                  Concluir
+                  Limpar dados
                 </Button>
               </div>
             </PopoverContent>
@@ -417,14 +411,6 @@ export function SalesDataTable({
             </Badge>
           )}
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearAllFilters}
-            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Limpar todos
-          </Button>
         </div>
       )}
 

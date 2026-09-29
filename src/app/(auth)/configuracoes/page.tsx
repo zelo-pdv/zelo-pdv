@@ -1428,6 +1428,16 @@ function ProductsConfigSection() {
   };
   const setProductsSettings = useSettingsStore((s) => s.setProductsSettings);
 
+  const [thresholdInput, setThresholdInput] = useState(
+    String(productsSettings.globalLowStockThreshold ?? 5)
+  );
+
+  useEffect(() => {
+    if (productsSettings.globalLowStockThreshold !== undefined) {
+      setThresholdInput(String(productsSettings.globalLowStockThreshold));
+    }
+  }, [productsSettings.globalLowStockThreshold]);
+
   const [activeProductTab, setActiveProductTab] = useState<"categories" | "units">("categories");
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
@@ -1684,12 +1694,27 @@ function ProductsConfigSection() {
                   </div>
                   <div className="w-32 shrink-0">
                     <Input
-                      type="number"
-                      min={0}
-                      value={productsSettings.globalLowStockThreshold ?? 5}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={thresholdInput}
                       onChange={(e) => {
-                        const val = Math.max(0, parseInt(e.target.value) || 0);
-                        setProductsSettings({ globalLowStockThreshold: val });
+                        const onlyDigits = e.target.value.replace(/\D/g, "");
+                        setThresholdInput(onlyDigits);
+                        if (onlyDigits !== "") {
+                          const val = parseInt(onlyDigits, 10);
+                          setProductsSettings({ globalLowStockThreshold: val });
+                        }
+                      }}
+                      onBlur={() => {
+                        if (thresholdInput === "" || isNaN(Number(thresholdInput))) {
+                          setThresholdInput("0");
+                          setProductsSettings({ globalLowStockThreshold: 0 });
+                        } else {
+                          const val = parseInt(thresholdInput, 10);
+                          setThresholdInput(String(val));
+                          setProductsSettings({ globalLowStockThreshold: val });
+                        }
                       }}
                     />
                   </div>

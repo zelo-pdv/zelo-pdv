@@ -1,7 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
 import {
-  AlertTriangle,
   ArrowUpDown,
   MoreVertical,
   PackagePlus,
@@ -117,16 +116,6 @@ export function getProductColumns({
                       Inativo
                     </Badge>
                   )}
-
-                  {low && (
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1 h-4"
-                    >
-                      <AlertTriangle className="mr-0.5 h-2.5 w-2.5" />
-                      Baixo
-                    </Badge>
-                  )}
                 </div>
               </div>
 
@@ -222,7 +211,24 @@ export function getProductColumns({
             </div>
 
             <div className="mt-0.5 text-xs text-muted-foreground sm:hidden">
-              {trackStock ? `${product.stock} un · ` : ""}{currency(product.salePrice)}
+              {trackStock ? (
+                <>
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      Number(product.stock) < 0
+                        ? "text-rose-600 dark:text-rose-400 font-semibold"
+                        : low
+                        ? "text-amber-600 dark:text-amber-400 font-semibold"
+                        : "text-foreground font-medium"
+                    )}
+                  >
+                    {Number(product.stock)} un
+                  </span>
+                  <span> · </span>
+                </>
+              ) : null}
+              {currency(product.salePrice)}
             </div>
           </div>
         );
@@ -252,27 +258,22 @@ export function getProductColumns({
 
             cell: ({ row }: any) => {
               const product = row.original;
+              const stockNum = Number(product.stock ?? 0);
               const low = isProductLowStock(product, globalLowStockThreshold);
               return (
-                <div className="flex items-center justify-end gap-1.5 text-right text-sm tabular-nums">
+                <div className="flex items-center justify-end text-right text-sm tabular-nums">
                   <span
                     className={cn(
                       "tabular-nums",
-                      low
+                      stockNum < 0
+                        ? "font-semibold text-rose-600 dark:text-rose-400"
+                        : low
                         ? "font-semibold text-amber-600 dark:text-amber-400"
-                        : "",
+                        : "text-foreground font-medium"
                     )}
                   >
-                    {Number(product.stock)} un
+                    {stockNum} un
                   </span>
-                  {low && (
-                    <Badge
-                      variant="outline"
-                      className="hidden sm:inline-flex border-amber-500/40 text-amber-700 bg-amber-500/10 text-[10px] px-1.5 h-4.5"
-                    >
-                      Baixo
-                    </Badge>
-                  )}
                 </div>
               );
             },

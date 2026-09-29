@@ -13,12 +13,15 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  ListFilter,
   Plus,
   Search,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -50,6 +53,7 @@ export function UsersDataTable({
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [groupFilter, setGroupFilter] = useState("Todos");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const table = useReactTable({
     data,
@@ -95,6 +99,14 @@ export function UsersDataTable({
   const totalFiltered = table.getFilteredRowModel().rows.length;
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
+  const activeFiltersCount =
+    (statusFilter !== "Todos" ? 1 : 0) + (groupFilter !== "Todos" ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setStatusFilter("Todos");
+    setGroupFilter("Todos");
+    setGlobalFilter("");
+  };
 
   return (
     <div>
@@ -109,60 +121,95 @@ export function UsersDataTable({
               className="rounded-xl pl-9"
             />
           </div>
-          <Popover>
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger
               render={
                 <Button
-                  variant={
-                    statusFilter !== "Todos" || groupFilter !== "Todos"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="icon"
-                  className="rounded-xl shrink-0"
+                  variant={activeFiltersCount > 0 ? "default" : "outline"}
+                  className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
+                  aria-label="Abrir filtros"
                 >
-                  <ListFilter className="h-4 w-4" />
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-primary text-[11px] font-bold">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </Button>
               }
-            ></PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-3 space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  Status
-                </label>
-                <div className="flex flex-col gap-1">
-                  {["Todos", "Ativo", "Inativo"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setStatusFilter(s)}
-                      className={`rounded-lg px-3 py-1.5 text-sm text-left transition-colors ${statusFilter === s ? "bg-secondary text-secondary-foreground" : "hover:bg-accent"}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+            />
+            <PopoverContent align="end" className="w-80 p-4 space-y-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <span className="font-semibold text-sm">Filtros de Usuários</span>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  Escopo
-                </label>
-                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
-                  <button
-                    onClick={() => setGroupFilter("Todos")}
-                    className={`rounded-lg px-3 py-1.5 text-sm text-left transition-colors ${groupFilter === "Todos" ? "bg-secondary text-secondary-foreground" : "hover:bg-accent"}`}
+
+              {/* Status */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                  Status
+                </Label>
+                <div className="grid grid-cols-3 gap-1">
+                  <Button
+                    type="button"
+                    variant={statusFilter === "Todos" ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setStatusFilter("Todos")}
                   >
                     Todos
-                  </button>
-                  {groups.map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => setGroupFilter(g.name)}
-                      className={`rounded-lg px-3 py-1.5 text-sm text-left transition-colors ${groupFilter === g.name ? "bg-secondary text-secondary-foreground" : "hover:bg-accent"}`}
-                    >
-                      {g.name}
-                    </button>
-                  ))}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={statusFilter === "Ativo" ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs text-emerald-600 dark:text-emerald-400"
+                    onClick={() => setStatusFilter("Ativo")}
+                  >
+                    Ativo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={statusFilter === "Inativo" ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs text-muted-foreground"
+                    onClick={() => setStatusFilter("Inativo")}
+                  >
+                    Inativo
+                  </Button>
                 </div>
+              </div>
+
+              {/* Grupo de Acesso */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                  Grupo de Acesso
+                </Label>
+                <select
+                  value={groupFilter}
+                  onChange={(e) => setGroupFilter(e.target.value)}
+                  className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                >
+                  <option value="Todos">Todos os grupos</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.name}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="w-full text-xs font-medium"
+                  onClick={clearAllFilters}
+                  disabled={activeFiltersCount === 0}
+                >
+                  Limpar dados
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
@@ -183,6 +230,38 @@ export function UsersDataTable({
           <Plus className="mr-1 h-4 w-4" /> Adicionar
         </Button>
       </div>
+
+      {/* Badges de Filtros Ativos */}
+      {activeFiltersCount > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">Filtros ativos:</span>
+          {statusFilter !== "Todos" && (
+            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+              Status: {statusFilter}
+              <button
+                type="button"
+                onClick={() => setStatusFilter("Todos")}
+                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
+          {groupFilter !== "Todos" && (
+            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+              Grupo: {groupFilter}
+              <button
+                type="button"
+                onClick={() => setGroupFilter("Todos")}
+                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       <Card className="border-border/70 p-0">
         <CardContent className="p-0">

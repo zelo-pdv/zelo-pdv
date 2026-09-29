@@ -12,11 +12,19 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, ListFilter, Plus, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -48,6 +56,7 @@ export function ClientsDataTable({
   const [pendingFilter, setPendingFilter] = useState("Todos");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const table = useReactTable({
     data,
@@ -93,7 +102,14 @@ export function ClientsDataTable({
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
 
-  const isFilterActive = activeFilter !== "Todos" || pendingFilter !== "Todos";
+  const activeFiltersCount =
+    (activeFilter !== "Todos" ? 1 : 0) + (pendingFilter !== "Todos" ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setActiveFilter("Todos");
+    setPendingFilter("Todos");
+    setGlobalFilter("");
+  };
 
   return (
     <div>
@@ -111,102 +127,113 @@ export function ClientsDataTable({
               className="rounded-xl pl-9"
             />
           </div>
-          <Popover>
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger
               render={
                 <Button
-                  variant={isFilterActive ? "default" : "outline"}
-                  size="icon"
-                  className="rounded-xl shrink-0"
-                  aria-label="Filtrar clientes"
+                  variant={activeFiltersCount > 0 ? "default" : "outline"}
+                  className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
+                  aria-label="Abrir filtros"
                 >
-                  <ListFilter className="h-4 w-4" />
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-primary text-[11px] font-bold">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </Button>
               }
-            ></PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-2 space-y-2">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+            />
+            <PopoverContent align="end" className="w-80 p-4 space-y-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <span className="font-semibold text-sm">Filtros de Clientes</span>
+              </div>
+
+              {/* Status de Cadastro */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                   Status de Cadastro
-                </p>
-                <div className="flex flex-col gap-0.5">
+                </Label>
+                <div className="grid grid-cols-3 gap-1">
                   <Button
-                    variant={activeFilter === "Todos" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={activeFilter === "Todos" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs"
+                    className="h-8 text-xs"
                     onClick={() => setActiveFilter("Todos")}
                   >
-                    Todos os status
+                    Todos
                   </Button>
                   <Button
-                    variant={activeFilter === "Ativos" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={activeFilter === "Ativos" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs text-emerald-600 dark:text-emerald-400"
+                    className="h-8 text-xs text-emerald-600 dark:text-emerald-400"
                     onClick={() => setActiveFilter("Ativos")}
                   >
-                    Apenas ativos
+                    Ativos
                   </Button>
                   <Button
-                    variant={activeFilter === "Inativos" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={activeFilter === "Inativos" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs text-muted-foreground"
+                    className="h-8 text-xs text-muted-foreground"
                     onClick={() => setActiveFilter("Inativos")}
                   >
-                    Apenas inativos
+                    Inativos
                   </Button>
                 </div>
               </div>
 
-              <Separator />
-
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+              {/* Pendências Financeiras */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                   Pendências Financeiras
-                </p>
-                <div className="flex flex-col gap-0.5">
+                </Label>
+                <div className="grid grid-cols-3 gap-1">
                   <Button
-                    variant={pendingFilter === "Todos" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={pendingFilter === "Todos" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs"
+                    className="h-8 text-xs"
                     onClick={() => setPendingFilter("Todos")}
                   >
-                    Todas as situações
+                    Todas
                   </Button>
                   <Button
-                    variant={pendingFilter === "Pendentes" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={pendingFilter === "Pendentes" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs text-amber-600 dark:text-amber-400"
+                    className="h-8 text-xs text-amber-600 dark:text-amber-400"
                     onClick={() => setPendingFilter("Pendentes")}
                   >
-                    Com pendências
+                    Pendentes
                   </Button>
                   <Button
-                    variant={pendingFilter === "Pagos" ? "secondary" : "ghost"}
+                    type="button"
+                    variant={pendingFilter === "Pagos" ? "default" : "outline"}
                     size="sm"
-                    className="justify-start h-8 text-xs"
+                    className="h-8 text-xs text-muted-foreground"
                     onClick={() => setPendingFilter("Pagos")}
                   >
-                    Sem pendências
+                    Em dia
                   </Button>
                 </div>
               </div>
 
-              {isFilterActive && (
-                <>
-                  <Separator />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
-                    onClick={() => {
-                      setActiveFilter("Todos");
-                      setPendingFilter("Todos");
-                    }}
-                  >
-                    Limpar filtros
-                  </Button>
-                </>
-              )}
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="w-full text-xs font-medium"
+                  onClick={clearAllFilters}
+                  disabled={activeFiltersCount === 0}
+                >
+                  Limpar dados
+                </Button>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
@@ -232,6 +259,38 @@ export function ClientsDataTable({
           )}
         </div>
       </div>
+
+      {/* Badges de Filtros Ativos */}
+      {activeFiltersCount > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">Filtros ativos:</span>
+          {activeFilter !== "Todos" && (
+            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+              Status: {activeFilter}
+              <button
+                type="button"
+                onClick={() => setActiveFilter("Todos")}
+                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
+          {pendingFilter !== "Todos" && (
+            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+              Pendência: {pendingFilter === "Pendentes" ? "Com pendências" : "Sem pendências"}
+              <button
+                type="button"
+                onClick={() => setPendingFilter("Todos")}
+                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       <Card className="border-border/70 p-0">
         <CardContent className="p-0">
