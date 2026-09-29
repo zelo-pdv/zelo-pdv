@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 // [GET] /api/clients/[id] - Busca um cliente específico
 export async function GET(
@@ -43,7 +44,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, phone, email, notes, address } = body;
+    const { name, phone, email, notes, address, active } = body;
 
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -52,13 +53,37 @@ export async function PATCH(
     const existingClient = await prisma.client.findUnique({ where: { id, lojaId: user.lojaId } });
     if (!existingClient) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
+    // Validação de unicidade cruzada de e-mail e telefone
+    if (email !== undefined && email !== null && email.trim() !== "") {
+      const emailConflict = await checkEmailConflict({
+        email,
+        lojaId: user.lojaId,
+        excludeClientId: id,
+      });
+      if (emailConflict) {
+        return NextResponse.json({ error: emailConflict }, { status: 400 });
+      }
+    }
+
+    if (phone !== undefined && phone !== null && phone.trim() !== "") {
+      const phoneConflict = await checkPhoneConflict({
+        phone,
+        lojaId: user.lojaId,
+        excludeClientId: id,
+      });
+      if (phoneConflict) {
+        return NextResponse.json({ error: phoneConflict }, { status: 400 });
+      }
+    }
+
     const updatedClient = await prisma.client.update({
       where: { id },
       data: {
-        name,
-        phone,
-        email,
-        notes,
+        ...(name !== undefined ? { name } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+        ...(email !== undefined ? { email: email && email.trim() !== "" ? email.trim() : null } : {}),
+        ...(notes !== undefined ? { notes } : {}),
+        ...(active !== undefined ? { active: Boolean(active) } : {}),
         // Como o relacionamento é de lista (to-many), usamos deleteMany + create
         // para substituir o endereço antigo pelo novo com segurança.
         address: address

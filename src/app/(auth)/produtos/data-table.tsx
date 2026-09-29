@@ -35,6 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { isProductLowStock, ProductFrontend } from "./columns";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -57,6 +58,7 @@ export function ProductsDataTable({
     hideCostPrice: false,
   };
   const [globalFilter, setGlobalFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Todos");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
@@ -89,13 +91,21 @@ export function ProductsDataTable({
     (table.getColumn("category")?.getFilterValue() as string) ?? "Todas";
 
   useEffect(() => {
+    table
+      .getColumn("active")
+      ?.setFilterValue(statusFilter === "Todos" ? undefined : statusFilter);
+  }, [statusFilter, table]);
+
+  useEffect(() => {
     table.setPageIndex(0);
-  }, [globalFilter, categoryFilter, table]);
+  }, [globalFilter, categoryFilter, statusFilter, table]);
 
   const rows = table.getRowModel().rows;
   const totalFiltered = table.getFilteredRowModel().rows.length;
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
+
+  const isFilterActive = categoryFilter !== "Todas" || statusFilter !== "Todos";
 
   return (
     <div>
@@ -118,41 +128,97 @@ export function ProductsDataTable({
             <PopoverTrigger
               render={
                 <Button
-                  variant={categoryFilter !== "Todas" ? "default" : "outline"}
+                  variant={isFilterActive ? "default" : "outline"}
                   size="icon"
                   className="rounded-xl shrink-0"
-                  aria-label="Filtrar categorias"
+                  aria-label="Filtrar produtos"
                 >
                   <ListFilter className="h-4 w-4" />
                 </Button>
               }
             ></PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-1">
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  variant={categoryFilter === "Todas" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="justify-start h-8"
-                  onClick={() =>
-                    table.getColumn("category")?.setFilterValue(undefined)
-                  }
-                >
-                  Todas as categorias
-                </Button>
-                {categories.map((c) => (
+            <PopoverContent align="end" className="w-56 p-2 space-y-2">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                  Status de Cadastro
+                </p>
+                <div className="flex flex-col gap-0.5">
                   <Button
-                    key={c}
-                    variant={categoryFilter === c ? "secondary" : "ghost"}
+                    variant={statusFilter === "Todos" ? "secondary" : "ghost"}
                     size="sm"
-                    className="justify-start h-8"
+                    className="justify-start h-8 text-xs"
+                    onClick={() => setStatusFilter("Todos")}
+                  >
+                    Todos os status
+                  </Button>
+                  <Button
+                    variant={statusFilter === "Ativos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs text-emerald-600 dark:text-emerald-400"
+                    onClick={() => setStatusFilter("Ativos")}
+                  >
+                    Apenas ativos
+                  </Button>
+                  <Button
+                    variant={statusFilter === "Inativos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs text-muted-foreground"
+                    onClick={() => setStatusFilter("Inativos")}
+                  >
+                    Apenas inativos
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                  Categorias
+                </p>
+                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                  <Button
+                    variant={categoryFilter === "Todas" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs"
                     onClick={() =>
-                      table.getColumn("category")?.setFilterValue(c)
+                      table.getColumn("category")?.setFilterValue(undefined)
                     }
                   >
-                    {c}
+                    Todas as categorias
                   </Button>
-                ))}
+                  {categories.map((c) => (
+                    <Button
+                      key={c}
+                      variant={categoryFilter === c ? "secondary" : "ghost"}
+                      size="sm"
+                      className="justify-start h-8 text-xs"
+                      onClick={() =>
+                        table.getColumn("category")?.setFilterValue(c)
+                      }
+                    >
+                      {c}
+                    </Button>
+                  ))}
+                </div>
               </div>
+
+              {isFilterActive && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
+                    onClick={() => {
+                      setStatusFilter("Todos");
+                      table.getColumn("category")?.setFilterValue(undefined);
+                    }}
+                  >
+                    Limpar filtros
+                  </Button>
+                </>
+              )}
             </PopoverContent>
           </Popover>
         </div>

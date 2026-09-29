@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { currency } from "@/lib/format";
@@ -15,6 +15,7 @@ export type ClientActions = {
   onView: (c: ClientWithAddress) => void;
   onEdit: (c: ClientWithAddress) => void;
   onDelete: (c: ClientWithAddress) => void;
+  onToggleActive: (c: ClientWithAddress) => void;
   can: (module: "clientes", action: "Visualizar" | "Adicionar" | "Editar" | "Excluir") => boolean;
 };
 
@@ -22,6 +23,7 @@ export function getClientColumns({
   onView,
   onEdit,
   onDelete,
+  onToggleActive,
   can,
 }: ClientActions): ColumnDef<ClientTableData>[] {
   return [
@@ -30,9 +32,20 @@ export function getClientColumns({
       header: "Cliente",
       cell: ({ row }) => {
         const c = row.original;
+        const active = c.active ?? true;
         return (
           <div className="min-w-0 max-w-[calc(100vw-130px)] sm:max-w-none">
-            <div className="truncate text-sm font-medium">{c.name}</div>
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="truncate text-sm font-medium">{c.name}</span>
+              {!active && (
+                <Badge
+                  variant="outline"
+                  className="h-4 border-muted-foreground/40 px-1 text-[10px] text-muted-foreground shrink-0"
+                >
+                  Inativo
+                </Badge>
+              )}
+            </div>
             <div className="truncate text-xs text-muted-foreground">
               {maskPhone(c.phone)}
             </div>
@@ -50,6 +63,34 @@ export function getClientColumns({
                 </Badge>
               )}
             </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "active",
+      header: "Status",
+      filterFn: (row, _id, value) => {
+        if (value === "Todos" || !value) return true;
+        const active = row.original.active ?? true;
+        if (value === "Ativos") return active === true;
+        if (value === "Inativos") return active === false;
+        return true;
+      },
+      cell: ({ row }) => {
+        const active = row.original.active ?? true;
+        return (
+          <div className="hidden sm:block">
+            <Badge
+              variant="outline"
+              className={
+                active
+                  ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10 text-xs"
+                  : "border-muted-foreground/40 text-muted-foreground bg-muted/40 text-xs"
+              }
+            >
+              {active ? "Ativo" : "Inativo"}
+            </Badge>
           </div>
         );
       },
@@ -96,6 +137,7 @@ export function getClientColumns({
       enableHiding: false,
       cell: ({ row }) => {
         const c = row.original;
+        const active = c.active ?? true;
         return (
           <div className="flex justify-end gap-1">
             <Button
@@ -104,19 +146,37 @@ export function getClientColumns({
               className="h-8 w-8"
               onClick={() => onView(c)}
               aria-label="Ver detalhes"
+              title="Ver detalhes"
             >
               <Eye className="h-4 w-4" />
             </Button>
             {can("clientes", "Editar") && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8"
-                onClick={() => onEdit(c)}
-                aria-label="Editar"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={
+                    !active
+                      ? "h-8 w-8 text-emerald-600 hover:text-emerald-700"
+                      : "h-8 w-8 text-muted-foreground hover:text-foreground"
+                  }
+                  onClick={() => onToggleActive(c)}
+                  aria-label={!active ? "Ativar cliente" : "Desativar cliente"}
+                  title={!active ? "Ativar cliente" : "Desativar cliente"}
+                >
+                  <Power className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => onEdit(c)}
+                  aria-label="Editar"
+                  title="Editar cliente"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </>
             )}
             {can("clientes", "Excluir") && (
               <Button
@@ -125,6 +185,7 @@ export function getClientColumns({
                 className="h-8 w-8 text-destructive"
                 onClick={() => onDelete(c)}
                 aria-label="Excluir"
+                title="Excluir cliente"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

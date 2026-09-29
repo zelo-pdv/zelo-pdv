@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 // [GET] /api/clients - Lista todos os clientes com seus endereços
 export async function GET() {
@@ -44,12 +45,34 @@ export async function POST(req: NextRequest) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
+    // Validação de unicidade de e-mail e telefone cruzada (clientes e usuários)
+    if (email && email.trim() !== "") {
+      const emailConflict = await checkEmailConflict({
+        email,
+        lojaId: user.lojaId,
+      });
+      if (emailConflict) {
+        return NextResponse.json({ error: emailConflict }, { status: 400 });
+      }
+    }
+
+    if (phone && phone.trim() !== "") {
+      const phoneConflict = await checkPhoneConflict({
+        phone,
+        lojaId: user.lojaId,
+      });
+      if (phoneConflict) {
+        return NextResponse.json({ error: phoneConflict }, { status: 400 });
+      }
+    }
+
     const newClient = await prisma.client.create({
       data: {
         name,
         phone,
-        email,
+        email: email && email.trim() !== "" ? email.trim() : null,
         notes,
+        active: body.active !== undefined ? Boolean(body.active) : true,
         lojaId: user.lojaId,
         address: address
           ? {

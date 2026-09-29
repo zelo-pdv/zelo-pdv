@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 const userSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+  phone: z.string().optional().nullable(),
   groupId: z.string().min(1, "Grupo é obrigatório"),
   active: z.boolean().default(true),
 });
@@ -40,15 +42,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = userSchema.parse(body);
 
-    const emailExists = await prisma.user.findUnique({
-      where: { email: data.email },
+    // Validação cruzada de unicidade de e-mail
+    const emailConflict = await checkEmailConflict({
+      email: data.email,
+      lojaId: currentUser.lojaId,
     });
+    if (emailConflict) {
+      return NextResponse.json({ error: emailConflict }, { status: 400 });
+    }
 
-    if (emailExists) {
-      return NextResponse.json(
-        { error: "Já existe um usuário com este e-mail" },
-        { status: 400 },
-      );
+    // Validação cruzada de unicidade de telefone
+    if (data.phone && data.phone.trim() !== "") {
+      const phoneConflict = await checkPhoneConflict({
+        phone: data.phone,
+        lojaId: currentUser.lojaId,
+      });
+      if (phoneConflict) {
+        return NextResponse.json({ error: phoneConflict }, { status: 400 });
+      }
     }
 
     const hashedPassword = await hash(data.password, 10);
@@ -56,7 +67,8 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: {
         name: data.name,
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone ? data.phone.trim() : null,
         password: hashedPassword,
         groupId: data.groupId,
         active: data.active,

@@ -14,6 +14,16 @@ import {
   ShoppingCart,
   LayoutDashboard,
   Package,
+  Download,
+  Upload,
+  FileSpreadsheet,
+  FileDown,
+  FileUp,
+  AlertCircle,
+  CheckCircle2,
+  Users,
+  UserCheck,
+  Coins,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -78,6 +88,11 @@ import {
 import { categoriesService } from "@/services/categories.service";
 import { unitsService, Unit, UnitFormData } from "@/services/units.service";
 import { usersService } from "@/services/users.service";
+import { clientsService } from "@/services/clients.service";
+import { productsService } from "@/services/products.service";
+import { salesService } from "@/services/sales.service";
+import { currency, dateTime } from "@/lib/format";
+import { notifyLocalSync } from "@/hooks/use-data-sync";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 
 export default function ConfiguracoesPage() {
@@ -89,6 +104,7 @@ export default function ConfiguracoesPage() {
       <DashboardConfigSection />
       <ProductsConfigSection />
       <GroupsSection />
+      <DataImportExportSection />
     </div>
   );
 }
@@ -361,7 +377,7 @@ function StoreSection() {
               onChange={(e) =>
                 update("phone", maskPhone(e.target.value))
               }
-              placeholder="(79) 98859-9091"
+              placeholder="(00) 00000-0000 "
               maxLength={15}
             />
           </div>
@@ -540,21 +556,12 @@ function NotificationsSection() {
     (s) => s.setNotificationSettings,
   );
 
-  const handleToggleEnableToasts = (checked: boolean) => {
-    setNotificationSettings({ enableToasts: checked });
-    if (checked) {
-      toast.success("Notificações em toast ativadas");
-    }
-  };
-
   const handleToggleOutOfStockWarning = (checked: boolean) => {
     setNotificationSettings({ outOfStockWarning: checked });
-    if (notifications.enableToasts) {
-      if (checked) {
-        toast.success("Avisos de estoque insuficiente ativados");
-      } else {
-        toast.info("Avisos de estoque insuficiente desativados");
-      }
+    if (checked) {
+      toast.success("Avisos de estoque insuficiente ativados");
+    } else {
+      toast.info("Avisos de estoque insuficiente desativados");
     }
   };
 
@@ -572,7 +579,7 @@ function NotificationsSection() {
             <CardTitle className="text-base font-semibold">Notificações e Avisos</CardTitle>
             {!isExpanded && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
-                • Toasts {notifications.enableToasts ? "ativados" : "desativados"}
+                • Aviso sem estoque: {notifications.outOfStockWarning ? "ativado" : "desativado"}
               </span>
             )}
           </div>
@@ -589,31 +596,11 @@ function NotificationsSection() {
       </CardHeader>
       {isExpanded && (
         <CardContent className="space-y-4 pt-0 animate-in fade-in-50 duration-150">
-          {/* Toggle Global de Notificações / Toasts */}
-          <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
-            <div className="space-y-0.5 pr-4">
-              <Label
-                className="text-sm font-medium cursor-pointer"
-                htmlFor="toggle-toasts"
-              >
-                Notificações do sistema (Toasts)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Ativa ou desativa os alertas visuais em toast exibidos no sistema.
-              </p>
-            </div>
-            <Switch
-              id="toggle-toasts"
-              checked={notifications.enableToasts}
-              onCheckedChange={handleToggleEnableToasts}
-            />
-          </div>
-
           {/* Toggle Específico para Produtos Sem Estoque */}
           <div
             className={cn(
               "flex items-center justify-between rounded-xl border border-border/70 p-4 transition-opacity",
-              (!notifications.enableToasts || !trackStock) && "opacity-50 pointer-events-none",
+              !trackStock && "opacity-50 pointer-events-none",
             )}
           >
             <div className="space-y-0.5 pr-4">
@@ -631,10 +618,8 @@ function NotificationsSection() {
             </div>
             <Switch
               id="toggle-stock-warning"
-              disabled={!notifications.enableToasts || !trackStock}
-              checked={
-                notifications.enableToasts && trackStock && notifications.outOfStockWarning
-              }
+              disabled={!trackStock}
+              checked={trackStock && notifications.outOfStockWarning}
               onCheckedChange={handleToggleOutOfStockWarning}
             />
           </div>
@@ -2125,3 +2110,831 @@ function ProductsConfigSection() {
     </Card>
   );
 }
+
+function DataImportExportSection() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [exportingType, setExportingType] = useState<string | null>(null);
+
+  // Modal de importação
+  const [importModalType, setImportModalType] = useState<"products" | "clients" | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [parsedRows, setParsedRows] = useState<Record<string, string>[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    importedCount: number;
+    errors: string[];
+  } | null>(null);
+
+  // Helper para download de CSV com UTF-8 BOM e delimitador ;
+  const downloadCsv = (
+    filename: string,
+    headers: string[],
+    rows: (string | number | null | undefined)[][],
+  ) => {
+    const csvContent =
+      "\uFEFF" +
+      [
+        headers.join(";"),
+        ...rows.map((row) =>
+          row
+            .map((cell) => {
+              const str = cell === null || cell === undefined ? "" : String(cell);
+              return `"${str.replace(/"/g, '""')}"`;
+            })
+            .join(";"),
+        ),
+      ].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Helper para parser de CSV client-side
+  const parseCsv = (text: string): Record<string, string>[] => {
+    const cleanText = text.replace(/^\uFEFF/, "").trim();
+    if (!cleanText) return [];
+
+    const lines = cleanText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length < 2) return [];
+
+    const firstLine = lines[0];
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const delimiter = semicolonCount >= commaCount ? ";" : ",";
+
+    const parseLine = (line: string): string[] => {
+      const result: string[] = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === delimiter && !inQuotes) {
+          result.push(cur.trim());
+          cur = "";
+        } else {
+          cur += char;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    };
+
+    const headers = parseLine(lines[0]).map((h) =>
+      h.replace(/^["']|["']$/g, "").trim(),
+    );
+
+    const records: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseLine(lines[i]);
+      const obj: Record<string, string> = {};
+      headers.forEach((h, idx) => {
+        let val = values[idx] ?? "";
+        val = val.replace(/^["']|["']$/g, "").trim();
+        obj[h] = val;
+      });
+      records.push(obj);
+    }
+    return records;
+  };
+
+  // 1. Exportações
+  const handleExportClients = async () => {
+    try {
+      setExportingType("clients");
+      const clients = await clientsService.list();
+      if (!clients || clients.length === 0) {
+        toast.warning("Nenhum cliente cadastrado para exportar.");
+        return;
+      }
+
+      const headers = [
+        "Nome",
+        "Telefone",
+        "E-mail",
+        "Status",
+        "CEP",
+        "Logradouro",
+        "Número",
+        "Complemento",
+        "Bairro",
+        "Cidade",
+        "UF",
+        "Observações",
+        "Cadastrado em",
+      ];
+
+      const rows = clients.map((c) => {
+        const addr = Array.isArray(c.address) ? c.address[0] : c.address;
+        return [
+          c.name,
+          maskPhone(c.phone),
+          c.email || "",
+          c.active ? "Ativo" : "Inativo",
+          addr?.zipCode || "",
+          addr?.street || "",
+          addr?.number || "",
+          addr?.complement || "",
+          addr?.neighborhood || "",
+          addr?.city || "",
+          addr?.state || "",
+          c.notes || "",
+          c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "",
+        ];
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(`clientes_zelo_${today}.csv`, headers, rows);
+      toast.success(`${clients.length} cliente(s) exportado(s) com sucesso!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao exportar clientes.");
+    } finally {
+      setExportingType(null);
+    }
+  };
+
+  const handleExportUsers = async () => {
+    try {
+      setExportingType("users");
+      const users = await usersService.list();
+      if (!users || users.length === 0) {
+        toast.warning("Nenhum usuário cadastrado para exportar.");
+        return;
+      }
+
+      const headers = [
+        "Nome",
+        "E-mail",
+        "Telefone",
+        "Grupo de Acesso",
+        "Status",
+        "Cadastrado em",
+      ];
+
+      const rows = users.map((u: any) => [
+        u.name,
+        u.email,
+        maskPhone(u.phone),
+        u.group?.name || "Sem grupo",
+        u.active ? "Ativo" : "Inativo",
+        u.createdAt ? new Date(u.createdAt).toLocaleDateString("pt-BR") : "",
+      ]);
+
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(`usuarios_zelo_${today}.csv`, headers, rows);
+      toast.success(`${users.length} usuário(s) exportado(s) com sucesso!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao exportar usuários.");
+    } finally {
+      setExportingType(null);
+    }
+  };
+
+  const handleExportProducts = async () => {
+    try {
+      setExportingType("products");
+      const products = await productsService.list();
+      if (!products || products.length === 0) {
+        toast.warning("Nenhum produto cadastrado para exportar.");
+        return;
+      }
+
+      const headers = [
+        "Nome",
+        "Categoria",
+        "Unidade",
+        "Preço de Venda",
+        "Preço de Custo",
+        "Estoque",
+        "Estoque Mínimo",
+        "Código Interno",
+        "Código de Barras",
+        "Status",
+        "Descrição",
+      ];
+
+      const rows = products.map((p: any) => [
+        p.name,
+        p.category?.name || "Geral",
+        p.unit || "UN",
+        currency(p.salePrice),
+        currency(p.costPrice),
+        Number(p.stock ?? 0),
+        Number(p.minStock ?? 0),
+        p.code || "",
+        p.barcode || "",
+        p.active ? "Ativo" : "Inativo",
+        p.description || "",
+      ]);
+
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(`produtos_zelo_${today}.csv`, headers, rows);
+      toast.success(`${products.length} produto(s) exportado(s) com sucesso!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao exportar produtos.");
+    } finally {
+      setExportingType(null);
+    }
+  };
+
+  const handleExportSales = async () => {
+    try {
+      setExportingType("sales");
+      const sales = await salesService.list();
+      if (!sales || sales.length === 0) {
+        toast.warning("Nenhuma venda cadastrada para exportar.");
+        return;
+      }
+
+      const headers = [
+        "Número da Venda",
+        "Data e Hora",
+        "Cliente",
+        "Forma de Pagamento",
+        "Status",
+        "Desconto",
+        "Total",
+      ];
+
+      const rows = sales.map((s: any) => [
+        s.saleNumber ? String(s.saleNumber) : s.id,
+        dateTime(s.date),
+        s.clientName || "Consumidor Final",
+        PAYMENT_LABELS[s.paymentMethod as PaymentMethod] || s.paymentMethod,
+        s.status === "PAGO" ? "Pago" : "Pendente",
+        s.discount ? currency(s.discount) : "R$ 0,00",
+        currency(s.total),
+      ]);
+
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(`vendas_zelo_${today}.csv`, headers, rows);
+      toast.success(`${sales.length} venda(s) exportada(s) com sucesso!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao exportar vendas.");
+    } finally {
+      setExportingType(null);
+    }
+  };
+
+  // 2. Modelos de Importação
+  const handleDownloadProductTemplate = () => {
+    const headers = [
+      "Nome",
+      "Categoria",
+      "Unidade",
+      "Preço de Venda",
+      "Preço de Custo",
+      "Estoque",
+      "Estoque Mínimo",
+      "Código Interno",
+      "Código de Barras",
+      "Descrição",
+    ];
+
+    const sampleRows = [
+      [
+        "Coca-Cola 2L",
+        "Bebidas",
+        "UN",
+        "10,50",
+        "7,00",
+        "50",
+        "10",
+        "001",
+        "7891234567890",
+        "Refrigerante de cola garrafa 2L",
+      ],
+      [
+        "Arroz Tipo 1 5kg",
+        "Alimentos",
+        "UN",
+        "28,90",
+        "21,00",
+        "30",
+        "5",
+        "002",
+        "7899876543210",
+        "Arroz branco agulhinha",
+      ],
+      [
+        "Detergente 500ml",
+        "Limpeza",
+        "UN",
+        "2,80",
+        "1,60",
+        "100",
+        "15",
+        "003",
+        "7891112223334",
+        "Detergente líquido neutro",
+      ],
+    ];
+
+    downloadCsv("modelo_importacao_produtos.csv", headers, sampleRows);
+    toast.success("Modelo de produtos baixado com sucesso!");
+  };
+
+  const handleDownloadClientTemplate = () => {
+    const headers = [
+      "Nome",
+      "Telefone",
+      "E-mail",
+      "CEP",
+      "Logradouro",
+      "Número",
+      "Complemento",
+      "Bairro",
+      "Cidade",
+      "UF",
+      "Observações",
+    ];
+
+    const sampleRows = [
+      [
+        "Maria Silva",
+        "(79) 99999-8888",
+        "maria.silva@exemplo.com",
+        "49000-000",
+        "Rua das Flores",
+        "123",
+        "Apto 101",
+        "Centro",
+        "Aracaju",
+        "SE",
+        "Cliente VIP",
+      ],
+      [
+        "João Santos",
+        "(79) 98888-7777",
+        "joao.santos@exemplo.com",
+        "49000-100",
+        "Av. Principal",
+        "456",
+        "",
+        "Jardins",
+        "Aracaju",
+        "SE",
+        "Prefere contato via WhatsApp",
+      ],
+    ];
+
+    downloadCsv("modelo_importacao_clientes.csv", headers, sampleRows);
+    toast.success("Modelo de clientes baixado com sucesso!");
+  };
+
+  // 3. Processamento de Importação
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFile(file);
+    setImportResult(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const parsed = parseCsv(text);
+      if (parsed.length === 0) {
+        toast.error("O arquivo selecionado está vazio ou não possui registros válidos.");
+        setParsedRows([]);
+        return;
+      }
+      setParsedRows(parsed);
+      toast.info(`${parsed.length} linha(s) identificada(s) no arquivo.`);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleStartImport = async () => {
+    if (!importModalType || parsedRows.length === 0) return;
+
+    setIsImporting(true);
+    setImportResult(null);
+
+    try {
+      const endpoint =
+        importModalType === "products"
+          ? "/api/import/products"
+          : "/api/import/clients";
+
+      const payload =
+        importModalType === "products"
+          ? { products: parsedRows }
+          : { clients: parsedRows };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao processar importação.");
+      }
+
+      setImportResult({
+        importedCount: data.importedCount,
+        errors: data.errors || [],
+      });
+
+      if (data.importedCount > 0) {
+        notifyLocalSync(importModalType === "products" ? "products" : "clients");
+      }
+
+      if (data.errors && data.errors.length > 0) {
+        toast.warning(
+          `${data.importedCount} registro(s) importado(s), mas ${data.errors.length} linha(s) tiveram erro.`,
+        );
+      } else {
+        toast.success(
+          `Todos os ${data.importedCount} registro(s) foram importados com sucesso!`,
+        );
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Erro durante a importação.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const closeImportModal = () => {
+    setImportModalType(null);
+    setImportFile(null);
+    setParsedRows([]);
+    setImportResult(null);
+  };
+
+  return (
+    <>
+      <Card className="mb-4">
+        <CardHeader className="py-4">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="flex w-full items-center justify-between text-left cursor-pointer group hover:opacity-80 transition-opacity"
+            aria-expanded={isExpanded}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+              <CardTitle className="text-base font-semibold">
+                Importação e Exportação de Dados
+              </CardTitle>
+              {!isExpanded && (
+                <span className="hidden sm:inline text-xs text-muted-foreground">
+                  • Exportar dados e importar via planilhas CSV
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
+              <span>{isExpanded ? "Minimizar" : "Gerenciar"}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isExpanded && "rotate-180",
+                )}
+              />
+            </div>
+          </button>
+        </CardHeader>
+
+        {isExpanded && (
+          <CardContent className="space-y-6 pt-0 animate-in fade-in-50 duration-150">
+            {/* Bloco 1: Exportação de Dados */}
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Download className="h-4 w-4 text-primary" />
+                  Exportação de Dados
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Baixe planilhas completas em formato CSV com compatibilidade
+                  direta com Excel e Google Planilhas.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Clientes */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Clientes</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Nomes, telefones, e-mails, endereços e status.
+                    </p>
+                  </div>
+                  <LoadingButton
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-medium gap-1.5"
+                    onClick={handleExportClients}
+                    loading={exportingType === "clients"}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar Clientes (.csv)
+                  </LoadingButton>
+                </div>
+
+                {/* Usuários */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Usuários</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Contas de acesso, grupos de permissão e contatos.
+                    </p>
+                  </div>
+                  <LoadingButton
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-medium gap-1.5"
+                    onClick={handleExportUsers}
+                    loading={exportingType === "users"}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar Usuários (.csv)
+                  </LoadingButton>
+                </div>
+
+                {/* Produtos */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Produtos</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Preços, estoques, categorias e códigos de barra.
+                    </p>
+                  </div>
+                  <LoadingButton
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-medium gap-1.5"
+                    onClick={handleExportProducts}
+                    loading={exportingType === "products"}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar Produtos (.csv)
+                  </LoadingButton>
+                </div>
+
+                {/* Vendas */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Coins className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Vendas</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Histórico com número, data, cliente, forma e total.
+                    </p>
+                  </div>
+                  <LoadingButton
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-medium gap-1.5"
+                    onClick={handleExportSales}
+                    loading={exportingType === "sales"}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar Vendas (.csv)
+                  </LoadingButton>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Bloco 2: Importação de Dados */}
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Upload className="h-4 w-4 text-primary" />
+                  Importação de Dados
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Cadastre dados em massa baixando o modelo .csv, preenchendo as
+                  linhas e importando de volta para a sua conta.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Importação de Produtos */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-4 bg-card/50 space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold">Produtos</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Importe o catálogo de produtos com categoria, estoque,
+                      unidade e preços de custo e venda.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs font-medium gap-1.5 flex-1"
+                      onClick={handleDownloadProductTemplate}
+                    >
+                      <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      Baixar Modelo (.csv)
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="text-xs font-medium gap-1.5 flex-1"
+                      onClick={() => setImportModalType("products")}
+                    >
+                      <FileUp className="h-3.5 w-3.5" />
+                      Importar Produtos
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Importação de Clientes */}
+                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-4 bg-card/50 space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold">Clientes</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Importe a base de clientes com validação rigorosa de
+                      unicidade de telefone e e-mail.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs font-medium gap-1.5 flex-1"
+                      onClick={handleDownloadClientTemplate}
+                    >
+                      <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      Baixar Modelo (.csv)
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="text-xs font-medium gap-1.5 flex-1"
+                      onClick={() => setImportModalType("clients")}
+                    >
+                      <FileUp className="h-3.5 w-3.5" />
+                      Importar Clientes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Modal de Importação com Upload e Pré-visualização */}
+      {importModalType && (
+        <Dialog open={true} onOpenChange={(open) => !open && closeImportModal()}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-base flex items-center gap-2">
+                <FileUp className="h-5 w-5 text-primary" />
+                Importar {importModalType === "products" ? "Produtos" : "Clientes"}{" "}
+                via CSV
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold text-foreground">Instruções:</p>
+                <p>
+                  1. Utilize o modelo oficial .csv disponibilizado nas
+                  configurações para evitar divergências.
+                </p>
+                <p>
+                  2. O arquivo deve conter cabeçalho com os nomes das colunas e
+                  delimitador ponto e vírgula (;) ou vírgula (,).
+                </p>
+                {importModalType === "clients" && (
+                  <p className="text-amber-600 dark:text-amber-400 font-medium">
+                    Aviso: E-mails e telefones são validados de forma única no
+                    sistema. Se já existirem, a respectiva linha será rejeitada.
+                  </p>
+                )}
+              </div>
+
+              {/* Input de Arquivo */}
+              <div className="space-y-2">
+                <Label htmlFor="csv-file-input">Selecione o arquivo .csv</Label>
+                <Input
+                  id="csv-file-input"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  disabled={isImporting}
+                  className="cursor-pointer"
+                />
+              </div>
+
+              {/* Resumo do Arquivo Pré-carregado */}
+              {importFile && parsedRows.length > 0 && !importResult && (
+                <div className="rounded-xl border border-border/80 p-3 space-y-2 bg-card">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground truncate max-w-62.5">
+                      {importFile.name}
+                    </span>
+                    <Badge variant="outline" className="text-primary text-[10px]">
+                      {parsedRows.length} registro(s) encontrado(s)
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Colunas detectadas:{" "}
+                    {Object.keys(parsedRows[0] || {}).join(", ")}
+                  </div>
+                </div>
+              )}
+
+              {/* Resultado após o processamento */}
+              {importResult && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    {importResult.errors.length === 0 ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                    )}
+                    <span>
+                      {importResult.importedCount} registro(s) importado(s) com
+                      sucesso!
+                    </span>
+                  </div>
+
+                  {importResult.errors.length > 0 && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-destructive font-medium">
+                        Ocorrências / Erros encontrados ({importResult.errors.length}):
+                      </Label>
+                      <ScrollArea className="h-32 rounded-lg border border-destructive/30 bg-destructive/5 p-2.5">
+                        <ul className="text-xs text-destructive space-y-1">
+                          {importResult.errors.map((err, i) => (
+                            <li key={i} className="flex items-start gap-1">
+                              • {err}
+                            </li>
+                          ))}
+                        </ul>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={closeImportModal}
+                disabled={isImporting}
+              >
+                {importResult ? "Fechar" : "Cancelar"}
+              </Button>
+              {!importResult && (
+                <LoadingButton
+                  onClick={handleStartImport}
+                  disabled={!importFile || parsedRows.length === 0 || isImporting}
+                  loading={isImporting}
+                >
+                  Confirmar e Importar
+                </LoadingButton>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+

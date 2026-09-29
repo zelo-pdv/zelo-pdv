@@ -125,7 +125,8 @@ model Client {
   name  String
   phone String
   email String?
-  notes String?
+  notes  String?
+  active Boolean @default(true)
 
   lojaId String
   loja   Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
@@ -138,6 +139,7 @@ model Client {
   deletedAt DateTime?
 
   @@index([lojaId])
+  @@index([lojaId, active])
   @@index([lojaId, updatedAt])
   @@index([lojaId, deletedAt])
 }
@@ -191,6 +193,7 @@ model Product {
   stock       Decimal @default(0) @db.Decimal(10, 3)
   minStock    Decimal @default(0) @db.Decimal(10, 3)
   notes       String?
+  active      Boolean @default(true)
 
   lojaId String
   loja   Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
@@ -206,6 +209,7 @@ model Product {
 
   @@unique([lojaId, code])
   @@index([lojaId])
+  @@index([lojaId, active])
   @@index([lojaId, barcode])
   @@index([lojaId, updatedAt])
   @@index([lojaId, deletedAt])

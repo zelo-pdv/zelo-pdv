@@ -81,12 +81,35 @@ export default function ClientesPage() {
     });
   }, [clients, sales]);
 
+  const handleToggleActive = async (client: ClientWithAddress) => {
+    try {
+      const newStatus = !(client.active ?? true);
+      const updated = await clientsService.update(client.id, { active: newStatus });
+      setClients((prev) =>
+        prev.map((c) => (c.id === client.id ? { ...c, ...updated } : c)),
+      );
+      toast.success(
+        newStatus
+          ? "Cliente ativado com sucesso!"
+          : "Cliente desativado com sucesso!",
+      );
+      notifyLocalSync("clients");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erro ao alterar status do cliente.",
+      );
+    }
+  };
+
   const columns = useMemo(
     () =>
       getClientColumns({
         onView: setDetail,
         onEdit: setEditing,
         onDelete: setDeleting,
+        onToggleActive: handleToggleActive,
         can,
       }),
     [can],

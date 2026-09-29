@@ -183,8 +183,12 @@ export default function NovaVenda() {
         clientsService.list(),
         productsService.list(),
       ]);
-      const typedClients = clientsData as Client[];
-      const typedProducts = productsData as Product[];
+      const typedClients = (clientsData as Client[]).filter(
+        (c: any) => c.active !== false,
+      );
+      const typedProducts = (productsData as Product[]).filter(
+        (p: any) => p.active !== false,
+      );
 
       setClients(typedClients);
       
@@ -268,7 +272,6 @@ export default function NovaVenda() {
 
     if (
       trackStock &&
-      notifications.enableToasts &&
       notifications.outOfStockWarning &&
       currentQty + 1 > p.stock
     ) {
@@ -320,7 +323,6 @@ export default function NovaVenda() {
 
     if (
       trackStock &&
-      notifications.enableToasts &&
       notifications.outOfStockWarning &&
       product &&
       qty > product.stock

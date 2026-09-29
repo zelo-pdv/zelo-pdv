@@ -25,6 +25,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { Client } from "@/prisma/client";
 import { ClientWithAddress } from "@/types";
 import { maskCep, maskPhone } from "@/lib/masks";
+import { Switch } from "@/components/ui/switch";
 
 // Tipagem segura para o endereço do formulário
 export type AddressData = {
@@ -120,6 +121,7 @@ export function ClientForm({
         email: initial?.email || "",
         address: parseInitialAddress(initial?.address),
         notes: initial?.notes || "",
+        active: initial?.active ?? true,
         createdAt: initial?.createdAt || new Date(),
         updatedAt: initial?.updatedAt || new Date(),
       };
@@ -225,6 +227,7 @@ export function ClientForm({
         phone: phoneToSave,
         email: form.email?.trim() === "" ? null : form.email,
         address: form.address,
+        active: form.active ?? true,
       });
 
       if (!isEdit) {
@@ -259,7 +262,7 @@ export function ClientForm({
             onChange={(e) => {
               setForm({ ...form, phone: maskPhone(e.target.value) });
             }}
-            placeholder="(79) 98859-9091"
+            placeholder="(00) 00000-0000 "
             autoComplete="off"
             maxLength={15}
           />
@@ -404,6 +407,19 @@ export function ClientForm({
           value={form.notes ?? ""}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           placeholder="Anotações importantes sobre o cliente..."
+        />
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-border/70 p-3">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-medium">Cliente Ativo</Label>
+          <p className="text-xs text-muted-foreground">
+            Clientes inativos não aparecerão na seleção de novas vendas.
+          </p>
+        </div>
+        <Switch
+          checked={form.active ?? true}
+          onCheckedChange={(checked) => setForm({ ...form, active: checked })}
         />
       </div>
     </div>

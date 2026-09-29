@@ -394,7 +394,7 @@ function UserForm({
           onChange={(e) =>
             setForm({ ...form, phone: maskPhone(e.target.value) })
           }
-          placeholder="(79) 98859-9091"
+          placeholder="(00) 00000-0000 "
           maxLength={15}
         />
       </div>

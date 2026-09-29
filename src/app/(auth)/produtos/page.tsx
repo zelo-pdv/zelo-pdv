@@ -143,12 +143,37 @@ export default function ProdutosPage() {
     [categories],
   );
 
+  const handleToggleActive = async (product: ProductFrontend) => {
+    try {
+      const newStatus = !(product.active ?? true);
+      await productsService.update(product.id, { active: newStatus });
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id ? { ...p, active: newStatus } : p,
+        ),
+      );
+      toast.success(
+        newStatus
+          ? "Produto ativado com sucesso!"
+          : "Produto desativado com sucesso!",
+      );
+      notifyLocalSync("products");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erro ao alterar status do produto.",
+      );
+    }
+  };
+
   const columns = useMemo(
     () =>
       getProductColumns({
         onStock: setStockDialog,
         onEdit: setEditing,
         onDelete: setDeleting,
+        onToggleActive: handleToggleActive,
         can,
         globalLowStockThreshold: productsSettings.globalLowStockThreshold,
         trackStock: productsSettings.trackStock ?? true,

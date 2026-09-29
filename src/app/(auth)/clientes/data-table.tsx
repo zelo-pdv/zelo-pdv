@@ -12,12 +12,11 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, ListFilter, Plus, Search } from "lucide-react";
-import { toast } from "sonner";
-import { currency } from "@/lib/format";
+import { ChevronLeft, ChevronRight, ListFilter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -45,7 +44,8 @@ export function ClientsDataTable({
   canAdd?: boolean;
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [activeFilter, setActiveFilter] = useState("Todos");
+  const [pendingFilter, setPendingFilter] = useState("Todos");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
@@ -74,82 +74,26 @@ export function ClientsDataTable({
 
   useEffect(() => {
     table
+      .getColumn("active")
+      ?.setFilterValue(activeFilter === "Todos" ? undefined : activeFilter);
+  }, [activeFilter, table]);
+
+  useEffect(() => {
+    table
       .getColumn("pendingAmount")
-      ?.setFilterValue(statusFilter === "Todos" ? undefined : statusFilter);
-  }, [statusFilter, table]);
+      ?.setFilterValue(pendingFilter === "Todos" ? undefined : pendingFilter);
+  }, [pendingFilter, table]);
 
   useEffect(() => {
     table.setPageIndex(0);
-  }, [globalFilter, statusFilter, table]);
+  }, [globalFilter, activeFilter, pendingFilter, table]);
 
   const rows = table.getRowModel().rows;
   const totalFiltered = table.getFilteredRowModel().rows.length;
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
 
-  // Item #24: Exportar lista de clientes para CSV
-  const handleExportCSV = () => {
-    const rowsToExport = table.getFilteredRowModel().rows.map((r) => r.original);
-
-    if (rowsToExport.length === 0) {
-      toast.warning("Nenhum cliente para exportar.");
-      return;
-    }
-
-    const headers = [
-      "Nome",
-      "Telefone",
-      "Email",
-      "Cidade/UF",
-      "Endereço",
-      "Total Comprado",
-      "Saldo Pendente",
-      "Status",
-    ];
-
-    const csvRows = rowsToExport.map((c) => {
-      const addr = Array.isArray(c.address) ? c.address[0] : c.address;
-      const cityUf = addr
-        ? `${addr.city || ""}${addr.state ? `/${addr.state}` : ""}`.trim()
-        : "";
-      const streetFull = addr
-        ? `${addr.street || ""}${addr.number ? `, ${addr.number}` : ""}${addr.neighborhood ? ` - ${addr.neighborhood}` : ""}`.trim()
-        : "";
-
-      return [
-        c.name,
-        c.phone || "",
-        c.email || "",
-        cityUf,
-        streetFull,
-        currency(c.totalSpent || 0),
-        currency(c.pendingAmount || 0),
-        (c.pendingAmount || 0) > 0 ? "Com pendências" : "Sem pendências",
-      ];
-    });
-
-    const csvContent =
-      "\uFEFF" +
-      [
-        headers.join(";"),
-        ...csvRows.map((row) =>
-          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")
-        ),
-      ].join("\r\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const todayStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `clientes_zelo_${todayStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast.success(`${rowsToExport.length} cliente(s) exportado(s) com sucesso!`);
-  };
+  const isFilterActive = activeFilter !== "Todos" || pendingFilter !== "Todos";
 
   return (
     <div>
@@ -171,69 +115,103 @@ export function ClientsDataTable({
             <PopoverTrigger
               render={
                 <Button
-                  variant={statusFilter !== "Todos" ? "default" : "outline"}
+                  variant={isFilterActive ? "default" : "outline"}
                   size="icon"
                   className="rounded-xl shrink-0"
-                  aria-label="Filtrar"
+                  aria-label="Filtrar clientes"
                 >
                   <ListFilter className="h-4 w-4" />
                 </Button>
               }
             ></PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-1">
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  variant={statusFilter === "Todos" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="justify-start h-8"
-                  onClick={() => setStatusFilter("Todos")}
-                >
-                  Todos os clientes
-                </Button>
-                <Button
-                  variant={statusFilter === "Pendentes" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="justify-start h-8"
-                  onClick={() => setStatusFilter("Pendentes")}
-                >
-                  Com pendências
-                </Button>
-                <Button
-                  variant={statusFilter === "Pagos" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="justify-start h-8"
-                  onClick={() => setStatusFilter("Pagos")}
-                >
-                  Sem pendências
-                </Button>
+            <PopoverContent align="end" className="w-56 p-2 space-y-2">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                  Status de Cadastro
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  <Button
+                    variant={activeFilter === "Todos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs"
+                    onClick={() => setActiveFilter("Todos")}
+                  >
+                    Todos os status
+                  </Button>
+                  <Button
+                    variant={activeFilter === "Ativos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs text-emerald-600 dark:text-emerald-400"
+                    onClick={() => setActiveFilter("Ativos")}
+                  >
+                    Apenas ativos
+                  </Button>
+                  <Button
+                    variant={activeFilter === "Inativos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs text-muted-foreground"
+                    onClick={() => setActiveFilter("Inativos")}
+                  >
+                    Apenas inativos
+                  </Button>
+                </div>
               </div>
+
+              <Separator />
+
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                  Pendências Financeiras
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  <Button
+                    variant={pendingFilter === "Todos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs"
+                    onClick={() => setPendingFilter("Todos")}
+                  >
+                    Todas as situações
+                  </Button>
+                  <Button
+                    variant={pendingFilter === "Pendentes" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs text-amber-600 dark:text-amber-400"
+                    onClick={() => setPendingFilter("Pendentes")}
+                  >
+                    Com pendências
+                  </Button>
+                  <Button
+                    variant={pendingFilter === "Pagos" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="justify-start h-8 text-xs"
+                    onClick={() => setPendingFilter("Pagos")}
+                  >
+                    Sem pendências
+                  </Button>
+                </div>
+              </div>
+
+              {isFilterActive && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
+                    onClick={() => {
+                      setActiveFilter("Todos");
+                      setPendingFilter("Todos");
+                    }}
+                  >
+                    Limpar filtros
+                  </Button>
+                </>
+              )}
             </PopoverContent>
           </Popover>
-
-          {/* Item #24: Botão de exportação Mobile */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-xl shrink-0 sm:hidden"
-            onClick={handleExportCSV}
-            title="Exportar CSV"
-            aria-label="Exportar CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Item #24: Botão de exportação Desktop */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full hidden sm:flex shrink-0 gap-1.5"
-            onClick={handleExportCSV}
-          >
-            <Download className="h-4 w-4" /> Exportar
-          </Button>
-
           {canAdd !== false && (
             <>
               <Button

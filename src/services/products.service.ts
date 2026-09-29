@@ -2,8 +2,8 @@ import { apiRequest } from "@/lib/api-request";
 import type { ProductFormValues } from "../lib/validations/product";
 
 export const productsService = {
-  async list() {
-    return apiRequest("/products");
+  async list(): Promise<any[]> {
+    return apiRequest<any[]>("/products");
   },
 
   async create(data: ProductFormValues) {

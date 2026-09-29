@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Search,
   SlidersHorizontal,
-  Download,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,8 +35,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { PAYMENT_LABELS, PaymentMethod, type Sale, SaleStatus } from "@/types";
-import { currency, dateTime } from "@/lib/format";
-import { toast } from "sonner";
 
 export function SalesDataTable({
   columns,
@@ -153,58 +150,6 @@ export function SalesDataTable({
   const totalFiltered = table.getFilteredRowModel().rows.length;
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
-
-  // Item #21: Exportação para CSV
-  const handleExportCSV = () => {
-    const rowsToExport = table.getFilteredRowModel().rows.map((r) => r.original);
-    if (rowsToExport.length === 0) {
-      toast.warning("Nenhuma venda encontrada para exportar.");
-      return;
-    }
-
-    const headers = [
-      "ID da Venda",
-      "Data e Hora",
-      "Cliente",
-      "Forma de Pagamento",
-      "Status",
-      "Desconto",
-      "Total",
-    ];
-
-    const csvRows = rowsToExport.map((s) => [
-      s.id,
-      dateTime(s.date),
-      s.clientName || "Consumidor Final",
-      PAYMENT_LABELS[s.paymentMethod] || s.paymentMethod,
-      s.status === "PAGO" ? "Pago" : "Pendente",
-      s.discount ? currency(s.discount) : "R$ 0,00",
-      currency(s.total),
-    ]);
-
-    // UTF-8 BOM e delimitador ; para compatibilidade nativa com Excel no Brasil
-    const csvContent =
-      "\uFEFF" +
-      [
-        headers.join(";"),
-        ...csvRows.map((row) =>
-          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")
-        ),
-      ].join("\r\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const todayStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `vendas_zelo_${todayStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast.success(`${rowsToExport.length} venda(s) exportada(s) com sucesso!`);
-  };
 
   const datePresetLabels: Record<string, string> = {
     today: "Hoje",
@@ -420,16 +365,6 @@ export function SalesDataTable({
           </Popover>
         </div>
 
-        {/* Item #21: Botão Exportar CSV */}
-        <Button
-          variant="outline"
-          onClick={handleExportCSV}
-          className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium hover:bg-primary/5"
-          title="Exportar vendas filtradas para arquivo CSV"
-        >
-          <Download className="h-4 w-4 text-primary" />
-          <span>Exportar CSV</span>
-        </Button>
       </div>
 
       {/* Badges de Filtros Ativos */}

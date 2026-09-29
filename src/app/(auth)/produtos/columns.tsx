@@ -6,6 +6,7 @@ import {
   MoreVertical,
   PackagePlus,
   Pencil,
+  Power,
   Trash2,
 } from "lucide-react";
 
@@ -50,6 +51,7 @@ export type ProductActions = {
   onStock: (product: ProductFrontend) => void;
   onEdit: (product: ProductFrontend) => void;
   onDelete: (product: ProductFrontend) => void;
+  onToggleActive?: (product: ProductFrontend) => void;
   can: PermissionChecker;
   globalLowStockThreshold?: number;
   trackStock?: boolean;
@@ -59,6 +61,7 @@ export function getProductColumns({
   onStock,
   onEdit,
   onDelete,
+  onToggleActive,
   can,
   globalLowStockThreshold = 5,
   trackStock = true,
@@ -88,6 +91,7 @@ export function getProductColumns({
       cell: ({ row }) => {
         const product = row.original;
         const low = trackStock && isProductLowStock(product, globalLowStockThreshold);
+        const active = product.active ?? true;
 
         const hasMobileActions = hasAnyAction;
 
@@ -104,6 +108,15 @@ export function getProductColumns({
                   <span className="truncate text-sm font-medium">
                     {product.name}
                   </span>
+
+                  {!active && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 border-muted-foreground/40 text-muted-foreground bg-muted/40 text-[10px] px-1 h-4"
+                    >
+                      Inativo
+                    </Badge>
+                  )}
 
                   {low && (
                     <Badge
@@ -161,6 +174,26 @@ export function getProductColumns({
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar produto
+                        </Button>
+                      )}
+
+                      {canEdit && onToggleActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-9 w-full justify-start px-3",
+                            !active
+                              ? "text-emerald-600 hover:text-emerald-700"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleActive(product);
+                          }}
+                        >
+                          <Power className="mr-2 h-4 w-4" />
+                          {active ? "Desativar produto" : "Ativar produto"}
                         </Button>
                       )}
 
@@ -248,6 +281,35 @@ export function getProductColumns({
       : []),
 
     {
+      accessorKey: "active",
+      header: "Status",
+      filterFn: (row, _id, value) => {
+        if (value === "Todos" || !value) return true;
+        const active = row.original.active ?? true;
+        if (value === "Ativos") return active === true;
+        if (value === "Inativos") return active === false;
+        return true;
+      },
+      cell: ({ row }) => {
+        const active = row.original.active ?? true;
+        return (
+          <div className="hidden sm:block">
+            <Badge
+              variant="outline"
+              className={
+                active
+                  ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10 text-xs"
+                  : "border-muted-foreground/40 text-muted-foreground bg-muted/40 text-xs"
+              }
+            >
+              {active ? "Ativo" : "Inativo"}
+            </Badge>
+          </div>
+        );
+      },
+    },
+
+    {
       accessorKey: "salePrice",
 
       header: () => <div className="text-right">Valor</div>,
@@ -270,6 +332,7 @@ export function getProductColumns({
 
       cell: ({ row }) => {
         const product = row.original;
+        const active = product.active ?? true;
 
         return (
           <div className="hidden justify-end gap-1 sm:flex">
@@ -280,8 +343,26 @@ export function getProductColumns({
                 className="h-8 w-8"
                 onClick={() => onStock(product)}
                 aria-label="Entrada de estoque"
+                title="Entrada de estoque"
               >
                 <PackagePlus className="h-4 w-4" />
+              </Button>
+            )}
+
+            {canEdit && onToggleActive && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className={
+                  !active
+                    ? "h-8 w-8 text-emerald-600 hover:text-emerald-700"
+                    : "h-8 w-8 text-muted-foreground hover:text-foreground"
+                }
+                onClick={() => onToggleActive(product)}
+                aria-label={!active ? "Ativar produto" : "Desativar produto"}
+                title={!active ? "Ativar produto" : "Desativar produto"}
+              >
+                <Power className="h-4 w-4" />
               </Button>
             )}
 
@@ -292,6 +373,7 @@ export function getProductColumns({
                 className="h-8 w-8"
                 onClick={() => onEdit(product)}
                 aria-label="Editar produto"
+                title="Editar produto"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -304,6 +386,7 @@ export function getProductColumns({
                 className="h-8 w-8 text-destructive"
                 onClick={() => onDelete(product)}
                 aria-label="Remover produto"
+                title="Remover produto"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

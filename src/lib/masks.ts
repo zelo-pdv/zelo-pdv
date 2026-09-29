@@ -12,7 +12,7 @@ export function unmask(value?: string | null): string {
 
 /**
  * Máscara dinâmica para Telefone fixo (10 dígitos) ou celular (11 dígitos)
- * Exemplo: (79) 98859-9091 ou (11) 3344-5566
+ * Exemplo: (00) 00000-0000  ou (11) 3344-5566
  */
 export function maskPhone(value?: string | null): string {
   if (!value) return "";

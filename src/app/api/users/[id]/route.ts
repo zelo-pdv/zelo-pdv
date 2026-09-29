@@ -3,10 +3,12 @@ import { z } from "zod";
 import { hash } from "bcrypt";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 
 const updateUserSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").optional(),
   email: z.string().email("E-mail inválido").optional(),
+  phone: z.string().optional().nullable(),
   password: z
     .string()
     .min(6, "A senha deve ter no mínimo 6 caracteres")
@@ -29,7 +31,36 @@ export async function PATCH(
     const body = await request.json();
     const data = updateUserSchema.parse(body);
 
-    const updateData = { ...data };
+    if (data.email) {
+      const emailConflict = await checkEmailConflict({
+        email: data.email,
+        lojaId: currentUser.lojaId,
+        excludeUserId: id,
+      });
+      if (emailConflict) {
+        return NextResponse.json({ error: emailConflict }, { status: 400 });
+      }
+    }
+
+    if (data.phone && data.phone.trim() !== "") {
+      const phoneConflict = await checkPhoneConflict({
+        phone: data.phone,
+        lojaId: currentUser.lojaId,
+        excludeUserId: id,
+      });
+      if (phoneConflict) {
+        return NextResponse.json({ error: phoneConflict }, { status: 400 });
+      }
+    }
+
+    const updateData: any = { ...data };
+
+    if (data.email) {
+      updateData.email = data.email.trim().toLowerCase();
+    }
+    if (data.phone !== undefined) {
+      updateData.phone = data.phone && data.phone.trim() !== "" ? data.phone.trim() : null;
+    }
 
     if (!updateData.password) {
       delete updateData.password;

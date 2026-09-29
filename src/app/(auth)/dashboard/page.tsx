@@ -119,7 +119,7 @@ function SalesWeekChart({
 
         {/* SVG Chart */}
         <div className="w-full overflow-x-auto pb-2">
-          <div className="min-w-[500px]">
+          <div className="min-w-125">
             <svg
               viewBox="0 0 700 200"
               className="w-full h-44 overflow-visible"
