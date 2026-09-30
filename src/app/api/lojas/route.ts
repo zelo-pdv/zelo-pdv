@@ -35,7 +35,12 @@ export async function GET() {
   }
 }
 
+import { checkRateLimit } from "@/lib/rate-limit";
+
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request);
+  if (!rateLimit.success) return rateLimit.response;
+
   try {
     const body = await request.json();
     const { address, ...lojaData } = body;

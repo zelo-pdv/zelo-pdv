@@ -45,6 +45,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = productSchema.parse(body);
 
+    if (data.categoryId) {
+      const existingCategory = await prisma.category.findFirst({
+        where: { id: data.categoryId, lojaId: auth.user.lojaId },
+      });
+      if (!existingCategory) {
+        return NextResponse.json({ error: "Categoria inválida ou não pertence à loja." }, { status: 400 });
+      }
+    }
+
     const toNull = (v?: string | null) =>
       v === "" || v === undefined ? null : v;
 

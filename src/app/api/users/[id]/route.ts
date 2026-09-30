@@ -71,6 +71,18 @@ export async function PATCH(
       }
     }
 
+    if (data.groupId) {
+      const existingGroup = await prisma.accessGroup.findFirst({
+        where: { id: data.groupId, lojaId: currentUser.lojaId },
+      });
+      if (!existingGroup) {
+        return NextResponse.json(
+          { error: "Grupo inválido ou não pertence à loja." },
+          { status: 400 },
+        );
+      }
+    }
+
     const updateData: any = { ...data };
 
     if (data.email) {
@@ -96,7 +108,7 @@ export async function PATCH(
       const { cookies } = await import("next/headers");
       const { SignJWT } = await import("jose");
 
-      const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+      const { JWT_SECRET } = await import("@/lib/jwt-secret");
 
       const firstUser = await prisma.user.findFirst({
         where: { lojaId: user.lojaId },
@@ -117,7 +129,7 @@ export async function PATCH(
 
       const token = await new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("24h")
+        .setExpirationTime("8h")
         .sign(JWT_SECRET);
 
       const cookieStore = await cookies();
@@ -127,7 +139,7 @@ export async function PATCH(
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 8,
       });
 
       const contextBase64 = Buffer.from(JSON.stringify(payload)).toString(
@@ -138,7 +150,7 @@ export async function PATCH(
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 8,
       });
     }
 

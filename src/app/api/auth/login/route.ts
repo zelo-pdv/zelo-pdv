@@ -5,11 +5,13 @@ import prisma from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 import bcrypt from "bcryptjs";
 import { withValidation } from "../../../../../proxy";
-
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+import { JWT_SECRET } from "@/lib/jwt-secret";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.success) return rateLimit.response;
+
   // Padronização e sanitização com Zod
   return withValidation(loginSchema, req, async (data) => {
     const { email, password } = data;
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
 
     const token = await new SignJWT(payload)
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("24h")
+      .setExpirationTime("8h")
       .sign(JWT_SECRET);
 
     const cookieStore = await cookies();
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict", // Strict para proteção máxima CSRF
       path: "/",
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 8, // 8h
     });
 
     const contextBase64 = Buffer.from(JSON.stringify(payload)).toString("base64");
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict", 
       path: "/",
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 8, // 8h
     });
 
     return NextResponse.json({ success: true, user: payload });

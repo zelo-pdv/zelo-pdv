@@ -2,8 +2,7 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import prisma from "@/lib/prisma";
 import type { Permissions } from "@/store/useSettingsStore";
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+import { JWT_SECRET } from "@/lib/jwt-secret";
 
 export interface AuthenticatedUser {
   id: string;

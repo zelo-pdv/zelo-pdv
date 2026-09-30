@@ -18,6 +18,14 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const existingProduct = await prisma.product.findFirst({
+      where: { id, lojaId: auth.user.lojaId },
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 });
+    }
+
     if (body.incrementStock !== undefined) {
       const product = await prisma.product.update({
         where: { id },
@@ -60,6 +68,18 @@ export async function PATCH(
         { error: "Nenhum dado para atualizar." },
         { status: 400 },
       );
+    }
+
+    if (data.categoryId) {
+      const existingCategory = await prisma.category.findFirst({
+        where: { id: data.categoryId, lojaId: auth.user.lojaId },
+      });
+      if (!existingCategory) {
+        return NextResponse.json(
+          { error: "Categoria inválida ou não pertence à loja." },
+          { status: 400 },
+        );
+      }
     }
 
     const toNull = (v?: string | null) =>
@@ -118,6 +138,14 @@ export async function DELETE(
 
   try {
     const { id } = await params;
+
+    const existingProduct = await prisma.product.findFirst({
+      where: { id, lojaId: auth.user.lojaId },
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 });
+    }
 
     await prisma.product.delete({
       where: { id },

@@ -64,6 +64,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // Validação se o grupo pertence à loja do usuário
+    const existingGroup = await prisma.accessGroup.findFirst({
+      where: { id: data.groupId, lojaId: currentUser.lojaId },
+    });
+    if (!existingGroup) {
+      return NextResponse.json({ error: "Grupo inválido ou não pertence à loja." }, { status: 400 });
+    }
+
     const hashedPassword = await hash(data.password, 10);
 
     const user = await prisma.user.create({

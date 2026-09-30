@@ -55,6 +55,30 @@ export async function POST(req: Request) {
     // Validação com Zod
     const parsed = saleSchema.parse(body);
 
+    const productIds = parsed.items.map((item) => item.productId);
+    const existingProducts = await prisma.product.findMany({
+      where: { id: { in: productIds }, lojaId: user.lojaId },
+    });
+
+    if (existingProducts.length !== productIds.length) {
+      return NextResponse.json(
+        { error: "Um ou mais produtos informados são inválidos ou não pertencem à loja." },
+        { status: 400 }
+      );
+    }
+
+    if (parsed.clientId) {
+      const existingClient = await prisma.client.findFirst({
+        where: { id: parsed.clientId, lojaId: user.lojaId },
+      });
+      if (!existingClient) {
+        return NextResponse.json(
+          { error: "Cliente informado é inválido ou não pertence à loja." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Usa $transaction para garantir que a venda e o desconto no estoque ocorram juntos
     const sale = await prisma.$transaction(async (tx) => {
       // Determina o próximo número sequencial da venda da loja (ordem crescente iniciando em 1)

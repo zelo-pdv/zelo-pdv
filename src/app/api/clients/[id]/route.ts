@@ -52,7 +52,7 @@ export async function PATCH(
     const user = auth.user;
 
     // Validate that client belongs to user's loja before updating
-    const existingClient = await prisma.client.findUnique({ where: { id, lojaId: user.lojaId } });
+    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId } });
     if (!existingClient) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
     // Validação de unicidade cruzada de e-mail e telefone
@@ -132,7 +132,7 @@ export async function DELETE(
     const user = auth.user;
 
     // Validate that client belongs to user's loja before deleting
-    const existingClient = await prisma.client.findUnique({ where: { id, lojaId: user.lojaId } });
+    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId } });
     if (!existingClient) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
     // Remove os endereços vinculados antes de apagar o cliente
@@ -142,8 +142,8 @@ export async function DELETE(
       })
       .catch(() => {});
 
-    await prisma.client.delete({
-      where: { id },
+    await prisma.client.deleteMany({
+      where: { id, lojaId: user.lojaId },
     });
 
     return new NextResponse(null, { status: 204 });
