@@ -13,7 +13,7 @@ export async function GET() {
 
     const lojaId = user.lojaId;
 
-    const [productAgg, clientAgg, saleAgg, categoryAgg, userAgg] = await Promise.all([
+    const [productAgg, clientAgg, saleAgg, categoryAgg, userAgg, groupAgg] = await Promise.all([
       prisma.product.aggregate({
         where: { lojaId },
         _max: { updatedAt: true },
@@ -39,7 +39,22 @@ export async function GET() {
         _max: { updatedAt: true },
         _count: { id: true },
       }),
+      prisma.accessGroup.aggregate({
+        where: { lojaId },
+        _max: { updatedAt: true },
+        _count: { id: true },
+      }),
     ]);
+
+    // Usamos um hash do user atual para o cliente detectar rapidamente se SUAS permissões mudaram
+    const sessionHash = JSON.stringify({
+      id: user.id,
+      groupId: user.groupId,
+      groupName: user.groupName,
+      isAdmin: user.isAdmin,
+      permissions: user.permissions,
+      active: user.active
+    });
 
     return NextResponse.json(
       {
@@ -48,6 +63,8 @@ export async function GET() {
         sales: `${saleAgg._max.updatedAt?.getTime() ?? 0}_${saleAgg._count.id}`,
         categories: `${categoryAgg._max.updatedAt?.getTime() ?? 0}_${categoryAgg._count.id}`,
         users: `${userAgg._max.updatedAt?.getTime() ?? 0}_${userAgg._count.id}`,
+        access_groups: `${groupAgg._max.updatedAt?.getTime() ?? 0}_${groupAgg._count.id}`,
+        session: sessionHash,
       },
       {
         headers: {

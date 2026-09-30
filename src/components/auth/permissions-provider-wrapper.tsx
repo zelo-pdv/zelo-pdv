@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { PermissionsProvider } from "./permissions-provider";
+import { useDataSync } from "@/hooks/use-data-sync";
 
 import type { Permissions } from "@/store/useSettingsStore";
 
@@ -48,7 +49,33 @@ export function PermissionsProviderWrapper({
 }: {
   children: ReactNode;
 }) {
-  const context = useMemo(() => getUserContext(), []);
+  const [context, setContext] = useState<UserContext | null>(() => getUserContext());
+
+  useDataSync({
+    types: ["session"],
+    onSync: async (changed, versions) => {
+      if (changed.includes("session") && versions?.session) {
+        try {
+          const newSession = JSON.parse(versions.session);
+          
+          if (!newSession.active) {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login"; // Redirect to login if user deactivated
+            return;
+          }
+
+          setContext((prev) => ({
+            ...prev,
+            permissions: newSession.permissions,
+            groupName: newSession.groupName,
+            isAdmin: newSession.isAdmin,
+          }));
+        } catch (e) {
+          console.error("Erro ao sincronizar sessão:", e);
+        }
+      }
+    },
+  });
 
   const permissions = context?.permissions ?? {};
   const user = context?.sub

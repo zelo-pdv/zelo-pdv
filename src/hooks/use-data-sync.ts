@@ -2,13 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-export type SyncType = "products" | "clients" | "sales" | "categories" | "users";
+export type SyncType = "products" | "clients" | "sales" | "categories" | "users" | "access_groups" | "session";
 
 type SyncVersions = Record<SyncType, string>;
 
 type Listener = {
   types: SyncType[];
-  callback: (changedTypes: SyncType[]) => void | Promise<void>;
+  callback: (changedTypes: SyncType[], versions?: SyncVersions) => void | Promise<void>;
 };
 
 const listeners = new Set<Listener>();
@@ -66,7 +66,11 @@ async function checkForUpdates() {
     });
 
     if (!res.ok) {
-      // Se não autenticado ou erro, apenas ignora
+      if (res.status === 401) {
+        // Se a sessão for inválida (ex: user excluído ou inativado), force o logout
+        await fetch("/api/auth/logout", { method: "POST" });
+        window.location.href = "/login";
+      }
       return;
     }
 
@@ -79,7 +83,7 @@ async function checkForUpdates() {
     }
 
     const changedTypes: SyncType[] = [];
-    const allTypes: SyncType[] = ["products", "clients", "sales", "categories", "users"];
+    const allTypes: SyncType[] = ["products", "clients", "sales", "categories", "users", "access_groups", "session"];
 
     for (const t of allTypes) {
       if (latestVersions[t] && latestVersions[t] !== cachedVersions[t]) {
@@ -96,7 +100,7 @@ async function checkForUpdates() {
         const hasOverlap = listener.types.some((t) => changedTypes.includes(t));
         if (hasOverlap) {
           try {
-            listener.callback(changedTypes);
+            listener.callback(changedTypes, latestVersions);
           } catch (err) {
             console.error("Erro no callback de sincronização:", err);
           }
@@ -149,7 +153,7 @@ function stopSyncLoopIfEmpty() {
 
 interface UseDataSyncOptions {
   types: SyncType[];
-  onSync: (changedTypes: SyncType[]) => void | Promise<void>;
+  onSync: (changedTypes: SyncType[], versions?: SyncVersions) => void | Promise<void>;
   enabled?: boolean;
 }
 
@@ -166,8 +170,8 @@ export function useDataSync({ types, onSync, enabled = true }: UseDataSyncOption
 
     const listener: Listener = {
       types,
-      callback: (changed) => {
-        onSyncRef.current(changed);
+      callback: (changed, versions) => {
+        onSyncRef.current(changed, versions);
       },
     };
 
