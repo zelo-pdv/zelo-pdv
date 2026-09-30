@@ -84,12 +84,12 @@ export function LoginForm() {
         <div className="relative z-10 my-auto flex items-center justify-center py-6 w-full">
           <div className="relative flex items-center justify-center">
             <Image
-              src="/zelo.jpeg"
+              src="/zelo-white.png"
               alt="Zelo PDV Logo"
               width={260}
               height={260}
               priority
-              className="w-56 h-56 xl:w-64 xl:h-64 object-contain rounded-3xl shadow-2xl drop-shadow-2xl border border-white/10"
+              className="w-56 h-56 xl:w-64 xl:h-64 object-contain "
             />
           </div>
         </div>
@@ -115,13 +115,20 @@ export function LoginForm() {
           {/* Mobile Logo */}
           <div className="flex lg:hidden flex-col items-center mb-8 gap-3">
             <Image 
-              src="/zelo.jpeg" 
+              src="/zelo-black.png" 
               alt="Zelo PDV Logo" 
-              width={64} 
-              height={64}
-              className="rounded-2xl object-contain shadow-sm"
+              width={96} 
+              height={96}
+              className="object-contain dark:hidden"
             />
-            <span className="text-xl font-bold tracking-tight text-foreground">Zelo PDV</span>
+            <Image 
+              src="/zelo-white.png" 
+              alt="Zelo PDV Logo" 
+              width={96} 
+              height={96}
+              className="object-contain hidden dark:block"
+            />
+            {/* <span className="text-xl font-bold tracking-tight text-foreground">Zelo PDV</span> */}
           </div>
 
           <div className="mb-8 text-left">

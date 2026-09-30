@@ -35,23 +35,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     to === "/" ? pathname === "/" : pathname.startsWith(to);
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="mb-6">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <Image
-                src="/zelo.jpeg"
-                alt="Zelo PDV"
-                width={32}
-                height={32}
-                className="size-8 rounded-lg object-contain shrink-0"
-              />
-              <span className="text-base font-bold text-foreground tracking-tight">
-                ZELO
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="mb-4 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2.5">
+        <div className="flex items-center gap-2.5 px-2 py-1.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center select-none">
+          <div className="relative shrink-0 flex items-center justify-center">
+            <Image
+              src="/zelo-black.png"
+              alt="Zelo PDV"
+              width={48}
+              height={48}
+              priority
+              className="size-9 group-data-[collapsible=icon]:size-10.5 object-contain dark:hidden transition-all duration-200"
+            />
+            <Image
+              src="/zelo-white.png"
+              alt="Zelo PDV"
+              width={48}
+              height={48}
+              priority
+              className="size-9 group-data-[collapsible=icon]:size-10.5 object-contain hidden dark:block transition-all duration-200"
+            />
+          </div>
+          <span className="text-[1.35rem] font-bold text-foreground tracking-tight translate-y-1.5 group-data-[collapsible=icon]:hidden">
+            Zelo
+          </span>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
