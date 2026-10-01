@@ -187,6 +187,16 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
     return diff > 0.01 ? diff : 0;
   }, [sale, itemsSubtotal]);
 
+  const voucherFooterText = useMemo(() => {
+    const raw = voucher?.footerText?.trim();
+    if (!raw) return "* OBRIGADO E VOLTE SEMPRE *";
+    const cleaned = raw
+      .replace(/\.?\s*documento sem valor fiscal\.?/gi, "")
+      .replace(/\.?\s*sem valor fiscal\.?/gi, "")
+      .trim();
+    return cleaned || "* OBRIGADO E VOLTE SEMPRE *";
+  }, [voucher?.footerText]);
+
   const render = async () => {
     if (!ref.current) throw new Error("sem conteúdo");
     const el = ref.current;
@@ -467,10 +477,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
       {/* 13. Rodapé */}
       <div className="mt-4 pt-3 border-t border-slate-900 text-center">
         <div className="font-bold text-xs tracking-wider uppercase text-slate-950">
-          {voucher.footerText || "* OBRIGADO E VOLTE SEMPRE *"}
-        </div>
-        <div className="text-[10px] text-slate-500 uppercase mt-1">
-          * DOCUMENTO SEM VALOR FISCAL *
+          {voucherFooterText}
         </div>
       </div>
     </div>

@@ -184,7 +184,7 @@ const defaultStore: StoreInfo = {
 const defaultVoucher: VoucherSettings = {
   logo: "",
   resellerName: "",
-  footerText: "Obrigado pela preferência! Documento sem valor fiscal.",
+  footerText: "Obrigado pela preferência!",
   showContact: true,
 };
 
@@ -315,6 +315,14 @@ export const useSettingsStore = create<SettingsState>()(
           : (undefined as unknown as Storage),
       ),
       skipHydration: true,
+      onRehydrateStorage: () => (state) => {
+        if (state?.voucher?.footerText) {
+          state.voucher.footerText = state.voucher.footerText
+            .replace(/\.?\s*documento sem valor fiscal\.?/gi, "")
+            .replace(/\.?\s*sem valor fiscal\.?/gi, "")
+            .trim();
+        }
+      },
     },
   ),
 );
