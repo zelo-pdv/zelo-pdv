@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, ScanBarcode, Check } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,7 @@ export function ProductPicker({
     <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
       <div className="flex gap-2 shrink-0 mb-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -100,10 +100,10 @@ export function ProductPicker({
           type="button"
           variant="outline"
           size="icon"
-          className="shrink-0 rounded-xl sm:hidden"
+          className="shrink-0 rounded-xl sm:hidden text-foreground"
           onClick={() => setIsScannerOpen(true)}
         >
-          <ScanBarcode className="h-4 w-4" />
+          <BoxIcon name="barcode-reader" className="text-lg text-foreground" />
         </Button>
       </div>
       <div className="min-h-0 flex-1">
@@ -133,7 +133,7 @@ export function ProductPicker({
                       {cartQty > 0 && (
                         <Badge
                           variant="secondary"
-                          className="h-5 px-1.5 text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                          className="h-5 px-1.5 text-[10px] font-semibold bg-zinc-100 text-zinc-900 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 shrink-0"
                         >
                           {cartQty} no carrinho
                         </Badge>
@@ -147,8 +147,8 @@ export function ProductPicker({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {isAdded && (
-                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-in fade-in zoom-in-75">
-                        <Check className="h-3.5 w-3.5" /> +1
+                      <span className="flex items-center gap-1 text-xs font-bold text-foreground animate-in fade-in zoom-in-75">
+                        <BoxIcon name="check" className="text-sm text-foreground" /> +1
                       </span>
                     )}
                     <div className="text-sm font-semibold tabular-nums">
@@ -179,8 +179,8 @@ export function ProductPicker({
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 mb-1">
               <div className="flex items-center gap-2">
-                <Button size="icon" variant="ghost" onClick={onClose}>
-                  <ArrowLeft className="h-4 w-4" />
+                <Button size="icon" variant="ghost" onClick={onClose} className="text-foreground">
+                  <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
                 </Button>
                 <DrawerTitle>Produtos</DrawerTitle>
               </div>
@@ -208,9 +208,9 @@ export function ProductPicker({
                 size="icon"
                 variant="ghost"
                 onClick={onClose}
-                className="ml-0"
+                className="ml-0 text-foreground"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
               </Button>
               <DialogTitle>Produtos</DialogTitle>
             </div>

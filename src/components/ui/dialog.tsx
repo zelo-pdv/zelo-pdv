@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { BoxIcon } from "@/components/ui/box-icon"
 
 interface DialogContextValue {
   blur?: boolean
@@ -102,8 +102,7 @@ function DialogContent({
               />
             }
           >
-            <XIcon
-            />
+            <BoxIcon name="x" className="text-lg text-foreground" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

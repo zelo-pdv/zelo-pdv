@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreVertical, Pencil, Settings2, Trash2, Key } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -50,7 +50,7 @@ export function getUserColumns({
                         className="h-8 w-8"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <BoxIcon name="dots-vertical-rounded" className="text-base" />
                       </Button>
                     }
                   ></PopoverTrigger>
@@ -64,7 +64,7 @@ export function getUserColumns({
                         onEdit(u);
                       }}
                     >
-                      <Pencil className="mr-2 h-4 w-4" />
+                      <BoxIcon name="pencil" className="mr-2 text-base" />
                       Editar usuário
                     </Button>
                     <Button
@@ -76,7 +76,7 @@ export function getUserColumns({
                         onChangePassword(u);
                       }}
                     >
-                      <Key className="mr-2 h-4 w-4" />
+                      <BoxIcon name="key" className="mr-2 text-base" />
                       Trocar senha
                     </Button>
                     <Separator className="my-1" />
@@ -90,7 +90,7 @@ export function getUserColumns({
                           onDelete(u);
                         }}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <BoxIcon name="trash" className="mr-2 text-base" />
                         Remover usuário
                       </Button>
                     )}
@@ -134,7 +134,7 @@ export function getUserColumns({
               <PopoverTrigger
                 render={
                   <Button size="icon" variant="ghost" className="h-8 w-8">
-                    <Settings2 className="h-4 w-4" />
+                    <BoxIcon name="cog" className="text-base" />
                   </Button>
                 }
               ></PopoverTrigger>
@@ -160,7 +160,7 @@ export function getUserColumns({
               onClick={() => onEdit(u)}
               title="Editar usuário"
             >
-              <Pencil className="h-4 w-4" />
+              <BoxIcon name="pencil" className="text-base" />
             </Button>
             <Button
               size="icon"
@@ -169,7 +169,7 @@ export function getUserColumns({
               onClick={() => onChangePassword(u)}
               title="Trocar senha"
             >
-              <Key className="h-4 w-4" />
+              <BoxIcon name="key" className="text-base" />
             </Button>
             {!u.isFirstUser && (
               <Button
@@ -179,7 +179,7 @@ export function getUserColumns({
                 onClick={() => onDelete(u)}
                 title="Remover usuário"
               >
-                <Trash2 className="h-4 w-4" />
+                <BoxIcon name="trash" className="text-base" />
               </Button>
             )}
           </div>

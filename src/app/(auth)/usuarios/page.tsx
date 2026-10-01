@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -440,9 +440,9 @@ function UserForm({
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4" />
+              <BoxIcon name="hide" className="text-base" />
             ) : (
-              <Eye className="h-4 w-4" />
+              <BoxIcon name="show" className="text-base" />
             )}
           </button>
         </div>
@@ -580,7 +580,7 @@ function DeleteUser({
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleConfirm} disabled={isDeleting}>
             {isDeleting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />
             ) : (
               "Remover"
             )}
@@ -658,9 +658,9 @@ function ChangePasswordDialog({
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4" />
+              <BoxIcon name="hide" className="text-base" />
             ) : (
-              <Eye className="h-4 w-4" />
+              <BoxIcon name="show" className="text-base" />
             )}
           </button>
         </div>
@@ -683,7 +683,7 @@ function ChangePasswordDialog({
         onClick={() => handleSubmit()}
         disabled={isSubmitting}
       >
-        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {isSubmitting && <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />}
         Salvar nova senha
       </Button>
     </div>

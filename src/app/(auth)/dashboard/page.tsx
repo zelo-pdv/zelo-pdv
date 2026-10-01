@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import {
-  AlertTriangle,
-  Clock,
-  DollarSign,
-  Package,
-  ShoppingCart,
-  TrendingUp,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,23 +18,17 @@ import { cn } from "@/lib/utils";
 import { useSettingsStore, DashboardPeriod } from "@/store/useSettingsStore";
 
 function StatCard({
-  icon: Icon,
+  icon,
   label,
   value,
   hint,
-  tone = "default",
 }: {
-  icon: typeof DollarSign;
+  icon: string;
   label: string;
   value: string;
   hint?: string;
   tone?: "default" | "warn" | "success";
 }) {
-  const toneMap = {
-    default: "bg-primary/10 text-primary",
-    warn: "bg-amber-500/15 text-amber-600",
-    success: "bg-emerald-500/15 text-emerald-600",
-  } as const;
   return (
     <Card className="@container/card">
       <CardContent className="p-4 md:p-5">
@@ -57,10 +44,8 @@ function StatCard({
               <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
             )}
           </div>
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneMap[tone]}`}
-          >
-            <Icon className="h-4 w-4" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+            <BoxIcon name={icon} className="text-xl text-current" />
           </div>
         </div>
       </CardContent>
@@ -94,7 +79,7 @@ function SalesWeekChart({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
+              <BoxIcon name="trending-up" className="text-base text-foreground" />
               <h2 className="text-base font-semibold">Vendas nos últimos 7 dias</h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -441,7 +426,7 @@ export default function Dashboard() {
   if (!can("dashboard", "Visualizar")) {
     return (
       <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <AlertTriangle className="h-12 w-12 text-destructive opacity-50" />
+        <BoxIcon name="error" className="text-5xl text-muted-foreground opacity-50" />
         <p className="text-sm font-medium">
           Você não tem permissão para visualizar o dashboard.
         </p>
@@ -465,9 +450,9 @@ export default function Dashboard() {
           <Link href="/nova-venda">
             <Button
               size="lg"
-              className="rounded-full shadow-xs gap-2 font-medium shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground px-5 h-10 cursor-pointer"
+              className="rounded-full shadow-xs gap-2 font-medium shrink-0 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 px-5 h-10 cursor-pointer"
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
+              <BoxIcon name="cart" className="text-lg mr-1 text-current" />
               Nova Venda
             </Button>
           </Link>
@@ -531,7 +516,7 @@ export default function Dashboard() {
         )}
       >
         <StatCard
-          icon={DollarSign}
+          icon="dollar-circle"
           label={
             period === "today"
               ? "Vendido hoje"
@@ -541,21 +526,18 @@ export default function Dashboard() {
           }
           value={currency(stats.soldInPeriod)}
           hint={`${stats.countInPeriod} venda${stats.countInPeriod === 1 ? "" : "s"} no período`}
-          tone="success"
         />
         <StatCard
-          icon={Clock}
+          icon="time-five"
           label="A receber"
           value={currency(stats.pending)}
           hint={`${stats.pendingCount} venda${stats.pendingCount === 1 ? "" : "s"} pendente${stats.pendingCount === 1 ? "" : "s"}`}
-          tone={stats.pending > 0 ? "warn" : "default"}
         />
         {!dashboardSettings.hideLowStockCard && (
           <StatCard
-            icon={AlertTriangle}
+            icon="error"
             label="Estoque baixo"
             value={`${stats.low.length} produto${stats.low.length === 1 ? "" : "s"}`}
-            tone="warn"
             hint={stats.low.length ? "Reponha em breve" : "Tudo em ordem"}
           />
         )}
@@ -572,10 +554,10 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {stats.low.slice(0, 4).map((p) => (
-              <Card key={p.id} className="border-amber-500/30 bg-amber-500/5">
+              <Card key={p.id} className="border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600">
-                    <Package className="h-5 w-5" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-foreground">
+                    <BoxIcon name="package" className="text-xl text-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{p.name}</div>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+import "boxicons/css/boxicons.min.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWAUpdater } from "@/components/pwa-updater";
 import { ThemeColorUpdater } from "@/components/theme-color-updater";

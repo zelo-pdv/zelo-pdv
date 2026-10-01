@@ -12,14 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,7 +109,7 @@ export function ProductsDataTable({
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center w-full">
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
             <Input
               placeholder="Buscar produtos..."
               value={globalFilter}
@@ -136,7 +129,7 @@ export function ProductsDataTable({
                   className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
                   aria-label="Abrir filtros"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <BoxIcon name="slider-alt" className="text-base" />
                   <span className="hidden sm:inline">Filtros</span>
                   {activeFiltersCount > 0 && (
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-primary text-[11px] font-bold">
@@ -230,14 +223,14 @@ export function ProductsDataTable({
           size="lg"
           className="w-full rounded-full sm:hidden"
         >
-          <Plus className="mr-2 h-4 w-4" /> Adicionar
+          <BoxIcon name="plus" className="mr-2 text-base" /> Adicionar
         </Button>
         <Button
           onClick={onCreateClick}
           size="sm"
           className="rounded-full hidden sm:flex shrink-0"
         >
-          <Plus className="mr-1 h-4 w-4" /> Adicionar
+          <BoxIcon name="plus" className="mr-1 text-base" /> Adicionar
         </Button>
       </div>
 
@@ -253,7 +246,7 @@ export function ProductsDataTable({
                 onClick={() => setStatusFilter("Todos")}
                 className="hover:text-destructive cursor-pointer rounded-full p-0.5"
               >
-                <X className="h-3 w-3" />
+                <BoxIcon name="x" className="text-xs" />
               </button>
             </Badge>
           )}
@@ -266,7 +259,7 @@ export function ProductsDataTable({
                 onClick={() => table.getColumn("category")?.setFilterValue(undefined)}
                 className="hover:text-destructive cursor-pointer rounded-full p-0.5"
               >
-                <X className="h-3 w-3" />
+                <BoxIcon name="x" className="text-xs" />
               </button>
             </Badge>
           )}
@@ -352,7 +345,7 @@ export function ProductsDataTable({
             onClick={() => table.previousPage()}
             aria-label="Página anterior"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <BoxIcon name="chevron-left" className="text-base" />
           </Button>
           <div className="text-xs tabular-nums text-muted-foreground">
             {pageIndex + 1} / {table.getPageCount() || 1}
@@ -365,7 +358,7 @@ export function ProductsDataTable({
             onClick={() => table.nextPage()}
             aria-label="Próxima página"
           >
-            <ChevronRight className="h-4 w-4" />
+            <BoxIcon name="chevron-right" className="text-base" />
           </Button>
         </div>
       </div>

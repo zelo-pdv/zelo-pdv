@@ -12,7 +12,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NAV, SECONDARY_NAV } from "@/lib/navigation-data";
-import { LogOut } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -71,13 +71,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuButton
                       tooltip={item.label}
                       render={
-                        <Link href={item.to}>
-                          {<item.icon />}
+                        <Link href={item.to} className="flex items-center gap-3 w-full">
+                          <item.icon
+                            active={active}
+                            className={
+                              active
+                                ? "text-[1.25rem] text-black dark:text-white"
+                                : "text-[1.25rem] text-muted-foreground group-hover/menu-button:text-foreground"
+                            }
+                          />
                           <span>{item.label}</span>
                         </Link>
                       }
                       className={
-                        active ? "bg-primary text-primary-foreground" : ""
+                        active
+                          ? "bg-zinc-100 text-zinc-900 font-semibold dark:bg-zinc-800 dark:text-zinc-50"
+                          : "text-muted-foreground hover:text-foreground"
                       }
                     ></SidebarMenuButton>
                   </SidebarMenuItem>
@@ -98,13 +107,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuButton
                       tooltip={item.label}
                       render={
-                        <Link href={item.to}>
-                          {<item.icon />}
+                        <Link href={item.to} className="flex items-center gap-3 w-full">
+                          <item.icon
+                            active={active}
+                            className={
+                              active
+                                ? "text-[1.25rem] text-black dark:text-white"
+                                : "text-[1.25rem] text-muted-foreground group-hover/menu-button:text-foreground"
+                            }
+                          />
                           <span>{item.label}</span>
                         </Link>
                       }
                       className={
-                        active ? "bg-primary text-primary-foreground" : ""
+                        active
+                          ? "bg-zinc-100 text-zinc-900 font-semibold dark:bg-zinc-800 dark:text-zinc-50"
+                          : "text-muted-foreground hover:text-foreground"
                       }
                     ></SidebarMenuButton>
                   </SidebarMenuItem>
@@ -121,8 +139,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     router.push("/login");
                     router.refresh();
                   }}
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <BoxIcon name="log-out" className="text-[1.15rem] text-muted-foreground" />
                   <span>Sair</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

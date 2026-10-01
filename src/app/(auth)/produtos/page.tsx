@@ -47,7 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Category } from "@/prisma/client";
-import {  ScanBarcode, Wand2, AlertCircle } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
@@ -727,7 +727,7 @@ function ProductForm({
               handleBarcodeValidation(generated);
             }}
           >
-            <Wand2 className="w-4 h-4 text-blue-500" />
+            <BoxIcon name="magic-wand" className="text-base text-foreground" />
           </Button>
           <Button
             type="button"
@@ -736,12 +736,12 @@ function ProductForm({
             className="shrink-0 sm:hidden"
             onClick={() => setIsScannerOpen(true)}
           >
-            <ScanBarcode className="w-4 h-4" />
+            <BoxIcon name="barcode-reader" className="text-base text-foreground" />
           </Button>
         </div>
         {barcodeExists && (
-          <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
-            <AlertCircle className="w-3 h-3" /> Código de barras já existe em outro produto.
+          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+            <BoxIcon name="error-circle" className="text-xs" /> Código de barras já existe em outro produto.
           </p>
         )}
       </div>

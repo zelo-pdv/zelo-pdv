@@ -1,19 +1,11 @@
-import {
-  LayoutDashboard,
-  Package,
-  Receipt,
-  Settings,
-  Users,
-  DollarSign,
-} from "lucide-react";
-
+import { createBoxIcon, type BoxIconComponent } from "@/components/ui/box-icon";
 import type { ModuleKey } from "@/store/useSettingsStore";
 
 export type NavItem = {
   to: string;
   label: string;
   short: string;
-  icon: typeof LayoutDashboard;
+  icon: BoxIconComponent;
   primary?: boolean;
   module?: ModuleKey;
   adminOnly?: boolean;
@@ -29,21 +21,21 @@ export const NAV: NavItem[] = [
     to: "/dashboard",
     label: "Dashboard",
     short: "Início",
-    icon: LayoutDashboard,
+    icon: createBoxIcon("grid-alt"),
     module: "dashboard",
   },
   {
     to: "/produtos",
     label: "Produtos",
     short: "Produtos",
-    icon: Package,
+    icon: createBoxIcon("package"),
     module: "produtos",
   },
   {
     to: "/nova-venda",
     label: "Nova Venda",
     short: "Vender",
-    icon: DollarSign,
+    icon: createBoxIcon("dollar-circle"),
     primary: true,
     module: "nova-venda",
   },
@@ -51,14 +43,14 @@ export const NAV: NavItem[] = [
     to: "/clientes",
     label: "Clientes",
     short: "Clientes",
-    icon: Users,
+    icon: createBoxIcon("group"),
     module: "clientes",
   },
   {
     to: "/historico",
     label: "Histórico",
     short: "Vendas",
-    icon: Receipt,
+    icon: createBoxIcon("receipt"),
     module: "historico",
   },
 ];
@@ -68,14 +60,14 @@ export const SECONDARY_NAV: NavItem[] = [
     to: "/usuarios",
     label: "Usuários",
     short: "Usuários",
-    icon: Users,
+    icon: createBoxIcon("user"),
     adminOnly: true,
   },
   {
     to: "/configuracoes",
     label: "Configurações",
     short: "Config",
-    icon: Settings,
+    icon: createBoxIcon("cog"),
     adminOnly: true,
   },
 ];
@@ -95,12 +87,13 @@ export const SettingsItens: NavItem[] = [
     to: "/usuarios",
     label: "Usuários",
     short: "Usuários",
-    icon: Users,
+    icon: createBoxIcon("user"),
   },
   {
     to: "/configuracoes",
     label: "Configurações",
     short: "Config",
-    icon: Settings,
+    icon: createBoxIcon("cog"),
   },
 ];
+

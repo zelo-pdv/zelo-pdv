@@ -38,11 +38,11 @@ export function BottomNavigation() {
               >
                 <span
                   className={cn(
-                    "-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95",
-                    active && "ring-4 ring-primary/20",
+                    "-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-lg shadow-black/10 dark:shadow-white/10 transition-transform active:scale-95",
+                    active && "ring-4 ring-zinc-300 dark:ring-zinc-700",
                   )}
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon active={active} className="text-2xl text-white dark:text-zinc-900" />
                 </span>
               </Link>
             );
@@ -53,10 +53,10 @@ export function BottomNavigation() {
               href={n.to}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 text-[11px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground",
+                active ? "text-zinc-900 dark:text-zinc-50 font-semibold" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon active={active} className={cn("text-xl", active ? "text-black dark:text-white" : "text-muted-foreground")} />
               {n.short}
             </Link>
           );

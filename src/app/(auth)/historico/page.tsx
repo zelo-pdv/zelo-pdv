@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Receipt, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -159,7 +159,7 @@ export default function HistoricoPage() {
   if (!can("historico", "Visualizar")) {
     return (
       <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <AlertTriangle className="h-12 w-12 text-destructive opacity-50" />
+        <BoxIcon name="error" className="text-5xl text-destructive opacity-50" />
         <p className="text-sm font-medium">Você não tem permissão para visualizar o histórico.</p>
       </div>
     );
@@ -276,9 +276,9 @@ export default function HistoricoPage() {
                     onClick={() => handleMarkAsPaid(detail.id)}
                   >
                     {isUpdatingStatus ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />
                     ) : (
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                      <BoxIcon name="check-circle" className="mr-2 text-base" />
                     )}
                     Marcar como pago
                   </Button>
@@ -296,7 +296,7 @@ export default function HistoricoPage() {
                     setDetail(null);
                   }}
                 >
-                  <Receipt className="mr-2 h-4 w-4" /> Ver comprovante
+                  <BoxIcon name="receipt" className="mr-2 text-base" /> Ver comprovante
                 </Button>
               </div>
             )}
@@ -408,9 +408,9 @@ export default function HistoricoPage() {
                     onClick={() => handleMarkAsPaid(detail.id)}
                   >
                     {isUpdatingStatus ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />
                     ) : (
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                      <BoxIcon name="check-circle" className="mr-2 text-base" />
                     )}
                     Marcar como pago
                   </Button>
@@ -428,7 +428,7 @@ export default function HistoricoPage() {
                     setDetail(null); // Fecha o de detalhes e abre o de comprovante
                   }}
                 >
-                  <Receipt className="mr-2 h-4 w-4" /> Ver comprovante
+                  <BoxIcon name="receipt" className="mr-2 text-base" /> Ver comprovante
                 </Button>
               </div>
             )}

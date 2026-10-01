@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil, Trash2, Power } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { currency } from "@/lib/format";
@@ -148,7 +148,7 @@ export function getClientColumns({
               aria-label="Ver detalhes"
               title="Ver detalhes"
             >
-              <Eye className="h-4 w-4" />
+              <BoxIcon name="show" className="text-base" />
             </Button>
             {can("clientes", "Editar") && (
               <>
@@ -164,7 +164,7 @@ export function getClientColumns({
                   aria-label={!active ? "Ativar cliente" : "Desativar cliente"}
                   title={!active ? "Ativar cliente" : "Desativar cliente"}
                 >
-                  <Power className="h-4 w-4" />
+                  <BoxIcon name="power-off" className="text-base" />
                 </Button>
                 <Button
                   size="icon"
@@ -174,7 +174,7 @@ export function getClientColumns({
                   aria-label="Editar"
                   title="Editar cliente"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <BoxIcon name="pencil" className="text-base" />
                 </Button>
               </>
             )}
@@ -187,7 +187,7 @@ export function getClientColumns({
                 aria-label="Excluir"
                 title="Excluir cliente"
               >
-                <Trash2 className="h-4 w-4" />
+                <BoxIcon name="trash" className="text-base" />
               </Button>
             )}
           </div>

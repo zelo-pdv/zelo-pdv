@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Receipt } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { currency, dateTime } from "@/lib/format";
@@ -97,7 +97,7 @@ export function getSaleColumns({
               onClick={() => onView(s)}
               aria-label="Ver detalhes"
             >
-              <Eye className="h-4 w-4" />
+              <BoxIcon name="show" className="text-base" />
             </Button>
             <Button
               size="icon"
@@ -106,7 +106,7 @@ export function getSaleColumns({
               onClick={() => onVoucher(s)}
               aria-label="Ver comprovante"
             >
-              <Receipt className="h-4 w-4" />
+              <BoxIcon name="receipt" className="text-base" />
             </Button>
           </div>
         );

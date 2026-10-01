@@ -19,6 +19,7 @@
     "@types/pg": "^8.20.4",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "boxicons": "^2.1.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html-to-image": "^1.11.13",

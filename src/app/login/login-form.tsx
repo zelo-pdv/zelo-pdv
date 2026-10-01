@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -186,9 +186,9 @@ export function LoginForm() {
                     tabIndex={-1}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                      <BoxIcon name="hide" className="text-xl" />
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      <BoxIcon name="show" className="text-xl" />
                     )}
                   </button>
                 </div>
@@ -209,18 +209,18 @@ export function LoginForm() {
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]" 
+              className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-black/10 dark:shadow-white/5 transition-all active:scale-[0.98] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200" 
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <BoxIcon name="loader-alt" className="mr-2 text-xl bx-spin" />
                   Entrando...
                 </>
               ) : (
                 <>
                   Entrar na conta
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <BoxIcon name="right-arrow-alt" className="ml-2 text-xl" />
                 </>
               )}
             </Button>

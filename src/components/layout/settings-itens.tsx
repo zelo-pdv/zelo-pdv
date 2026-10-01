@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  SettingsIcon,
-  Sun,
-  Moon,
-  UserCog,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,7 +31,7 @@ export default function SettingsItem() {
       <DropdownMenuTrigger
         render={
           <Button variant="outline">
-            <SettingsIcon />
+            <BoxIcon name="cog" className="text-lg text-foreground" />
           </Button>
         }
       />
@@ -52,9 +45,9 @@ export default function SettingsItem() {
             }}
           >
             {isDark ? (
-              <Sun className="mr-2 h-4 w-4" />
+              <BoxIcon name="sun" className="mr-2 text-base text-foreground" />
             ) : (
-              <Moon className="mr-2 h-4 w-4" />
+              <BoxIcon name="moon" solid className="mr-2 text-base text-foreground" />
             )}
             {resolvedTheme === "dark" ? "Tema claro" : "Tema escuro"}
           </DropdownMenuItem>
@@ -63,7 +56,7 @@ export default function SettingsItem() {
               <DropdownMenuItem
                 render={
                   <Link href="/usuarios">
-                    <UserCog className="mr-2 h-4 w-4" />
+                    <BoxIcon name="user-pin" className="mr-2 text-base text-foreground" />
                     Usuários
                   </Link>
                 }
@@ -72,7 +65,7 @@ export default function SettingsItem() {
               <DropdownMenuItem
                 render={
                   <Link href="/configuracoes">
-                    <Settings className="mr-2 h-4 w-4" />
+                    <BoxIcon name="cog" className="mr-2 text-base text-foreground" />
                     Configurações
                   </Link>
                 }
@@ -91,7 +84,7 @@ export default function SettingsItem() {
               router.refresh();
             }}
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <BoxIcon name="log-out" className="mr-2 text-base text-destructive" />
             Sair
           </DropdownMenuItem>
         </DropdownMenuGroup>

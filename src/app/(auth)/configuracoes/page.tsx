@@ -1,30 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Store as StoreIcon,
-  ShieldCheck,
-  MapPin,
-  Loader2,
-  ChevronDown,
-  Bell,
-  ShoppingCart,
-  LayoutDashboard,
-  Package,
-  Download,
-  Upload,
-  FileSpreadsheet,
-  FileDown,
-  FileUp,
-  AlertCircle,
-  CheckCircle2,
-  Users,
-  UserCheck,
-  Coins,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -111,7 +88,7 @@ export default function ConfiguracoesPage() {
   if (!isAdmin) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <BoxIcon name="loader-alt" className="text-3xl bx-spin text-muted-foreground" />
       </div>
     );
   }
@@ -337,7 +314,7 @@ function StoreSection() {
           aria-expanded={isSectionExpanded}
         >
           <div className="flex items-center gap-2 flex-wrap">
-            <StoreIcon className="h-4 w-4 text-primary shrink-0" />
+            <BoxIcon name="store" solid={isSectionExpanded} className="text-base text-foreground shrink-0" />
             <CardTitle className="text-base font-semibold">Dados da loja</CardTitle>
             {!isSectionExpanded && form.name && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -347,9 +324,10 @@ function StoreSection() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
             <span>{isSectionExpanded ? "Minimizar" : "Ver dados da loja"}</span>
-            <ChevronDown
+            <BoxIcon
+              name="chevron-down"
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "text-base transition-transform duration-200",
                 isSectionExpanded && "rotate-180"
               )}
             />
@@ -429,7 +407,7 @@ function StoreSection() {
             aria-expanded={isAddressExpanded}
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <MapPin className="h-4 w-4 text-primary shrink-0" />
+              <BoxIcon name="map-pin" solid={isAddressExpanded} className="text-base text-foreground shrink-0" />
               <h4 className="text-sm font-semibold">
                 Endereço da loja (para cupom e comprovante)
               </h4>
@@ -441,9 +419,10 @@ function StoreSection() {
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
               <span>{isAddressExpanded ? "Minimizar" : "Ver endereço"}</span>
-              <ChevronDown
+              <BoxIcon
+                name="chevron-down"
                 className={cn(
-                  "h-4 w-4 transition-transform duration-200",
+                  "text-base transition-transform duration-200",
                   isAddressExpanded && "rotate-180"
                 )}
               />
@@ -457,7 +436,7 @@ function StoreSection() {
                   <Label>CEP</Label>
                   {cepLoading && (
                     <span className="flex items-center text-xs text-muted-foreground gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
+                      <BoxIcon name="loader-alt" className="text-xs bx-spin" /> Buscando...
                     </span>
                   )}
                 </div>
@@ -595,7 +574,7 @@ function NotificationsSection() {
           aria-expanded={isExpanded}
         >
           <div className="flex items-center gap-2 flex-wrap">
-            <Bell className="h-4 w-4 text-primary shrink-0" />
+            <BoxIcon name="bell" solid={isExpanded} className="text-base text-foreground shrink-0" />
             <CardTitle className="text-base font-semibold">Notificações e Avisos</CardTitle>
             {!isExpanded && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -605,9 +584,10 @@ function NotificationsSection() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
             <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
-            <ChevronDown
+            <BoxIcon
+              name="chevron-down"
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "text-base transition-transform duration-200",
                 isExpanded && "rotate-180"
               )}
             />
@@ -688,7 +668,7 @@ function SalesConfigSection() {
           aria-expanded={isExpanded}
         >
           <div className="flex items-center gap-2 flex-wrap">
-            <ShoppingCart className="h-4 w-4 text-primary shrink-0" />
+            <BoxIcon name="cart" solid={isExpanded} className="text-base text-foreground shrink-0" />
             <CardTitle className="text-base font-semibold">Configurações de Venda</CardTitle>
             {!isExpanded && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -698,9 +678,10 @@ function SalesConfigSection() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
             <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
-            <ChevronDown
+            <BoxIcon
+              name="chevron-down"
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "text-base transition-transform duration-200",
                 isExpanded && "rotate-180"
               )}
             />
@@ -840,7 +821,7 @@ function DashboardConfigSection() {
           aria-expanded={isExpanded}
         >
           <div className="flex items-center gap-2 flex-wrap">
-            <LayoutDashboard className="h-4 w-4 text-primary shrink-0" />
+            <BoxIcon name="grid-alt" solid={isExpanded} className="text-base text-foreground shrink-0" />
             <CardTitle className="text-base font-semibold">Configurações do Dashboard</CardTitle>
             {!isExpanded && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -850,9 +831,10 @@ function DashboardConfigSection() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
             <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
-            <ChevronDown
+            <BoxIcon
+              name="chevron-down"
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "text-base transition-transform duration-200",
                 isExpanded && "rotate-180"
               )}
             />
@@ -1019,7 +1001,7 @@ function GroupsSection() {
             aria-expanded={isExpanded}
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              <BoxIcon name="shield-quarter" solid={isExpanded} className="text-base text-foreground shrink-0" />
               <CardTitle className="text-base font-semibold">Grupos de acesso</CardTitle>
               {!isExpanded && (
                 <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -1029,9 +1011,10 @@ function GroupsSection() {
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
               <span>{isExpanded ? "Minimizar" : "Gerenciar"}</span>
-              <ChevronDown
+              <BoxIcon
+                name="chevron-down"
                 className={cn(
-                  "h-4 w-4 transition-transform duration-200",
+                  "text-base transition-transform duration-200",
                   isExpanded && "rotate-180"
                 )}
               />
@@ -1043,7 +1026,7 @@ function GroupsSection() {
               className="rounded-full shrink-0"
               onClick={() => setCreating(true)}
             >
-              <Plus className="mr-1 h-4 w-4" /> Adicionar
+              <BoxIcon name="plus" className="mr-1 text-base" /> Adicionar
             </Button>
           )}
         </div>
@@ -1102,7 +1085,7 @@ function GroupsSection() {
                       onClick={() => setEditing(g)}
                       aria-label="Editar"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <BoxIcon name="pencil" className="text-base" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger
@@ -1112,7 +1095,7 @@ function GroupsSection() {
                             variant="ghost"
                             className="h-8 w-8 text-destructive"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <BoxIcon name="trash" className="text-base" />
                           </Button>
                         }
                       ></AlertDialogTrigger>
@@ -1648,7 +1631,7 @@ function ProductsConfigSection() {
           aria-expanded={isExpanded}
         >
           <div className="flex items-center gap-2 flex-wrap">
-            <Package className="h-4 w-4 text-primary shrink-0" />
+            <BoxIcon name="package" solid={isExpanded} className="text-base text-foreground shrink-0" />
             <CardTitle className="text-base font-semibold">Configurações de Produtos</CardTitle>
             {!isExpanded && (
               <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -1658,9 +1641,10 @@ function ProductsConfigSection() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
             <span>{isExpanded ? "Minimizar" : "Configurar"}</span>
-            <ChevronDown
+            <BoxIcon
+              name="chevron-down"
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "text-base transition-transform duration-200",
                 isExpanded && "rotate-180"
               )}
             />
@@ -1819,7 +1803,7 @@ function ProductsConfigSection() {
                   size="sm"
                   onClick={() => openCategoryModal()}
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Nova Categoria
+                  <BoxIcon name="plus" className="mr-2 text-base" /> Nova Categoria
                 </Button>
               </div>
 
@@ -1845,7 +1829,7 @@ function ProductsConfigSection() {
                             size="icon"
                             onClick={() => openCategoryModal(cat)}
                           >
-                            <Pencil className="w-4 h-4 text-blue-500" />
+                            <BoxIcon name="pencil" className="text-base text-muted-foreground hover:text-foreground" />
                           </Button>
 
                           <Button
@@ -1853,7 +1837,7 @@ function ProductsConfigSection() {
                             size="icon"
                             onClick={() => handleDeleteCategory(cat.id)}
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <BoxIcon name="trash" className="text-base text-muted-foreground hover:text-destructive" />
                           </Button>
                         </div>
                       </li>
@@ -1878,7 +1862,7 @@ function ProductsConfigSection() {
                   size="sm"
                   onClick={() => openUnitModal()}
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Nova Unidade
+                  <BoxIcon name="plus" className="mr-2 text-base" /> Nova Unidade
                 </Button>
               </div>
 
@@ -1911,7 +1895,7 @@ function ProductsConfigSection() {
                             size="icon"
                             onClick={() => openUnitModal(u)}
                           >
-                            <Pencil className="w-4 h-4 text-blue-500" />
+                            <BoxIcon name="pencil" className="text-base text-muted-foreground hover:text-foreground" />
                           </Button>
 
                           <Button
@@ -1919,7 +1903,7 @@ function ProductsConfigSection() {
                             size="icon"
                             onClick={() => handleDeleteUnit(u.id)}
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <BoxIcon name="trash" className="text-base text-muted-foreground hover:text-destructive" />
                           </Button>
                         </div>
                       </li>
@@ -2640,7 +2624,7 @@ function DataImportExportSection() {
             aria-expanded={isExpanded}
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+              <BoxIcon name="spreadsheet" solid={isExpanded} className="text-base text-foreground shrink-0" />
               <CardTitle className="text-base font-semibold">
                 Importação e Exportação de Dados
               </CardTitle>
@@ -2652,9 +2636,10 @@ function DataImportExportSection() {
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground shrink-0 ml-2">
               <span>{isExpanded ? "Minimizar" : "Gerenciar"}</span>
-              <ChevronDown
+              <BoxIcon
+                name="chevron-down"
                 className={cn(
-                  "h-4 w-4 transition-transform duration-200",
+                  "text-base transition-transform duration-200",
                   isExpanded && "rotate-180",
                 )}
               />
@@ -2668,7 +2653,7 @@ function DataImportExportSection() {
             <div className="space-y-3">
               <div>
                 <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                  <Download className="h-4 w-4 text-primary" />
+                  <BoxIcon name="download" className="text-base text-foreground" />
                   Exportação de Dados
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -2682,7 +2667,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
                   <div className="space-y-1 mb-3">
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
+                      <BoxIcon name="group" className="text-base text-foreground" />
                       <span className="text-sm font-medium">Clientes</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2691,12 +2676,11 @@ function DataImportExportSection() {
                   </div>
                   <LoadingButton
                     variant="outline"
-                    size="sm"
-                    className="w-full text-xs font-medium gap-1.5"
+                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                     onClick={handleExportClients}
                     loading={exportingType === "clients"}
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <BoxIcon name="download" className="text-base sm:text-sm" />
                     Exportar Clientes (.csv)
                   </LoadingButton>
                 </div>
@@ -2705,7 +2689,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
                   <div className="space-y-1 mb-3">
                     <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4 text-primary" />
+                      <BoxIcon name="user-check" className="text-base text-foreground" />
                       <span className="text-sm font-medium">Usuários</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2714,12 +2698,11 @@ function DataImportExportSection() {
                   </div>
                   <LoadingButton
                     variant="outline"
-                    size="sm"
-                    className="w-full text-xs font-medium gap-1.5"
+                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                     onClick={handleExportUsers}
                     loading={exportingType === "users"}
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <BoxIcon name="download" className="text-base sm:text-sm" />
                     Exportar Usuários (.csv)
                   </LoadingButton>
                 </div>
@@ -2728,7 +2711,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
                   <div className="space-y-1 mb-3">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-primary" />
+                      <BoxIcon name="package" className="text-base text-foreground" />
                       <span className="text-sm font-medium">Produtos</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2737,12 +2720,11 @@ function DataImportExportSection() {
                   </div>
                   <LoadingButton
                     variant="outline"
-                    size="sm"
-                    className="w-full text-xs font-medium gap-1.5"
+                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                     onClick={handleExportProducts}
                     loading={exportingType === "products"}
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <BoxIcon name="download" className="text-base sm:text-sm" />
                     Exportar Produtos (.csv)
                   </LoadingButton>
                 </div>
@@ -2751,7 +2733,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
                   <div className="space-y-1 mb-3">
                     <div className="flex items-center gap-2">
-                      <Coins className="h-4 w-4 text-primary" />
+                      <BoxIcon name="coin-stack" className="text-base text-foreground" />
                       <span className="text-sm font-medium">Vendas</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2760,12 +2742,11 @@ function DataImportExportSection() {
                   </div>
                   <LoadingButton
                     variant="outline"
-                    size="sm"
-                    className="w-full text-xs font-medium gap-1.5"
+                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                     onClick={handleExportSales}
                     loading={exportingType === "sales"}
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <BoxIcon name="download" className="text-base sm:text-sm" />
                     Exportar Vendas (.csv)
                   </LoadingButton>
                 </div>
@@ -2778,7 +2759,7 @@ function DataImportExportSection() {
             <div className="space-y-3">
               <div>
                 <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                  <Upload className="h-4 w-4 text-primary" />
+                  <BoxIcon name="upload" className="text-base text-foreground" />
                   Importação de Dados
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -2792,7 +2773,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-4 bg-card/50 space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-primary" />
+                      <BoxIcon name="package" className="text-base text-foreground" />
                       <span className="text-sm font-semibold">Produtos</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2801,22 +2782,20 @@ function DataImportExportSection() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-2 w-full">
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="text-xs font-medium gap-1.5 flex-1"
+                      className="w-full sm:flex-1 h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                       onClick={handleDownloadProductTemplate}
                     >
-                      <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <BoxIcon name="download" className="text-base sm:text-sm text-muted-foreground" />
                       Baixar Modelo (.csv)
                     </Button>
                     <Button
-                      size="sm"
-                      className="text-xs font-medium gap-1.5 flex-1"
+                      className="w-full sm:flex-1 h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                       onClick={() => setImportModalType("products")}
                     >
-                      <FileUp className="h-3.5 w-3.5" />
+                      <BoxIcon name="upload" className="text-base sm:text-sm" />
                       Importar Produtos
                     </Button>
                   </div>
@@ -2826,7 +2805,7 @@ function DataImportExportSection() {
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-4 bg-card/50 space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
+                      <BoxIcon name="group" className="text-base text-foreground" />
                       <span className="text-sm font-semibold">Clientes</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2835,22 +2814,20 @@ function DataImportExportSection() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-2 w-full">
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="text-xs font-medium gap-1.5 flex-1"
+                      className="w-full sm:flex-1 h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                       onClick={handleDownloadClientTemplate}
                     >
-                      <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <BoxIcon name="download" className="text-base sm:text-sm text-muted-foreground" />
                       Baixar Modelo (.csv)
                     </Button>
                     <Button
-                      size="sm"
-                      className="text-xs font-medium gap-1.5 flex-1"
+                      className="w-full sm:flex-1 h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
                       onClick={() => setImportModalType("clients")}
                     >
-                      <FileUp className="h-3.5 w-3.5" />
+                      <BoxIcon name="upload" className="text-base sm:text-sm" />
                       Importar Clientes
                     </Button>
                   </div>
@@ -2864,18 +2841,22 @@ function DataImportExportSection() {
       {/* Modal de Importação com Upload e Pré-visualização */}
       {importModalType && (
         <Dialog open={true} onOpenChange={(open) => !open && closeImportModal()}>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle className="text-base flex items-center gap-2">
-                <FileUp className="h-5 w-5 text-primary" />
-                Importar {importModalType === "products" ? "Produtos" : "Clientes"}{" "}
-                via CSV
+          <DialogContent className="w-[calc(100vw-1.5rem)] sm:max-w-xl max-h-[90dvh] flex flex-col p-4 sm:p-6 overflow-hidden rounded-2xl sm:rounded-xl">
+            <DialogHeader className="shrink-0 pb-1">
+              <DialogTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <BoxIcon name="upload" className="text-xl text-foreground shrink-0" />
+                <span className="truncate">
+                  Importar {importModalType === "products" ? "Produtos" : "Clientes"} via CSV
+                </span>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-semibold text-foreground">Instruções:</p>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 py-2 pr-1 -mr-1">
+              <div className="rounded-xl bg-muted/50 p-3 sm:p-3.5 text-xs text-muted-foreground space-y-1.5 border border-border/40">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <BoxIcon name="info-circle" className="text-sm text-foreground" />
+                  Instruções:
+                </p>
                 <p>
                   1. Utilize o modelo oficial .csv disponibilizado nas
                   configurações para evitar divergências.
@@ -2885,7 +2866,7 @@ function DataImportExportSection() {
                   delimitador ponto e vírgula (;) ou vírgula (,).
                 </p>
                 {importModalType === "clients" && (
-                  <p className="text-amber-600 dark:text-amber-400 font-medium">
+                  <p className="text-muted-foreground font-medium pt-0.5">
                     Aviso: E-mails e telefones são validados de forma única no
                     sistema. Se já existirem, a respectiva linha será rejeitada.
                   </p>
@@ -2894,29 +2875,31 @@ function DataImportExportSection() {
 
               {/* Input de Arquivo */}
               <div className="space-y-2">
-                <Label htmlFor="csv-file-input">Selecione o arquivo .csv</Label>
+                <Label htmlFor="csv-file-input" className="text-xs sm:text-sm font-medium">
+                  Selecione o arquivo .csv
+                </Label>
                 <Input
                   id="csv-file-input"
                   type="file"
                   accept=".csv"
                   onChange={handleFileChange}
                   disabled={isImporting}
-                  className="cursor-pointer"
+                  className="cursor-pointer file:cursor-pointer h-11 sm:h-9 py-2 text-xs sm:text-sm rounded-xl sm:rounded-lg"
                 />
               </div>
 
               {/* Resumo do Arquivo Pré-carregado */}
               {importFile && parsedRows.length > 0 && !importResult && (
-                <div className="rounded-xl border border-border/80 p-3 space-y-2 bg-card">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground truncate max-w-62.5">
+                <div className="rounded-xl border border-border/80 p-3 sm:p-3.5 space-y-2 bg-card">
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <span className="font-medium text-foreground truncate">
                       {importFile.name}
                     </span>
-                    <Badge variant="outline" className="text-primary text-[10px]">
+                    <Badge variant="outline" className="text-foreground text-[10px] shrink-0">
                       {parsedRows.length} registro(s) encontrado(s)
                     </Badge>
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-[11px] text-muted-foreground wrap-break-word">
                     Colunas detectadas:{" "}
                     {Object.keys(parsedRows[0] || {}).join(", ")}
                   </div>
@@ -2928,9 +2911,9 @@ function DataImportExportSection() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     {importResult.errors.length === 0 ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <BoxIcon name="check-circle" className="text-xl shrink-0" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                      <BoxIcon name="error-circle" className="text-xl shrink-0" />
                     )}
                     <span>
                       {importResult.importedCount} registro(s) importado(s) com
@@ -2958,9 +2941,10 @@ function DataImportExportSection() {
               )}
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="shrink-0 pt-3 border-t border-border/60 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-2 w-full">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto sm:min-w-28 h-11 sm:h-9 text-sm sm:text-xs font-medium rounded-xl sm:rounded-lg gap-2"
                 onClick={closeImportModal}
                 disabled={isImporting}
               >
@@ -2968,10 +2952,12 @@ function DataImportExportSection() {
               </Button>
               {!importResult && (
                 <LoadingButton
+                  className="w-full sm:w-auto sm:min-w-44 h-11 sm:h-9 text-sm sm:text-xs font-medium rounded-xl sm:rounded-lg gap-2"
                   onClick={handleStartImport}
                   disabled={!importFile || parsedRows.length === 0 || isImporting}
                   loading={isImporting}
                 >
+                  <BoxIcon name="check" className="text-base sm:text-sm" />
                   Confirmar e Importar
                 </LoadingButton>
               )}

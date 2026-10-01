@@ -13,7 +13,7 @@ import ClientDetail from "@/components/clients/client-detail";
 import DeleteClient from "@/components/clients/delete-client";
 import type { ClientWithAddress, Sale } from "@/types";
 import { usePermissions } from "@/components/auth/permissions-provider";
-import { AlertTriangle } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 export default function ClientesPage() {
@@ -123,7 +123,7 @@ export default function ClientesPage() {
   if (!can("clientes", "Visualizar")) {
     return (
       <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <AlertTriangle className="h-12 w-12 text-destructive opacity-50" />
+        <BoxIcon name="error" className="text-5xl text-destructive opacity-50" />
         <p className="text-sm font-medium">Você não tem permissão para visualizar clientes.</p>
       </div>
     );

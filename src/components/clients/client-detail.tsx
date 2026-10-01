@@ -6,7 +6,7 @@ import { maskPhone } from "@/lib/masks";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { ChevronDown, MessageCircle, Receipt } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
 import {
@@ -30,9 +30,10 @@ function ClientSaleCard({ sale }: { sale: Sale }) {
         className="flex items-center justify-between p-2.5 text-sm cursor-pointer select-none"
       >
         <div className="min-w-0 flex items-center gap-2">
-          <ChevronDown
+          <BoxIcon
+            name="chevron-down"
             className={cn(
-              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+              "text-sm text-muted-foreground transition-transform duration-200 shrink-0",
               expanded && "rotate-180"
             )}
           />
@@ -95,9 +96,9 @@ function ClientSaleCard({ sale }: { sale: Sale }) {
             </span>
             <Link
               href={`/historico?saleId=${sale.id}`}
-              className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1"
+              className="text-xs text-foreground/80 hover:text-foreground font-medium hover:underline inline-flex items-center gap-1"
             >
-              <Receipt className="h-3 w-3" /> Ver no histórico
+              <BoxIcon name="receipt" className="text-xs" /> Ver no histórico
             </Link>
           </div>
         </div>
@@ -235,7 +236,7 @@ export default function ClientDetail({
               target="_blank"
               rel="noreferrer"
             >
-              <MessageCircle className="mr-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" /> WhatsApp
+              <BoxIcon name="message-rounded-dots" className="mr-1.5 text-base text-foreground" /> WhatsApp
             </Link>
           }
         />

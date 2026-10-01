@@ -1,13 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
-import {
-  ArrowUpDown,
-  MoreVertical,
-  PackagePlus,
-  Pencil,
-  Power,
-  Trash2,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +76,7 @@ export function getProductColumns({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Produto
-          <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+          <BoxIcon name="sort-alt-2" className="ml-1 text-sm" />
         </Button>
       ),
 
@@ -130,7 +123,7 @@ export function getProductColumns({
                           className="h-8 w-8"
                           onClick={(event) => event.stopPropagation()}
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <BoxIcon name="dots-vertical-rounded" className="text-base" />
                         </Button>
                       }
                     />
@@ -146,7 +139,7 @@ export function getProductColumns({
                             onStock(product);
                           }}
                         >
-                          <PackagePlus className="mr-2 h-4 w-4" />
+                          <BoxIcon name="package" className="mr-2 text-base" />
                           Entrada de estoque
                         </Button>
                       )}
@@ -161,7 +154,7 @@ export function getProductColumns({
                             onEdit(product);
                           }}
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <BoxIcon name="pencil" className="mr-2 text-base" />
                           Editar produto
                         </Button>
                       )}
@@ -181,7 +174,7 @@ export function getProductColumns({
                             onToggleActive(product);
                           }}
                         >
-                          <Power className="mr-2 h-4 w-4" />
+                          <BoxIcon name="power-off" className="mr-2 text-base" />
                           {active ? "Desativar produto" : "Ativar produto"}
                         </Button>
                       )}
@@ -200,7 +193,7 @@ export function getProductColumns({
                             onDelete(product);
                           }}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <BoxIcon name="trash" className="mr-2 text-base" />
                           Remover produto
                         </Button>
                       )}
@@ -346,7 +339,7 @@ export function getProductColumns({
                 aria-label="Entrada de estoque"
                 title="Entrada de estoque"
               >
-                <PackagePlus className="h-4 w-4" />
+                <BoxIcon name="package" className="text-base" />
               </Button>
             )}
 
@@ -363,7 +356,7 @@ export function getProductColumns({
                 aria-label={!active ? "Ativar produto" : "Desativar produto"}
                 title={!active ? "Ativar produto" : "Desativar produto"}
               >
-                <Power className="h-4 w-4" />
+                <BoxIcon name="power-off" className="text-base" />
               </Button>
             )}
 
@@ -376,7 +369,7 @@ export function getProductColumns({
                 aria-label="Editar produto"
                 title="Editar produto"
               >
-                <Pencil className="h-4 w-4" />
+                <BoxIcon name="pencil" className="text-base" />
               </Button>
             )}
 
@@ -389,7 +382,7 @@ export function getProductColumns({
                 aria-label="Remover produto"
                 title="Remover produto"
               >
-                <Trash2 className="h-4 w-4" />
+                <BoxIcon name="trash" className="text-base" />
               </Button>
             )}
           </div>

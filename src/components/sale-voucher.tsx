@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileText, Share2 } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
@@ -480,29 +480,29 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
   const ActionButtons = (
     <div className="space-y-2">
       <Button
-        className="h-12 w-full rounded-full"
+        className="h-12 w-full rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
         onClick={shareWhatsapp}
         disabled={!!busy}
       >
-        <Share2 className="mr-2 h-4 w-4" />
+        <BoxIcon name="share-alt" className="mr-2 text-base text-current" />
         Compartilhar via WhatsApp
       </Button>
       <div className="grid grid-cols-2 gap-2">
         <Button
           variant="outline"
-          className="h-11 rounded-full"
+          className="h-11 rounded-full text-foreground"
           onClick={downloadPdf}
           disabled={!!busy}
         >
-          <FileText className="mr-2 h-4 w-4" /> PDF
+          <BoxIcon name="file" className="mr-2 text-base text-foreground" /> PDF
         </Button>
         <Button
           variant="outline"
-          className="h-11 rounded-full"
+          className="h-11 rounded-full text-foreground"
           onClick={downloadPng}
           disabled={!!busy}
         >
-          <Download className="mr-2 h-4 w-4" /> Imagem
+          <BoxIcon name="download" className="mr-2 text-base text-foreground" /> Imagem
         </Button>
       </div>
     </div>

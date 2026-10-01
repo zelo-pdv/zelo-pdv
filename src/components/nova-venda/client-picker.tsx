@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, User } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -47,7 +47,7 @@ export function ClientPicker({
   const PickerContent = (
     <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
       <div className="relative shrink-0 mb-3">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -65,7 +65,7 @@ export function ClientPicker({
                 className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border/80 p-2.5 text-left transition hover:border-primary/40 hover:bg-accent"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <User className="h-4 w-4" />
+                  <BoxIcon name="user" className="text-base text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">Consumidor Final</div>
@@ -101,8 +101,8 @@ export function ClientPicker({
       <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="flex-row items-center gap-2 mb-1">
-            <Button size="icon" variant="ghost" onClick={onClose}>
-              <ArrowLeft className="h-4 w-4" />
+            <Button size="icon" variant="ghost" onClick={onClose} className="text-foreground">
+              <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
             </Button>
             <DrawerTitle>Escolher cliente</DrawerTitle>
           </DrawerHeader>
@@ -120,9 +120,9 @@ export function ClientPicker({
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="ml-0"
+            className="ml-0 text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
           </Button>
           <DialogTitle>Escolher cliente</DialogTitle>
         </DialogHeader>

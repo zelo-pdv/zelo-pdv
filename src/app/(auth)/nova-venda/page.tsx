@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Check,
-  Minus,
-  Plus,
-  ShoppingCart,
-  Trash2,
-  User,
-} from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/components/auth/permissions-provider";
-import { AlertTriangle } from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -406,7 +397,7 @@ export default function NovaVenda() {
   if (!can("nova-venda", "Visualizar")) {
     return (
       <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <AlertTriangle className="h-12 w-12 text-destructive opacity-50" />
+        <BoxIcon name="error" className="text-5xl text-destructive opacity-50" />
         <p className="text-sm font-medium">
           Você não tem permissão para visualizar vendas.
         </p>
@@ -445,7 +436,7 @@ export default function NovaVenda() {
           ) : (
             <>
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <User className="h-5 w-5" />
+                <BoxIcon name="user" className="text-xl" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">
@@ -459,7 +450,7 @@ export default function NovaVenda() {
                     : "Toque para escolher ou deixe Consumidor Final"}
                 </div>
               </div>
-              <Plus className="h-4 w-4 text-muted-foreground" />
+              <BoxIcon name="plus" className="text-base text-muted-foreground" />
             </>
           )}
         </CardContent>
@@ -472,7 +463,7 @@ export default function NovaVenda() {
           variant="outline"
           className="h-12 flex-1 justify-start rounded-xl border-dashed"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <BoxIcon name="plus" className="mr-2 text-base" />
           {loadingData ? "Carregando produtos..." : "Adicionar produto"}
         </Button>
         {items.length > 0 && (
@@ -483,7 +474,7 @@ export default function NovaVenda() {
             className="h-12 w-12 shrink-0 rounded-xl border-dashed border-destructive/40 text-destructive hover:border-destructive hover:text-destructive"
             title="Limpar carrinho"
           >
-            <Trash2 className="h-4 w-4" />
+            <BoxIcon name="trash" className="text-base" />
           </Button>
         )}
       </div>
@@ -520,7 +511,7 @@ export default function NovaVenda() {
                         className="h-8 w-8"
                         onClick={() => updateQty(it.productId, it.quantity - 1)}
                       >
-                        <Minus className="h-3.5 w-3.5" />
+                        <BoxIcon name="minus" className="text-sm" />
                       </Button>
                       <div className="w-7 text-center text-sm font-medium tabular-nums">
                         {it.quantity}
@@ -531,7 +522,7 @@ export default function NovaVenda() {
                         className="h-8 w-8"
                         onClick={() => updateQty(it.productId, it.quantity + 1)}
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <BoxIcon name="plus" className="text-sm" />
                       </Button>
                       <Button
                         size="icon"
@@ -539,7 +530,7 @@ export default function NovaVenda() {
                         className="h-8 w-8 text-destructive"
                         onClick={() => removeItem(it.productId)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <BoxIcon name="trash" className="text-base" />
                       </Button>
                     </div>
                   </CardContent>
@@ -567,7 +558,7 @@ export default function NovaVenda() {
             size="lg"
             className="rounded-full"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Finalizar
+            <BoxIcon name="cart" className="mr-2 text-base" /> Finalizar
           </Button>
         </div>
       </div>
@@ -629,7 +620,7 @@ export default function NovaVenda() {
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 shrink-0 px-4 md:px-6">
               <Button size="icon" variant="ghost" onClick={handleCheckoutBack}>
-                <ArrowLeft className="h-4 w-4" />
+                <BoxIcon name="left-arrow-alt" className="text-lg" />
               </Button>
               <DrawerTitle>
                 Pagamento
@@ -816,7 +807,7 @@ export default function NovaVenda() {
                     onClick={finalize}
                     disabled={isFinalizing || !can("nova-venda", "Adicionar")}
                   >
-                    <Check className="mr-2 h-4 w-4" />
+                    <BoxIcon name="check" className="mr-2 text-base" />
                     {isFinalizing
                       ? "Salvando..."
                       : `Confirmar · ${currency(total)}`}
@@ -837,7 +828,7 @@ export default function NovaVenda() {
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md p-0 flex flex-col gap-0">
             <DialogHeader className="flex-row items-center gap-2 shrink-0 px-6 pt-6 pb-2">
               <Button size="icon" variant="ghost" onClick={handleCheckoutBack}>
-                <ArrowLeft className="h-4 w-4" />
+                <BoxIcon name="left-arrow-alt" className="text-lg" />
               </Button>
               <DialogTitle className="mt-0 pt-0">
                 Pagamento
@@ -1013,7 +1004,7 @@ export default function NovaVenda() {
                   disabled={isFinalizing || !can("nova-venda", "Adicionar")}
                   className="flex-1 rounded-full"
                 >
-                  <Check className="mr-2 h-4 w-4" />
+                  <BoxIcon name="check" className="mr-2 text-base" />
                   {isFinalizing
                     ? "Salvando..."
                     : `Confirmar · ${currency(total)}`}

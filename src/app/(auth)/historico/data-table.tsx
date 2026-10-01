@@ -9,13 +9,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -165,7 +159,7 @@ export function SalesDataTable({
       <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
             <Input
               placeholder="Buscar por cliente..."
               value={globalFilter}
@@ -183,7 +177,7 @@ export function SalesDataTable({
                   className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
                   aria-label="Abrir filtros"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <BoxIcon name="slider-alt" className="text-base" />
                   <span className="hidden sm:inline">Filtros</span>
                   {activeFiltersCount > 0 && (
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-primary text-[11px] font-bold">
@@ -373,7 +367,7 @@ export function SalesDataTable({
                 onClick={() => setStatusFilter("all")}
                 className="hover:text-destructive cursor-pointer rounded-full p-0.5"
               >
-                <X className="h-3 w-3" />
+                <BoxIcon name="x" className="text-xs" />
               </button>
             </Badge>
           )}
@@ -386,7 +380,7 @@ export function SalesDataTable({
                 onClick={() => setPaymentFilter("all")}
                 className="hover:text-destructive cursor-pointer rounded-full p-0.5"
               >
-                <X className="h-3 w-3" />
+                <BoxIcon name="x" className="text-xs" />
               </button>
             </Badge>
           )}
@@ -406,7 +400,7 @@ export function SalesDataTable({
                 }}
                 className="hover:text-destructive cursor-pointer rounded-full p-0.5"
               >
-                <X className="h-3 w-3" />
+                <BoxIcon name="x" className="text-xs" />
               </button>
             </Badge>
           )}
@@ -496,7 +490,7 @@ export function SalesDataTable({
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <BoxIcon name="chevron-left" className="text-base" />
           </Button>
           <div className="text-xs tabular-nums text-muted-foreground">
             {pageIndex + 1} / {table.getPageCount() || 1}
@@ -508,7 +502,7 @@ export function SalesDataTable({
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >
-            <ChevronRight className="h-4 w-4" />
+            <BoxIcon name="chevron-right" className="text-base" />
           </Button>
         </div>
       </div>
