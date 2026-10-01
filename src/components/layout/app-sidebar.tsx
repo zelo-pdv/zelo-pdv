@@ -31,6 +31,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     (item) => !item.adminOnly || isAdmin,
   );
 
+  // Com acesso a apenas uma página (ou nenhuma), a barra lateral não é necessária
+  if (visibleNav.length + visibleSecondaryNav.length <= 1) {
+    return null;
+  }
+
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
   return (

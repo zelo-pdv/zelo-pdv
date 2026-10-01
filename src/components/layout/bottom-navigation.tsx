@@ -14,49 +14,60 @@ export function BottomNavigation() {
     (n) => !n.module || can(n.module, "Visualizar"),
   );
 
+  // Se tiver somente um item (ou nenhum), não precisa mostrar a navegação
+  if (visibleNav.length <= 1) {
+    return null;
+  }
+
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
+
+  // Ajusta o espaçamento/largura máxima dependendo de se há 2, 3, 4 ou 5 itens
+  const getMaxWidthClass = (count: number) => {
+    switch (count) {
+      case 2:
+        return "max-w-xs";
+      case 3:
+        return "max-w-sm";
+      case 4:
+        return "max-w-md";
+      default:
+        return "max-w-lg";
+    }
+  };
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/80 backdrop-blur-lg md:hidden">
       <div
-        className="mx-auto grid max-w-lg pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-1"
+        className={cn(
+          "mx-auto grid pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-1 transition-all",
+          getMaxWidthClass(visibleNav.length),
+        )}
         style={{
-          gridTemplateColumns: `repeat(${Math.max(1, visibleNav.length)}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${visibleNav.length}, minmax(0, 1fr))`,
         }}
       >
         {visibleNav.map((n) => {
           const Icon = n.icon;
           const active = isActive(n.to);
-          if (n.primary) {
-            return (
-              <Link
-                key={n.to}
-                href={n.to}
-                className="relative flex items-center justify-center"
-                aria-label={n.label}
-              >
-                <span
-                  className={cn(
-                    "-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-lg shadow-black/10 dark:shadow-white/10 transition-transform active:scale-95",
-                    active && "ring-4 ring-zinc-300 dark:ring-zinc-700",
-                  )}
-                >
-                  <Icon active={active} className="text-2xl text-white dark:text-zinc-900" />
-                </span>
-              </Link>
-            );
-          }
           return (
             <Link
               key={n.to}
               href={n.to}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 text-[11px] font-medium transition-colors",
-                active ? "text-zinc-900 dark:text-zinc-50 font-semibold" : "text-muted-foreground hover:text-foreground",
+                active
+                  ? "text-zinc-900 dark:text-zinc-50 font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon active={active} className={cn("text-xl", active ? "text-black dark:text-white" : "text-muted-foreground")} />
+              <Icon
+                active={active}
+                className={cn(
+                  "text-xl",
+                  active ? "text-black dark:text-white" : "text-muted-foreground",
+                )}
+              />
               {n.short}
             </Link>
           );

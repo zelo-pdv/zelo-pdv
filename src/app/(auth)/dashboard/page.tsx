@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { currency, dateTime } from "@/lib/format";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { salesService } from "@/services/sales.service";
 import { productsService } from "@/services/products.service";
@@ -16,6 +17,7 @@ import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, DashboardPeriod } from "@/store/useSettingsStore";
+import { getFirstAccessibleRoute } from "@/lib/navigation-data";
 
 function StatCard({
   icon,
@@ -253,6 +255,7 @@ function SalesWeekChart({
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const { can, user } = usePermissions();
   const dashboardSettings = useSettingsStore((s) => s.dashboard) ?? {
     defaultPeriod: "today",
@@ -296,11 +299,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!can("dashboard", "Visualizar")) {
-      setIsLoading(false);
+      const targetRoute = getFirstAccessibleRoute(can);
+      if (targetRoute && targetRoute !== "/dashboard") {
+        router.replace(targetRoute);
+      } else {
+        setIsLoading(false);
+      }
       return;
     }
     refreshData(false);
-  }, [can]);
+  }, [can, router]);
 
   // Sincronização em tempo real do dashboard
   useDataSync({
@@ -419,7 +427,7 @@ export default function Dashboard() {
   const recentCount = dashboardSettings.recentSalesCount || 5;
   const latest = sortedSales.slice(0, recentCount);
 
-  if (isLoading) {
+  if (isLoading || (!can("dashboard", "Visualizar") && getFirstAccessibleRoute(can) !== "/dashboard")) {
     return <GlobalLoader />;
   }
 

@@ -36,7 +36,6 @@ export const NAV: NavItem[] = [
     label: "Nova Venda",
     short: "Vender",
     icon: createBoxIcon("cart"),
-    primary: true,
     module: "nova-venda",
   },
   {
@@ -96,4 +95,33 @@ export const SettingsItens: NavItem[] = [
     icon: createBoxIcon("cog"),
   },
 ];
+
+export function getFirstAccessibleRoute(
+  canOrPermissions:
+    | ((module: ModuleKey, action: "Visualizar" | "Adicionar" | "Editar" | "Excluir") => boolean)
+    | { permissions?: any; isAdmin?: boolean }
+): string {
+  const sequence: { module: ModuleKey; to: string }[] = [
+    { module: "dashboard", to: "/dashboard" },
+    { module: "produtos", to: "/produtos" },
+    { module: "nova-venda", to: "/nova-venda" },
+    { module: "clientes", to: "/clientes" },
+    { module: "historico", to: "/historico" },
+  ];
+
+  if (typeof canOrPermissions === "function") {
+    const found = sequence.find((item) =>
+      canOrPermissions(item.module, "Visualizar")
+    );
+    return found?.to || "/dashboard";
+  }
+
+  const { permissions, isAdmin } = canOrPermissions;
+  if (isAdmin) return "/dashboard";
+
+  const found = sequence.find(
+    (item) => permissions?.[item.module]?.includes("Visualizar")
+  );
+  return found?.to || "/dashboard";
+}
 

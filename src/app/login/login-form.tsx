@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { loginSchema } from "@/lib/validations/auth";
 import { authService } from "@/services/auth.service";
+import { getFirstAccessibleRoute } from "@/lib/navigation-data";
 
 import { ModeToggle } from "@/components/layout/mode-toggle";
 
@@ -47,7 +48,7 @@ export function LoginForm() {
 
     setLoading(true);
     try {
-      await authService.login(validation.data);
+      const res = (await authService.login(validation.data)) as any;
 
       // Gerencia o Lembre-me
       if (typeof window !== "undefined") {
@@ -59,7 +60,11 @@ export function LoginForm() {
       }
 
       toast.success(`Bem-vindo(a), seu PDV está pronto!`);
-      router.push("/dashboard");
+      const targetRoute = getFirstAccessibleRoute({
+        permissions: res?.user?.permissions,
+        isAdmin: res?.user?.isAdmin,
+      });
+      router.push(targetRoute);
     } catch (error: any) {
       toast.error(error.message || "Erro ao realizar login.");
     } finally {

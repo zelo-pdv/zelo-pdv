@@ -47,9 +47,22 @@ export async function requireGuest() {
   const token = cookieStore.get("token")?.value;
 
   if (token) {
-    const payload = await verifyJwtToken(token);
+    const payload = (await verifyJwtToken(token)) as any;
     if (payload) {
-      redirect("/dashboard");
+      if (payload.isAdmin) {
+        redirect("/dashboard");
+      }
+      const sequence = [
+        { module: "dashboard", to: "/dashboard" },
+        { module: "produtos", to: "/produtos" },
+        { module: "nova-venda", to: "/nova-venda" },
+        { module: "clientes", to: "/clientes" },
+        { module: "historico", to: "/historico" },
+      ];
+      const found = sequence.find((item) =>
+        payload.permissions?.[item.module]?.includes("Visualizar")
+      );
+      redirect(found?.to || "/dashboard");
     }
   }
 }
