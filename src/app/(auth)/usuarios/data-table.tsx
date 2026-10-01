@@ -210,13 +210,6 @@ export function UsersDataTable({
 
         <Button
           onClick={onCreateClick}
-          size="lg"
-          className="w-full rounded-full sm:hidden"
-        >
-          <BoxIcon name="plus" className="mr-2 text-base" /> Adicionar
-        </Button>
-        <Button
-          onClick={onCreateClick}
           size="sm"
           className="rounded-full hidden sm:flex shrink-0"
         >

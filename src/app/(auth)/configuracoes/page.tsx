@@ -2142,7 +2142,6 @@ function ProductsConfigSection() {
 
 function DataImportExportSection() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [exportingType, setExportingType] = useState<string | null>(null);
 
   // Modal de importação
   const [importModalType, setImportModalType] = useState<"products" | "clients" | null>(null);
@@ -2240,187 +2239,7 @@ function DataImportExportSection() {
     return records;
   };
 
-  // 1. Exportações
-  const handleExportClients = async () => {
-    try {
-      setExportingType("clients");
-      const clients = await clientsService.list();
-      if (!clients || clients.length === 0) {
-        toast.warning("Nenhum cliente cadastrado para exportar.");
-        return;
-      }
 
-      const headers = [
-        "Nome",
-        "Telefone",
-        "E-mail",
-        "Status",
-        "CEP",
-        "Logradouro",
-        "Número",
-        "Complemento",
-        "Bairro",
-        "Cidade",
-        "UF",
-        "Observações",
-        "Cadastrado em",
-      ];
-
-      const rows = clients.map((c) => {
-        const addr = Array.isArray(c.address) ? c.address[0] : c.address;
-        return [
-          c.name,
-          maskPhone(c.phone),
-          c.email || "",
-          c.active ? "Ativo" : "Inativo",
-          addr?.zipCode || "",
-          addr?.street || "",
-          addr?.number || "",
-          addr?.complement || "",
-          addr?.neighborhood || "",
-          addr?.city || "",
-          addr?.state || "",
-          c.notes || "",
-          c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "",
-        ];
-      });
-
-      const today = new Date().toISOString().slice(0, 10);
-      downloadCsv(`clientes_zelo_${today}.csv`, headers, rows);
-      toast.success(`${clients.length} cliente(s) exportado(s) com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao exportar clientes.");
-    } finally {
-      setExportingType(null);
-    }
-  };
-
-  const handleExportUsers = async () => {
-    try {
-      setExportingType("users");
-      const users = await usersService.list();
-      if (!users || users.length === 0) {
-        toast.warning("Nenhum usuário cadastrado para exportar.");
-        return;
-      }
-
-      const headers = [
-        "Nome",
-        "E-mail",
-        "Telefone",
-        "Grupo de Acesso",
-        "Status",
-        "Cadastrado em",
-      ];
-
-      const rows = users.map((u: any) => [
-        u.name,
-        u.email,
-        maskPhone(u.phone),
-        u.group?.name || "Sem grupo",
-        u.active ? "Ativo" : "Inativo",
-        u.createdAt ? new Date(u.createdAt).toLocaleDateString("pt-BR") : "",
-      ]);
-
-      const today = new Date().toISOString().slice(0, 10);
-      downloadCsv(`usuarios_zelo_${today}.csv`, headers, rows);
-      toast.success(`${users.length} usuário(s) exportado(s) com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao exportar usuários.");
-    } finally {
-      setExportingType(null);
-    }
-  };
-
-  const handleExportProducts = async () => {
-    try {
-      setExportingType("products");
-      const products = await productsService.list();
-      if (!products || products.length === 0) {
-        toast.warning("Nenhum produto cadastrado para exportar.");
-        return;
-      }
-
-      const headers = [
-        "Nome",
-        "Categoria",
-        "Unidade",
-        "Preço de Venda",
-        "Preço de Custo",
-        "Estoque",
-        "Estoque Mínimo",
-        "Código Interno",
-        "Código de Barras",
-        "Status",
-        "Descrição",
-      ];
-
-      const rows = products.map((p: any) => [
-        p.name,
-        p.category?.name || "Geral",
-        p.unit || "UN",
-        currency(p.salePrice),
-        currency(p.costPrice),
-        Number(p.stock ?? 0),
-        Number(p.minStock ?? 0),
-        p.code || "",
-        p.barcode || "",
-        p.active ? "Ativo" : "Inativo",
-        p.description || "",
-      ]);
-
-      const today = new Date().toISOString().slice(0, 10);
-      downloadCsv(`produtos_zelo_${today}.csv`, headers, rows);
-      toast.success(`${products.length} produto(s) exportado(s) com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao exportar produtos.");
-    } finally {
-      setExportingType(null);
-    }
-  };
-
-  const handleExportSales = async () => {
-    try {
-      setExportingType("sales");
-      const sales = await salesService.list();
-      if (!sales || sales.length === 0) {
-        toast.warning("Nenhuma venda cadastrada para exportar.");
-        return;
-      }
-
-      const headers = [
-        "Número da Venda",
-        "Data e Hora",
-        "Cliente",
-        "Forma de Pagamento",
-        "Status",
-        "Desconto",
-        "Total",
-      ];
-
-      const rows = sales.map((s: any) => [
-        s.saleNumber ? String(s.saleNumber) : s.id,
-        dateTime(s.date),
-        s.clientName || "Consumidor Final",
-        PAYMENT_LABELS[s.paymentMethod as PaymentMethod] || s.paymentMethod,
-        s.status === "PAGO" ? "Pago" : "Pendente",
-        s.discount ? currency(s.discount) : "R$ 0,00",
-        currency(s.total),
-      ]);
-
-      const today = new Date().toISOString().slice(0, 10);
-      downloadCsv(`vendas_zelo_${today}.csv`, headers, rows);
-      toast.success(`${sales.length} venda(s) exportada(s) com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao exportar vendas.");
-    } finally {
-      setExportingType(null);
-    }
-  };
 
   // 2. Modelos de Importação
   const handleDownloadProductTemplate = () => {
@@ -2626,11 +2445,11 @@ function DataImportExportSection() {
             <div className="flex items-center gap-2 flex-wrap">
               <BoxIcon name="spreadsheet" solid={isExpanded} className="text-base text-foreground shrink-0" />
               <CardTitle className="text-base font-semibold">
-                Importação e Exportação de Dados
+                Importação de Dados
               </CardTitle>
               {!isExpanded && (
                 <span className="hidden sm:inline text-xs text-muted-foreground">
-                  • Exportar dados e importar via planilhas CSV
+                  • Importar dados via planilhas CSV
                 </span>
               )}
             </div>
@@ -2649,125 +2468,10 @@ function DataImportExportSection() {
 
         {isExpanded && (
           <CardContent className="space-y-6 pt-0 animate-in fade-in-50 duration-150">
-            {/* Bloco 1: Exportação de Dados */}
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                  <BoxIcon name="download" className="text-base text-foreground" />
-                  Exportação de Dados
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Baixe planilhas completas em formato CSV com compatibilidade
-                  direta com Excel e Google Planilhas.
-                </p>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* Clientes */}
-                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
-                  <div className="space-y-1 mb-3">
-                    <div className="flex items-center gap-2">
-                      <BoxIcon name="group" className="text-base text-foreground" />
-                      <span className="text-sm font-medium">Clientes</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Nomes, telefones, e-mails, endereços e status.
-                    </p>
-                  </div>
-                  <LoadingButton
-                    variant="outline"
-                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
-                    onClick={handleExportClients}
-                    loading={exportingType === "clients"}
-                  >
-                    <BoxIcon name="download" className="text-base sm:text-sm" />
-                    Exportar Clientes (.csv)
-                  </LoadingButton>
-                </div>
-
-                {/* Usuários */}
-                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
-                  <div className="space-y-1 mb-3">
-                    <div className="flex items-center gap-2">
-                      <BoxIcon name="user-check" className="text-base text-foreground" />
-                      <span className="text-sm font-medium">Usuários</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Contas de acesso, grupos de permissão e contatos.
-                    </p>
-                  </div>
-                  <LoadingButton
-                    variant="outline"
-                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
-                    onClick={handleExportUsers}
-                    loading={exportingType === "users"}
-                  >
-                    <BoxIcon name="download" className="text-base sm:text-sm" />
-                    Exportar Usuários (.csv)
-                  </LoadingButton>
-                </div>
-
-                {/* Produtos */}
-                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
-                  <div className="space-y-1 mb-3">
-                    <div className="flex items-center gap-2">
-                      <BoxIcon name="package" className="text-base text-foreground" />
-                      <span className="text-sm font-medium">Produtos</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Preços, estoques, categorias e códigos de barra.
-                    </p>
-                  </div>
-                  <LoadingButton
-                    variant="outline"
-                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
-                    onClick={handleExportProducts}
-                    loading={exportingType === "products"}
-                  >
-                    <BoxIcon name="download" className="text-base sm:text-sm" />
-                    Exportar Produtos (.csv)
-                  </LoadingButton>
-                </div>
-
-                {/* Vendas */}
-                <div className="flex flex-col justify-between rounded-xl border border-border/70 p-3.5 bg-card/50">
-                  <div className="space-y-1 mb-3">
-                    <div className="flex items-center gap-2">
-                      <BoxIcon name="coin-stack" className="text-base text-foreground" />
-                      <span className="text-sm font-medium">Vendas</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Histórico com número, data, cliente, forma e total.
-                    </p>
-                  </div>
-                  <LoadingButton
-                    variant="outline"
-                    className="w-full h-11 sm:h-9 text-sm sm:text-xs font-medium gap-2 rounded-xl sm:rounded-lg"
-                    onClick={handleExportSales}
-                    loading={exportingType === "sales"}
-                  >
-                    <BoxIcon name="download" className="text-base sm:text-sm" />
-                    Exportar Vendas (.csv)
-                  </LoadingButton>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
 
             {/* Bloco 2: Importação de Dados */}
             <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                  <BoxIcon name="upload" className="text-base text-foreground" />
-                  Importação de Dados
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Cadastre dados em massa baixando o modelo .csv, preenchendo as
-                  linhas e importando de volta para a sua conta.
-                </p>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Importação de Produtos */}
                 <div className="flex flex-col justify-between rounded-xl border border-border/70 p-4 bg-card/50 space-y-4">

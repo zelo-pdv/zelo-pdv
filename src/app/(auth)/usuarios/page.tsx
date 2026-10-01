@@ -57,6 +57,8 @@ import {
 } from "@/services/accessGroup.service";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
+import { MobileActionFab } from "@/components/ui/mobile-action-fab";
+import { handleExportUsers } from "@/lib/export";
 
 export type AppUser = {
   id: string;
@@ -120,6 +122,13 @@ export default function UsuariosPage() {
   const [passwordResetting, setPasswordResetting] = useState<AppUser | null>(
     null,
   );
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    await handleExportUsers();
+    setIsExporting(false);
+  };
 
   const refreshData = async (silent = false) => {
     try {
@@ -210,6 +219,12 @@ export default function UsuariosPage() {
         data={enrichedUsers}
         groups={groups as any}
         onCreateClick={() => setCreating(true)}
+      />
+
+      <MobileActionFab 
+        onAdd={() => setCreating(true)} 
+        onExport={handleExport} 
+        isExporting={isExporting} 
       />
 
       <UserForm

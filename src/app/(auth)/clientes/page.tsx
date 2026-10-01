@@ -15,6 +15,8 @@ import type { ClientWithAddress, Sale } from "@/types";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { BoxIcon } from "@/components/ui/box-icon";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
+import { MobileActionFab } from "@/components/ui/mobile-action-fab";
+import { handleExportClients } from "@/lib/export";
 
 export default function ClientesPage() {
   const { can } = usePermissions();
@@ -26,6 +28,13 @@ export default function ClientesPage() {
   const [creating, setCreating] = useState(false);
   const [detail, setDetail] = useState<ClientWithAddress | null>(null);
   const [deleting, setDeleting] = useState<ClientWithAddress | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    await handleExportClients();
+    setIsExporting(false);
+  };
 
   // Carrega ou atualiza os dados (com suporte a atualização silenciosa em tempo real)
   const refreshData = async (silent = false) => {
@@ -137,6 +146,14 @@ export default function ClientesPage() {
         onCreateClick={() => setCreating(true)}
         canAdd={can("clientes", "Adicionar")}
       />
+
+      {can("clientes", "Adicionar") && (
+        <MobileActionFab 
+          onAdd={() => setCreating(true)} 
+          onExport={handleExport} 
+          isExporting={isExporting} 
+        />
+      )}
 
       <ClientForm
         key={editing?.id ?? "new"}

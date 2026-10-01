@@ -52,6 +52,8 @@ import { usePermissions } from "@/components/auth/permissions-provider";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { MobileActionFab } from "@/components/ui/mobile-action-fab";
+import { handleExportProducts } from "@/lib/export";
 
 // 1. Estado do Formulário usa NUMBER agora, compatível com frontend
 export type FormState = {
@@ -100,6 +102,13 @@ export default function ProdutosPage() {
   const [creating, setCreating] = useState(false);
   const [stockDialog, setStockDialog] = useState<ProductFrontend | null>(null);
   const [deleting, setDeleting] = useState<ProductFrontend | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    await handleExportProducts();
+    setIsExporting(false);
+  };
 
   const refreshData = async (silent = false) => {
     try {
@@ -192,6 +201,12 @@ export default function ProdutosPage() {
         data={products}
         categories={categoryNames}
         onCreateClick={() => setCreating(true)}
+      />
+
+      <MobileActionFab 
+        onAdd={() => setCreating(true)} 
+        onExport={handleExport} 
+        isExporting={isExporting} 
       />
 
       <ProductForm
