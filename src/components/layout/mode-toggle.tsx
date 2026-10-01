@@ -1,9 +1,7 @@
 "use client";
 
-import { BoxIcon } from "@/components/ui/box-icon";
 import { useTheme } from "next-themes";
-
-import { Button } from "@/components/ui/button";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { cn } from "@/lib/utils";
 
 export function ModeToggle({
@@ -15,40 +13,21 @@ export function ModeToggle({
 }) {
   const { setTheme, resolvedTheme } = useTheme();
 
-  const isDark = resolvedTheme === "dark";
-
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
-
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={toggleTheme}
-      className={cn("relative overflow-hidden text-foreground", className)}
-    >
-      <BoxIcon
-        name="sun"
-        className={`text-[1.3rem] text-black transition-all duration-500 ease-in-out ${
-          isDark
-            ? "scale-0 rotate-90 translate-y-4 opacity-0"
-            : "scale-100 rotate-0 translate-y-0 opacity-100"
-        }`}
+    <div className="inline-flex items-center">
+      <AnimatedThemeToggler
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
+        onThemeChange={setTheme}
+        className={cn(
+          "relative inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer select-none outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+          className
+        )}
       />
-      <BoxIcon
-        name="moon"
-        className={`absolute text-[1.3rem] text-white transition-all duration-500 ease-in-out ${
-          isDark
-            ? "scale-100 rotate-0 translate-y-0 opacity-100"
-            : "scale-0 -rotate-90 -translate-y-4 opacity-0"
-        }`}
-      />
-      {isDark ? (
-        <span className={`${title ? "" : "sr-only"}`}>Tema claro</span>
-      ) : (
-        <span className={`${title ? "" : "sr-only"}`}>Tema escuro</span>
+      {title && (
+        <span className="ml-2 text-sm">
+          {resolvedTheme === "dark" ? "Tema claro" : "Tema escuro"}
+        </span>
       )}
-    </Button>
+    </div>
   );
 }

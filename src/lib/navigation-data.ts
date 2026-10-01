@@ -35,7 +35,7 @@ export const NAV: NavItem[] = [
     to: "/nova-venda",
     label: "Nova Venda",
     short: "Vender",
-    icon: createBoxIcon("dollar-circle"),
+    icon: createBoxIcon("cart"),
     primary: true,
     module: "nova-venda",
   },
@@ -73,7 +73,7 @@ export const SECONDARY_NAV: NavItem[] = [
 ];
 
 export const TitlePages: TitlePage[] = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Início", to: "/dashboard" },
   { label: "Produtos", to: "/produtos" },
   { label: "Nova Venda", to: "/nova-venda" },
   { label: "Clientes", to: "/clientes" },
