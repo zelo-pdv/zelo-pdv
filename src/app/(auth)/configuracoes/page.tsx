@@ -2468,8 +2468,6 @@ function DataImportExportSection() {
 
         {isExpanded && (
           <CardContent className="space-y-6 pt-0 animate-in fade-in-50 duration-150">
-
-
             {/* Bloco 2: Importação de Dados */}
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

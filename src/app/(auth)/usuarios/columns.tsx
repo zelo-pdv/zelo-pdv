@@ -20,6 +20,7 @@ export type UserActions = {
   onEdit: (u: AppUser) => void;
   onDelete: (u: AppUser) => void;
   onChangePassword: (u: AppUser) => void;
+  currentUserId?: string;
 };
 
 export function getUserColumns({
@@ -27,6 +28,7 @@ export function getUserColumns({
   onEdit,
   onDelete,
   onChangePassword,
+  currentUserId,
 }: UserActions): ColumnDef<UserTableData>[] {
   return [
     {
@@ -80,7 +82,7 @@ export function getUserColumns({
                       Trocar senha
                     </Button>
                     <Separator className="my-1" />
-                    {!u.isFirstUser && (
+                    {u.id !== currentUserId && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -171,7 +173,7 @@ export function getUserColumns({
             >
               <BoxIcon name="key" className="text-base" />
             </Button>
-            {!u.isFirstUser && (
+            {u.id !== currentUserId && (
               <Button
                 size="icon"
                 variant="ghost"

@@ -162,12 +162,22 @@ export default function UsuariosPage() {
   });
 
   const enrichedUsers = useMemo(() => {
-    return users.map((u, i) => {
+    let oldestUserId = "";
+    let oldestDate = Infinity;
+    users.forEach((u) => {
+      const d = new Date(u.createdAt || 0).getTime();
+      if (d < oldestDate) {
+        oldestDate = d;
+        oldestUserId = u.id;
+      }
+    });
+
+    return users.map((u) => {
       const group = groups.find((g) => g.id === u.groupId);
       return {
         ...u,
         groupLabel: group?.name || "Sem grupo",
-        isFirstUser: i === 0, // Primeiro retornado pelo banco (mais antigo)
+        isFirstUser: u.id === oldestUserId,
       };
     });
   }, [users, groups]);
@@ -200,6 +210,7 @@ export default function UsuariosPage() {
         onEdit: (u) => setEditing(u as AppUser),
         onDelete: (u) => setDeleting(u as AppUser),
         onChangePassword: (u) => setPasswordResetting(u as AppUser),
+        currentUserId: currentUser?.sub,
       }),
     [users, currentUser],
   );
