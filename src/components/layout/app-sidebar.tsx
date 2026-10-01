@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { usePermissions } from "@/components/auth/permissions-provider";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -79,11 +80,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <Link href={item.to} className="flex items-center gap-3 w-full">
                           <item.icon
                             active={active}
-                            className={
+                            className={cn(
+                              "text-[1.25rem] group-data-[collapsible=icon]:translate-x-[-2.5px] transition-transform",
                               active
-                                ? "text-[1.25rem] text-black dark:text-white"
-                                : "text-[1.25rem] text-muted-foreground group-hover/menu-button:text-foreground"
-                            }
+                                ? "text-black dark:text-white"
+                                : "text-muted-foreground group-hover/menu-button:text-foreground"
+                            )}
                           />
                           <span>{item.label}</span>
                         </Link>
@@ -115,11 +117,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <Link href={item.to} className="flex items-center gap-3 w-full">
                           <item.icon
                             active={active}
-                            className={
+                            className={cn(
+                              "text-[1.25rem] group-data-[collapsible=icon]:translate-x-[-2.5px] transition-transform",
                               active
-                                ? "text-[1.25rem] text-black dark:text-white"
-                                : "text-[1.25rem] text-muted-foreground group-hover/menu-button:text-foreground"
-                            }
+                                ? "text-black dark:text-white"
+                                : "text-muted-foreground group-hover/menu-button:text-foreground"
+                            )}
                           />
                           <span>{item.label}</span>
                         </Link>
@@ -136,6 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   variant="outline"
+                  tooltip="Sair"
                   onClick={async () => {
                     await fetch("/api/auth/logout", {
                       method: "POST",
@@ -146,7 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   }}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  <BoxIcon name="log-out" className="text-[1.15rem] text-muted-foreground" />
+                  <BoxIcon name="log-out" className="text-[1.15rem] text-muted-foreground group-data-[collapsible=icon]:translate-x-[-2.5px] transition-transform" />
                   <span>Sair</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
