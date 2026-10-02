@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
+import { clientFormSchema } from "@/lib/validations/client";
 
 // [GET] /api/clients - Lista todos os clientes com seus endereços
 export async function GET() {
@@ -34,14 +35,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, notes, address } = body;
-
-    if (!name || !phone) {
-      return NextResponse.json(
-        { error: "Nome e telefone são obrigatórios." },
-        { status: 400 },
-      );
-    }
+    const parsedData = clientFormSchema.parse(body);
+    const { name, phone, email, notes, address } = parsedData;
 
     const auth = await requirePermission("clientes", "Adicionar");
     if (!auth.authorized) return auth.response;

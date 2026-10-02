@@ -10,13 +10,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const textBody = await request.text();
+    // Limita o tamanho do payload (5MB) para evitar DoS
+    if (textBody.length > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "O arquivo de importação excede o tamanho máximo permitido (5MB)." }, { status: 413 });
+    }
+    const body = JSON.parse(textBody);
     const items = Array.isArray(body) ? body : body.clients;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "Nenhum cliente enviado para importação." },
         { status: 400 },
+      );
+    }
+
+    if (items.length > 1000) {
+      return NextResponse.json(
+        { error: "A importação está limitada a 1000 itens por vez. Divida seu arquivo e tente novamente." },
+        { status: 413 }
       );
     }
 

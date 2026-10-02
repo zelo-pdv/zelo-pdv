@@ -4,6 +4,7 @@ import { SignJWT } from "jose";
 import prisma from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 import bcrypt from "bcryptjs";
+import { setAuthCookies } from "@/lib/cookies";
 import { withValidation } from "../../../../../proxy";
 import { JWT_SECRET } from "@/lib/jwt-secret";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -18,30 +19,28 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { group: true },
+      include: { group: true, loja: { select: { ownerId: true } } },
     });
 
-    if (!user) {
-      return NextResponse.json({ error: "Usuário não encontrado." }, { status: 401 });
+    let senhaValida = false;
+    if (user) {
+      senhaValida = await bcrypt.compare(password, user.password);
+    } else {
+      // Dummy hash comparation to mitigate timing attacks for non-existent users
+      await bcrypt.compare(password, "$2a$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa");
     }
 
-    const senhaValida = await bcrypt.compare(password, user.password);
-
-    if (!senhaValida) {
-      return NextResponse.json({ error: "Senha incorreta." }, { status: 401 });
+    if (!user || !senhaValida) {
+      // Generic message to prevent user enumeration
+      return NextResponse.json({ error: "Credenciais inválidas." }, { status: 401 });
     }
 
     if (!user.active) {
       return NextResponse.json({ error: "Este usuário está inativo." }, { status: 403 });
     }
 
-    const firstUser = await prisma.user.findFirst({
-      where: { lojaId: user.lojaId },
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    });
-    const isFirstUser = firstUser?.id === user.id;
-    const isAdmin = user.group?.name === "ADMIN" || isFirstUser;
+    const isOwner = user.loja?.ownerId === user.id;
+    const isAdmin = user.group?.name === "ADMIN" || isOwner;
 
     const payload = {
       sub: user.id,
@@ -57,24 +56,7 @@ export async function POST(req: Request) {
       .setExpirationTime("8h")
       .sign(JWT_SECRET);
 
-    const cookieStore = await cookies();
-
-    cookieStore.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", // Strict para proteção máxima CSRF
-      path: "/",
-      maxAge: 60 * 60 * 8, // 8h
-    });
-
-    const contextBase64 = Buffer.from(JSON.stringify(payload)).toString("base64");
-    cookieStore.set("user_context", contextBase64, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", 
-      path: "/",
-      maxAge: 60 * 60 * 8, // 8h
-    });
+    await setAuthCookies(token, payload);
 
     return NextResponse.json({ success: true, user: payload });
   });

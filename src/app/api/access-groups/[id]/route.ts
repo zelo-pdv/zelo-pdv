@@ -68,7 +68,7 @@ export async function DELETE(
     }
 
     const usersCount = await prisma.user.count({
-      where: { groupId: id },
+      where: { groupId: id, lojaId: auth.user.lojaId },
     });
 
     if (usersCount > 0) {

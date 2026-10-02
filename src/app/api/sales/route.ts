@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
     // Usa $transaction para garantir que a venda e o desconto no estoque ocorram juntos
     const sale = await prisma.$transaction(async (tx) => {
-      // Determina o próximo número sequencial da venda da loja (ordem crescente iniciando em 1)
+      // Determina o próximo número sequencial da venda da loja
       const lastSale = await tx.sale.findFirst({
         where: { lojaId: user.lojaId, saleNumber: { not: null } },
         orderBy: { saleNumber: "desc" },
@@ -100,6 +100,49 @@ export async function POST(req: Request) {
         nextNumber++;
       }
 
+      let calculatedTotal = 0;
+      const saleItemsData = [];
+
+      // Recupera todos os produtos novamente dentro da transação para garantir integridade e preço atualizado
+      const productsInDb = await tx.product.findMany({
+        where: { id: { in: productIds }, lojaId: user.lojaId }
+      });
+      const productMap = new Map(productsInDb.map(p => [p.id, p]));
+
+      for (const item of parsed.items) {
+        if (item.quantity <= 0) {
+          throw new Error("Quantidade inválida para o produto.");
+        }
+        const dbProduct = productMap.get(item.productId);
+        if (!dbProduct) {
+          throw new Error("Produto não encontrado.");
+        }
+        
+        // Verifica estoque (opcional: se o sistema permitir estoque negativo, pode remover este if)
+        // if (dbProduct.stock !== null && dbProduct.stock < item.quantity) {
+        //  throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
+        // }
+
+        const unitPrice = dbProduct.salePrice.toNumber();
+        const subtotal = item.quantity * unitPrice;
+        calculatedTotal += subtotal;
+
+        saleItemsData.push({
+          productId: item.productId,
+          productName: dbProduct.name, // Usa o nome real do banco
+          quantity: item.quantity,
+          unitPrice: unitPrice,
+          subtotal: subtotal,
+        });
+      }
+
+      const discount = parsed.discount ?? 0;
+      if (discount < 0 || discount > calculatedTotal) {
+        throw new Error("Desconto inválido.");
+      }
+
+      const finalTotal = calculatedTotal - discount;
+
       // 1. Cria a venda e os itens da venda
       const newSale = await tx.sale.create({
         data: {
@@ -108,8 +151,8 @@ export async function POST(req: Request) {
           saleNumber: nextNumber,
           clientId: parsed.clientId,
           clientName: parsed.clientName,
-          total: parsed.total,
-          discount: parsed.discount ?? 0,
+          total: finalTotal,
+          discount: discount,
           paymentMethod: parsed.paymentMethod,
           status: parsed.status,
           dueDate: parsed.dueDate
@@ -119,13 +162,7 @@ export async function POST(req: Request) {
             : null,
           notes: parsed.notes,
           items: {
-            create: parsed.items.map((item) => ({
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: item.quantity * item.unitPrice,
-            })),
+            create: saleItemsData,
           },
         },
         include: {
@@ -150,7 +187,7 @@ export async function POST(req: Request) {
       });
 
       // 2. Decrementa o estoque de cada produto vendido
-      for (const item of parsed.items) {
+      for (const item of saleItemsData) {
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -171,6 +208,10 @@ export async function POST(req: Request) {
         { error: "Dados inválidos: " + error.issues[0].message },
         { status: 400 },
       );
+    }
+    // Tratamento de erros lançados dentro da transação
+    if (error instanceof Error && (error.message.includes("Quantidade inválida") || error.message.includes("Desconto inválido") || error.message.includes("Produto não encontrado"))) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json(
       { error: "Erro interno ao processar a venda." },

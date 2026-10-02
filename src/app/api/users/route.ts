@@ -25,7 +25,13 @@ export async function GET() {
       include: { group: true },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(users);
+    
+    const safeUsers = users.map((u) => {
+      const { password, ...safeUser } = u;
+      return safeUser;
+    });
+    
+    return NextResponse.json(safeUsers);
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
     return NextResponse.json(
@@ -87,13 +93,21 @@ export async function POST(request: Request) {
       include: { group: true },
     });
 
-    return NextResponse.json(user, { status: 201 });
+    const { password, ...safeUser } = user;
+
+    return NextResponse.json(safeUser, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar usuário:", error);
     if (error instanceof z.ZodError) {
       const zodError = error as z.ZodError;
       const message = zodError.issues?.[0]?.message ?? "Erro de validação";
       return NextResponse.json({ error: message }, { status: 400 });
+    }
+    if ((error as any)?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Este e-mail está indisponível." },
+        { status: 400 },
+      );
     }
     return NextResponse.json(
       { error: "Erro interno no servidor" },

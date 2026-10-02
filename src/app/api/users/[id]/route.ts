@@ -38,6 +38,15 @@ export async function PATCH(
       );
     }
 
+    const targetUser = await prisma.user.findUnique({
+      where: { id, lojaId: currentUser.lojaId },
+      include: { loja: true },
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
+    }
+
     const body = await request.json();
     const data = updateUserSchema.parse(body);
 
@@ -47,6 +56,26 @@ export async function PATCH(
         { error: "Você não tem permissão para alterar grupo ou status." },
         { status: 403 },
       );
+    }
+
+    const isTargetOwner = targetUser.loja?.ownerId === targetUser.id;
+
+    if (isTargetOwner) {
+      if (currentUser.id !== targetUser.id) {
+        return NextResponse.json(
+          { error: "Apenas o proprietário pode alterar seus próprios dados." },
+          { status: 403 },
+        );
+      }
+      if (data.active === false) {
+        return NextResponse.json(
+          { error: "O proprietário não pode ser desativado." },
+          { status: 403 },
+        );
+      }
+      if (data.groupId && data.groupId !== targetUser.groupId) {
+        // Prevent changing owner's group if it would remove their access, but for now we just don't let it be restricted without care
+      }
     }
 
     if (data.email) {
@@ -101,7 +130,7 @@ export async function PATCH(
     const user = await prisma.user.update({
       where: { id, lojaId: currentUser.lojaId },
       data: updateData,
-      include: { group: true },
+      include: { group: true, loja: true },
     });
 
     if (id === currentUser.id) {
@@ -110,13 +139,8 @@ export async function PATCH(
 
       const { JWT_SECRET } = await import("@/lib/jwt-secret");
 
-      const firstUser = await prisma.user.findFirst({
-        where: { lojaId: user.lojaId },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      });
-      const isFirstUser = firstUser?.id === user.id;
-      const isAdmin = user.group?.name === "ADMIN" || isFirstUser;
+      const isOwner = user.loja?.ownerId === user.id;
+      const isAdmin = user.group?.name === "ADMIN" || isOwner;
 
       const payload = {
         sub: user.id,
@@ -167,6 +191,12 @@ export async function PATCH(
         { status: 400 },
       );
     }
+    if ((error as any)?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Este e-mail está indisponível." },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(
       { error: "Erro ao atualizar usuário" },
       { status: 500 },
@@ -185,14 +215,21 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const firstUser = await prisma.user.findFirst({
-      where: { lojaId: currentUser.lojaId },
-      orderBy: { createdAt: "asc" },
+    const targetUser = await prisma.user.findUnique({
+      where: { id, lojaId: currentUser.lojaId },
+      include: { loja: true },
     });
 
-    if (firstUser && firstUser.id === id) {
+    if (!targetUser) {
       return NextResponse.json(
-        { error: "O primeiro usuário da loja não pode ser deletado." },
+        { error: "Usuário não encontrado." },
+        { status: 404 },
+      );
+    }
+
+    if (targetUser.loja?.ownerId === targetUser.id) {
+      return NextResponse.json(
+        { error: "O proprietário da loja não pode ser deletado." },
         { status: 403 },
       );
     }

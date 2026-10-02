@@ -5,9 +5,12 @@ import { getCurrentUser } from "@/lib/auth";
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    const where = user?.lojaId ? { id: user.lojaId } : {};
-    const loja = await prisma.loja.findFirst({
-      where,
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    }
+
+    const loja = await prisma.loja.findUnique({
+      where: { id: user.lojaId },
       include: {
         address: true,
       },
@@ -38,27 +41,55 @@ export async function GET() {
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(request);
-  if (!rateLimit.success) return rateLimit.response;
+  // Limite estrito: 3 criações de loja por hora por IP para evitar spam/DoS
+  const rateLimit = checkRateLimit(request, 3, 60 * 60 * 1000);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: "Muitas tentativas de criação de loja. Tente novamente mais tarde." },
+      { status: 429 }
+    );
+  }
 
   try {
-    const body = await request.json();
+    const textBody = await request.text();
+    // Limita o tamanho do payload para evitar abuso (10KB)
+    if (textBody.length > 10240) {
+      return NextResponse.json({ error: "Payload muito grande." }, { status: 413 });
+    }
+
+    const body = JSON.parse(textBody);
+    
+    // Validação básica
+    if (!body.name || typeof body.name !== 'string' || body.name.length < 3 || body.name.length > 50) {
+      return NextResponse.json({ error: "Nome da loja inválido." }, { status: 400 });
+    }
+    if (!body.ownerName || typeof body.ownerName !== 'string' || body.ownerName.length < 1 || body.ownerName.length > 50) {
+      return NextResponse.json({ error: "Nome do responsável inválido." }, { status: 400 });
+    }
+    if (body.document && (typeof body.document !== 'string' || body.document.length > 20)) {
+      return NextResponse.json({ error: "Documento inválido." }, { status: 400 });
+    }
+
     const { address, ...lojaData } = body;
 
     const loja = await prisma.loja.create({
       data: {
-        ...lojaData,
+        name: lojaData.name,
+        ownerName: lojaData.ownerName,
+        document: lojaData.document,
+        phone: lojaData.phone,
+        email: lojaData.email,
         ...(address && Object.values(address).some((v) => !!v && String(v).trim() !== "")
           ? {
               address: {
                 create: {
-                  street: address.street || "",
-                  number: address.number || "",
-                  complement: address.complement || "",
-                  neighborhood: address.neighborhood || "",
-                  city: address.city || "",
-                  state: address.state || "",
-                  zipCode: address.zipCode || "",
+                  street: address.street?.substring(0, 100) || "",
+                  number: address.number?.substring(0, 20) || "",
+                  complement: address.complement?.substring(0, 50) || "",
+                  neighborhood: address.neighborhood?.substring(0, 50) || "",
+                  city: address.city?.substring(0, 50) || "",
+                  state: address.state?.substring(0, 2) || "",
+                  zipCode: address.zipCode?.substring(0, 20) || "",
                 },
               },
             }

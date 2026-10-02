@@ -115,13 +115,58 @@ export async function proxy(request: NextRequest) {
   // ==========================================
   // 2. JWT VERIFICATION (PROXY)
   // ==========================================
-  const protectedRoutes = ['/dashboard', '/configuracoes', '/historico', '/produtos', '/clientes', '/usuarios'];
+  const protectedRoutes = [
+    '/dashboard', 
+    '/configuracoes', 
+    '/historico', 
+    '/produtos', 
+    '/clientes', 
+    '/usuarios',
+    '/nova-venda'
+  ];
+  
   const isProtected = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   if (isProtected) {
     const token = request.cookies.get('token')?.value;
-    if (!token || !(await verifyJwtToken(token))) {
+    const payload = token ? await verifyJwtToken(token) : null;
+    
+    if (!payload) {
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    const { isAdmin, permissions } = payload as any;
+
+    if (!isAdmin) {
+      const pathname = request.nextUrl.pathname;
+      let moduleName = "";
+
+      if (pathname.startsWith("/dashboard")) moduleName = "dashboard";
+      else if (pathname.startsWith("/configuracoes")) moduleName = "configuracoes";
+      else if (pathname.startsWith("/historico")) moduleName = "historico";
+      else if (pathname.startsWith("/produtos")) moduleName = "produtos";
+      else if (pathname.startsWith("/clientes")) moduleName = "clientes";
+      else if (pathname.startsWith("/usuarios")) moduleName = "usuarios";
+      else if (pathname.startsWith("/nova-venda")) moduleName = "nova-venda";
+
+      if (moduleName) {
+        const hasViewPermission = Array.isArray(permissions?.[moduleName]) && permissions[moduleName].includes("Visualizar");
+        if (!hasViewPermission) {
+          // Redirecionar para o dashboard se não tiver permissão para a rota solicitada.
+          // Caso seja o próprio dashboard e ele não tenha acesso (muito raro, mas possível),
+          // direciona para login ou uma rota padrão que ele tenha acesso.
+          if (moduleName === "dashboard") {
+            const sequence = ["produtos", "nova-venda", "clientes", "historico", "configuracoes"];
+            const found = sequence.find((mod) => permissions?.[mod]?.includes("Visualizar"));
+            if (found) {
+              return NextResponse.redirect(new URL(`/${found}`, request.url));
+            } else {
+              return NextResponse.redirect(new URL('/login', request.url));
+            }
+          }
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+      }
     }
   }
 

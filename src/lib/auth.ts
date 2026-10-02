@@ -12,6 +12,7 @@ export interface AuthenticatedUser {
   groupId: string | null;
   groupName: string;
   isAdmin: boolean;
+  isOwner: boolean;
   permissions: Permissions;
   lojaId: string;
 }
@@ -37,6 +38,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       },
       include: {
         group: true,
+        loja: { select: { ownerId: true } },
       },
     });
 
@@ -48,13 +50,8 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       return null;
     }
 
-    const firstUser = await prisma.user.findFirst({
-      where: { lojaId: user.lojaId },
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    });
-    const isFirstUser = firstUser?.id === user.id;
-    const isAdmin = user.group.name === "ADMIN" || isFirstUser;
+    const isOwner = user.loja?.ownerId === user.id;
+    const isAdmin = user.group.name === "ADMIN" || isOwner;
 
     return {
       id: user.id,
@@ -64,6 +61,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       groupId: user.groupId,
       groupName: user.group.name,
       isAdmin,
+      isOwner,
       permissions: user.group.permissions as unknown as Permissions,
       lojaId: user.lojaId,
     };

@@ -25,9 +25,10 @@ export async function checkEmailConflict({
 
   const cleanEmail = email.trim().toLowerCase();
 
-  // 1. Verifica se já existe um Usuário com esse e-mail
+  // 1. Verifica se já existe um Usuário com esse e-mail na MESMA loja
   const existingUser = await prisma.user.findFirst({
     where: {
+      lojaId,
       email: {
         equals: cleanEmail,
         mode: "insensitive",
@@ -37,7 +38,7 @@ export async function checkEmailConflict({
   });
 
   if (existingUser) {
-    return "Este e-mail já está sendo utilizado por um usuário do sistema.";
+    return "Este e-mail já está sendo utilizado por um usuário na sua loja.";
   }
 
   // 2. Verifica se já existe um Cliente com esse e-mail na loja

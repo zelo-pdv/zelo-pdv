@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
+import { clientFormSchema } from "@/lib/validations/client";
 
 // [GET] /api/clients/[id] - Busca um cliente específico
 export async function GET(
@@ -45,7 +46,9 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, phone, email, notes, address, active } = body;
+    const parsedData = clientFormSchema.parse(body);
+    const { name, phone, email, notes, address } = parsedData;
+    const active = body.active;
 
     const auth = await requirePermission("clientes", "Editar");
     if (!auth.authorized) return auth.response;

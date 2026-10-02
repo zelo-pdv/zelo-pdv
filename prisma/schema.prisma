@@ -30,6 +30,8 @@ model Loja {
   document  String?
   logo      String?
   active    Boolean @default(true)
+  ownerId   String?
+  owner     User?   @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   address      Address[]
   users        User[]
@@ -111,6 +113,7 @@ model User {
 
   address Address[]
   sales   Sale[]
+  ownedStores Loja[] @relation("StoreOwner")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

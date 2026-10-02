@@ -10,14 +10,14 @@ export const saleItemSchema = z.object({
 
 export const saleSchema = z.object({
   clientId: z.string().optional().nullable(),
-  clientName: z.string().optional().nullable(),
-  items: z.array(saleItemSchema).min(1, "Adicione pelo menos um produto"),
+  clientName: z.string().max(100, "O nome do cliente é muito longo").optional().nullable(),
+  items: z.array(saleItemSchema).min(1, "Adicione pelo menos um produto").max(500, "Muitos itens na venda"),
   total: z.number().nonnegative("O total não pode ser negativo"),
   discount: z.number().nonnegative().optional().nullable(),
   paymentMethod: z.nativeEnum(PaymentMethod),
   status: z.nativeEnum(SaleStatus),
-  dueDate: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
+  dueDate: z.string().max(30).optional().nullable(),
+  notes: z.string().max(500, "A observação é muito longa").optional().nullable(),
 });
 
 export type SaleFormValues = z.infer<typeof saleSchema>;
