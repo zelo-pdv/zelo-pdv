@@ -247,6 +247,7 @@ export function ClientForm({
         <Label>Nome</Label>
         <Input
           className={requiredInputClass}
+          name="name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Nome completo do cliente"
@@ -258,6 +259,7 @@ export function ClientForm({
           <Label>Telefone / WhatsApp</Label>
           <Input
             className={requiredInputClass}
+            name="phone"
             value={form.phone ?? ""}
             onChange={(e) => {
               setForm({ ...form, phone: maskPhone(e.target.value) });
@@ -271,6 +273,7 @@ export function ClientForm({
           <Label>E-mail</Label>
           <Input
             type="email"
+            name="email"
             value={form.email ?? ""}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             placeholder="email@exemplo.com"

@@ -148,21 +148,12 @@ function StoreSection() {
           usersService.list().catch(() => []),
         ]);
 
-        const firstUser = users.reduce((oldest: any, current: any) => {
-          if (!oldest) return current;
-          const oldestDate = new Date(oldest.createdAt || 0);
-          const currentDate = new Date(current.createdAt || 0);
-          return currentDate < oldestDate ? current : oldest;
-        }, null);
-
-        const firstUserName = firstUser?.name || "";
-
         if (data && (data as { id?: string }).id) {
           setLojaId((data as { id?: string }).id ?? null);
 
           const storeData: LojaFormData = {
             name: data.name || "",
-            ownerName: firstUserName || data.ownerName || "",
+            ownerName: data.ownerName || "",
             document: data.document ? maskCpfCnpj(data.document) : "",
             phone: data.phone ? maskPhone(data.phone) : "",
             email: data.email || "",
@@ -281,10 +272,7 @@ function StoreSection() {
         await updateLoja(lojaId, parsed.data);
         toast.success("Dados da loja atualizados com sucesso");
       } else {
-        const novaLoja = await createLoja(parsed.data);
-        // Salvamos o novo ID retornado pela API para que os próximos envios sejam um "Update"
-        setLojaId((novaLoja as { id: string }).id);
-        toast.success("Loja cadastrada com sucesso");
+        toast.error("Loja não encontrada para atualizar.");
       }
 
       // 3. Atualiza o estado original para refletir a nova base de dados salva

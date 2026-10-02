@@ -93,7 +93,7 @@ function DrawerOverlay({
       data-slot="drawer-overlay"
       data-blur={isBlurActive ? "" : undefined}
       className={cn(
-        "fixed inset-0 z-50 min-h-dvh bg-black/40 opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0",
+        "fixed inset-0 z-50 min-h-dvh bg-black/40 opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none! data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0",
         isBlurActive && "supports-backdrop-filter:backdrop-blur-sm",
         className,
       )}
@@ -147,7 +147,7 @@ function DrawerContent({
       <DrawerPrimitive.Viewport
         data-slot="drawer-viewport"
         data-modal={modal}
-        className="pointer-events-none fixed inset-0 z-50 select-none data-[modal=true]:pointer-events-auto"
+        className="pointer-events-none fixed inset-0 z-50 select-none data-[modal=true]:pointer-events-auto data-ending-style:pointer-events-none! data-closed:pointer-events-none!"
       >
         <DrawerPrimitive.Popup
           initialFocus={initialFocus}

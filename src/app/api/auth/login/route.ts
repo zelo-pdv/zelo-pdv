@@ -22,6 +22,8 @@ export async function POST(req: Request) {
       include: { group: true, loja: { select: { ownerId: true } } },
     });
 
+    console.log("LOGIN ATTEMPT - EMAIL:", email, "USER FOUND:", !!user);
+
     let senhaValida = false;
     if (user) {
       senhaValida = await bcrypt.compare(password, user.password);

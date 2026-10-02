@@ -74,14 +74,14 @@ export default function SettingsItem() {
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            data-testid="logout-button"
             className="text-destructive focus:text-destructive"
             onClick={async () => {
               await fetch("/api/auth/logout", {
                 method: "POST",
               });
 
-              router.push("/login");
-              router.refresh();
+              window.location.href = "/login";
             }}
           >
             <BoxIcon name="log-out" className="mr-2 text-base text-destructive" />

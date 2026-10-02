@@ -138,6 +138,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               })}
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  data-testid="logout-button"
                   variant="outline"
                   tooltip="Sair"
                   onClick={async () => {
@@ -145,8 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       method: "POST",
                     });
 
-                    router.push("/login");
-                    router.refresh();
+                    window.location.href = "/login";
                   }}
                   className="text-muted-foreground hover:text-foreground"
                 >

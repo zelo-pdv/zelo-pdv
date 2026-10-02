@@ -22,4 +22,5 @@ export const clientFormSchema = z.object({
   email: z.string().email("E-mail inválido").max(100).optional().or(z.literal("")),
   address: addressSchema.optional(),
   notes: z.string().max(500).optional().or(z.literal("")),
+  active: z.boolean().default(true),
 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { requireAdmin } from "@/lib/require-permission";
+import { accessGroupSchema } from "@/lib/validations/access-group";
 
 export async function GET() {
   try {
@@ -29,21 +30,23 @@ export async function POST(request: Request) {
     const user = auth.user;
 
     const body = await request.json();
-    const { name, description, active, permissions } = body;
-
-    if (!name) {
+    
+    const parsed = accessGroupSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "O nome do grupo é obrigatório." },
-        { status: 400 },
+        { error: "Dados inválidos: " + parsed.error.issues[0].message },
+        { status: 400 }
       );
     }
+
+    const { name, description, active, permissions } = parsed.data;
 
     const group = await prisma.accessGroup.create({
       data: {
         name,
         description,
-        active: active ?? true,
-        permissions: permissions ?? {},
+        active,
+        permissions,
         lojaId: user.lojaId,
       },
     });

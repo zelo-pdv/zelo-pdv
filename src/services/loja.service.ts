@@ -1,7 +1,9 @@
 import { apiRequest } from "@/lib/api-request";
 import { LojaFormData } from "@/lib/validations/loja";
 
-export async function getLoja(): Promise<LojaFormData> {
+export type LojaResponse = LojaFormData & { id: string; ownerId: string | null };
+
+export async function getLoja(): Promise<LojaResponse> {
   return apiRequest("/lojas");
 }
 

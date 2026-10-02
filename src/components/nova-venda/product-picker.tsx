@@ -11,6 +11,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerClose,
 } from "@/components/ui/drawer";
 import {
   Dialog,
@@ -179,7 +180,7 @@ export function ProductPicker({
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 mb-1">
               <div className="flex items-center gap-2">
-                <Button size="icon" variant="ghost" onClick={onClose} className="text-foreground">
+                <Button data-testid="product-picker-close" size="icon" variant="ghost" onClick={onClose} className="text-foreground">
                   <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
                 </Button>
                 <DrawerTitle>Produtos</DrawerTitle>
@@ -205,6 +206,7 @@ export function ProductPicker({
           <DialogHeader className="flex-row items-center gap-2 p-4 pb-0">
             <div className="flex items-center gap-2">
               <Button
+                data-testid="product-picker-close"
                 size="icon"
                 variant="ghost"
                 onClick={onClose}

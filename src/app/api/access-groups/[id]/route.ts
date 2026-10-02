@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-permission";
+import { updateAccessGroupSchema } from "@/lib/validations/access-group";
 
 export async function PATCH(
   request: Request,
@@ -12,7 +13,16 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, description, active, permissions } = body;
+    
+    const parsed = updateAccessGroupSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos: " + parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+    
+    const { name, description, active, permissions } = parsed.data;
 
     const existing = await prisma.accessGroup.findFirst({
       where: { id, lojaId: auth.user.lojaId },

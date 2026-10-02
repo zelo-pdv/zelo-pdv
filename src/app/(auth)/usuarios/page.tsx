@@ -55,6 +55,7 @@ import {
   getAccessGroups,
   type AccessGroupDTO,
 } from "@/services/accessGroup.service";
+import { getLoja } from "@/services/loja.service";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 import { MobileActionFab } from "@/components/ui/mobile-action-fab";
@@ -107,6 +108,7 @@ export default function UsuariosPage() {
   const { user: currentUser, isAdmin } = usePermissions();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [groups, setGroups] = useState<AccessGroupDTO[]>([]);
+  const [lojaOwnerId, setLojaOwnerId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -133,12 +135,14 @@ export default function UsuariosPage() {
   const refreshData = async (silent = false) => {
     try {
       if (!silent) setIsLoading(true);
-      const [fetchedUsers, fetchedGroups] = await Promise.all([
+      const [fetchedUsers, fetchedGroups, fetchedLoja] = await Promise.all([
         usersService.list(),
         getAccessGroups(),
+        getLoja(),
       ]);
       setUsers(fetchedUsers);
       setGroups(fetchedGroups);
+      setLojaOwnerId(fetchedLoja.ownerId || "");
     } catch (error) {
       if (!silent) {
         toast.error("Erro ao carregar os dados.");
@@ -162,25 +166,15 @@ export default function UsuariosPage() {
   });
 
   const enrichedUsers = useMemo(() => {
-    let oldestUserId = "";
-    let oldestDate = Infinity;
-    users.forEach((u) => {
-      const d = new Date(u.createdAt || 0).getTime();
-      if (d < oldestDate) {
-        oldestDate = d;
-        oldestUserId = u.id;
-      }
-    });
-
     return users.map((u) => {
       const group = groups.find((g) => g.id === u.groupId);
       return {
         ...u,
         groupLabel: group?.name || "Sem grupo",
-        isFirstUser: u.id === oldestUserId,
+        isFirstUser: u.id === lojaOwnerId,
       };
     });
-  }, [users, groups]);
+  }, [users, groups, lojaOwnerId]);
 
   const columns = useMemo(
     () =>

@@ -82,7 +82,7 @@ export function getUserColumns({
                       Trocar senha
                     </Button>
                     <Separator className="my-1" />
-                    {u.id !== currentUserId && (
+                    {u.id !== currentUserId && !u.isFirstUser && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -173,7 +173,7 @@ export function getUserColumns({
             >
               <BoxIcon name="key" className="text-base" />
             </Button>
-            {u.id !== currentUserId && (
+            {u.id !== currentUserId && !u.isFirstUser && (
               <Button
                 size="icon"
                 variant="ghost"

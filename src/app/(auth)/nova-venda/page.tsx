@@ -594,16 +594,17 @@ export default function NovaVenda() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
+              variant="destructive"
               onClick={() => {
+                console.log('CLEAR CART CLICKED');
                 clear();
                 setShowClearConfirm(false);
                 toast.info("Carrinho esvaziado.");
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Limpar carrinho
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

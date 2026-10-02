@@ -3,19 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { PermissionsProvider } from "./permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
+import { userContextSchema, type UserContextData } from "@/lib/validations/user_context";
 
-import type { Permissions } from "@/store/useSettingsStore";
-
-interface UserContext {
-  permissions?: Permissions;
-  sub?: string;
-  email?: string;
-  name?: string;
-  groupName?: string;
-  isAdmin?: boolean;
-}
-
-function getUserContext(): UserContext | null {
+function getUserContext(): UserContextData | null {
   if (typeof document === "undefined") {
     return null;
   }
@@ -38,7 +28,14 @@ function getUserContext(): UserContext | null {
     }
     const decoded = new TextDecoder().decode(bytes);
 
-    return JSON.parse(decoded) as UserContext;
+    const rawObj = JSON.parse(decoded);
+    const parsed = userContextSchema.safeParse(rawObj);
+    
+    if (parsed.success) {
+      return parsed.data;
+    }
+    console.error("Invalid user context:", parsed.error);
+    return null;
   } catch {
     return null;
   }
@@ -49,7 +46,7 @@ export function PermissionsProviderWrapper({
 }: {
   children: ReactNode;
 }) {
-  const [context, setContext] = useState<UserContext | null>(() => getUserContext());
+  const [context, setContext] = useState<UserContextData | null>(() => getUserContext());
 
   useDataSync({
     types: ["session"],
@@ -64,12 +61,12 @@ export function PermissionsProviderWrapper({
             return;
           }
 
-          setContext((prev) => ({
+          setContext((prev) => prev ? ({
             ...prev,
             permissions: newSession.permissions,
             groupName: newSession.groupName,
             isAdmin: newSession.isAdmin,
-          }));
+          }) : null);
         } catch (e) {
           console.error("Erro ao sincronizar sessão:", e);
         }

@@ -3,14 +3,22 @@ import prisma from "@/lib/prisma"; // Ajuste o caminho do seu prisma se necessá
 import { saleSchema } from "@/lib/validations/sale";
 import { requirePermission } from "@/lib/require-permission";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const auth = await requirePermission("historico", "Visualizar");
     if (!auth.authorized) return auth.response;
     const user = auth.user;
 
-    const sales = await prisma.sale.findMany({
-      where: { lojaId: user.lojaId },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "5000", 10);
+    const skip = (page - 1) * limit;
+
+    const [sales, total] = await Promise.all([
+      prisma.sale.findMany({
+        where: { lojaId: user.lojaId },
+        take: limit,
+        skip: skip,
       include: {
         items: {
           include: {
@@ -33,8 +41,18 @@ export async function GET() {
       orderBy: {
         date: "desc",
       },
+    }),
+    prisma.sale.count({ where: { lojaId: user.lojaId } }),
+  ]);
+    return NextResponse.json({
+      data: sales,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
     });
-    return NextResponse.json(sales);
   } catch (error) {
     console.error("Erro ao buscar vendas:", error);
     return NextResponse.json(
@@ -79,9 +97,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // Usa $transaction para garantir que a venda e o desconto no estoque ocorram juntos
-    const sale = await prisma.$transaction(async (tx) => {
-      // Determina o próximo número sequencial da venda da loja
+    // Usa retry loop para lidar com falhas de concorrência no saleNumber (P2002)
+    let sale;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        sale = await prisma.$transaction(async (tx) => {
+          // Determina o próximo número sequencial da venda da loja
       const lastSale = await tx.sale.findFirst({
         where: { lojaId: user.lojaId, saleNumber: { not: null } },
         orderBy: { saleNumber: "desc" },
@@ -118,10 +140,10 @@ export async function POST(req: Request) {
           throw new Error("Produto não encontrado.");
         }
         
-        // Verifica estoque (opcional: se o sistema permitir estoque negativo, pode remover este if)
-        // if (dbProduct.stock !== null && dbProduct.stock < item.quantity) {
-        //  throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
-        // }
+        // Verifica estoque
+        if (dbProduct.stock !== null && dbProduct.stock.toNumber() < item.quantity) {
+          throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
+        }
 
         const unitPrice = dbProduct.salePrice.toNumber();
         const subtotal = item.quantity * unitPrice;
@@ -186,21 +208,45 @@ export async function POST(req: Request) {
         },
       });
 
-      // 2. Decrementa o estoque de cada produto vendido
+      // 2. Decrementa o estoque atômicamente e valida sob underflow (concorrência)
       for (const item of saleItemsData) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
+        const dbProduct = productMap.get(item.productId);
+        if (dbProduct && dbProduct.stock !== null) {
+          const updatedProduct = await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
             },
-          },
-        });
+            select: { stock: true }
+          });
+          
+          if (updatedProduct.stock !== null && updatedProduct.stock.toNumber() < 0) {
+            throw new Error(`Estoque insuficiente para o produto ${item.productName}.`);
+          }
+        }
       }
 
       return newSale;
     });
 
+        break; // Sucesso, sai do loop
+      } catch (error: any) {
+        if (error.code === 'P2002' && (
+             (Array.isArray(error.meta?.target) && error.meta.target.includes('saleNumber')) || 
+             (typeof error.meta?.target === 'string' && error.meta.target.includes('saleNumber')) ||
+             (error.meta?.modelName === 'Sale' && error.message.includes('saleNumber'))
+           )) {
+          retries--;
+          if (retries === 0) {
+            throw new Error("Alta concorrência na geração do número da venda. Tente novamente.");
+          }
+          continue; // Tenta de novo na próxima iteração
+        }
+        throw error; // Outros erros repassa pra cima
+      }
+    }
     return NextResponse.json(sale, { status: 201 });
   } catch (error: any) {
     if (error.name === "ZodError") {
@@ -209,8 +255,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    console.log("SALE ERROR:", error);
     // Tratamento de erros lançados dentro da transação
-    if (error instanceof Error && (error.message.includes("Quantidade inválida") || error.message.includes("Desconto inválido") || error.message.includes("Produto não encontrado"))) {
+    if (error instanceof Error && (error.message.includes("Quantidade inválida") || error.message.includes("Desconto inválido") || error.message.includes("Produto não encontrado") || error.message.includes("Estoque insuficiente"))) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { z } from "zod";
@@ -33,9 +33,40 @@ export async function requireAuth() {
     redirect("/login");
   }
 
-  const payload = await verifyJwtToken(token);
+  const payload = await verifyJwtToken(token) as any;
   if (!payload) {
     redirect("/login");
+  }
+
+  // Authorization check inside requireAuth
+  const headersList = await headers();
+  const pathname = headersList.get("x-invoke-path") || headersList.get("referer") || "";
+  
+  if (!payload.isAdmin) {
+    let moduleName = "";
+    if (pathname.includes("/dashboard")) moduleName = "dashboard";
+    else if (pathname.includes("/configuracoes")) moduleName = "configuracoes";
+    else if (pathname.includes("/historico")) moduleName = "historico";
+    else if (pathname.includes("/produtos")) moduleName = "produtos";
+    else if (pathname.includes("/clientes")) moduleName = "clientes";
+    else if (pathname.includes("/usuarios")) moduleName = "usuarios";
+    else if (pathname.includes("/nova-venda")) moduleName = "nova-venda";
+
+    if (moduleName) {
+      const hasViewPermission = Array.isArray(payload.permissions?.[moduleName]) && payload.permissions[moduleName].includes("Visualizar");
+      if (!hasViewPermission) {
+        if (moduleName === "dashboard") {
+          const sequence = ["produtos", "nova-venda", "clientes", "historico", "configuracoes"];
+          const found = sequence.find((mod) => payload.permissions?.[mod]?.includes("Visualizar"));
+          if (found) {
+            redirect(`/${found}`);
+          } else {
+            redirect("/login");
+          }
+        }
+        redirect("/dashboard");
+      }
+    }
   }
 
   return { token, user: payload };
@@ -73,10 +104,34 @@ export async function withValidation<T>(
   req: Request,
   handler: (data: T) => Promise<NextResponse>
 ) {
+  // Rate Limiting
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1';
+  const now = Date.now();
+  const rlData = rateLimitMap.get(ip) ?? { count: 0, lastReset: now };
+
+  if (now - rlData.lastReset > RATE_WINDOW) {
+    rlData.count = 0;
+    rlData.lastReset = now;
+  }
+  rlData.count++;
+  rateLimitMap.set(ip, rlData);
+
+  if (rlData.count > RATE_LIMIT) {
+    return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+  }
+
   try {
     const body = await req.json();
     const validatedData = schema.parse(body); 
-    return await handler(validatedData);
+    const response = await handler(validatedData);
+    
+    // Set security headers on the API response
+    response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;");
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    
+    return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -90,116 +145,3 @@ export async function withValidation<T>(
     );
   }
 }
-
-export async function proxy(request: NextRequest) {
-  const response = NextResponse.next();
-  const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
-
-  // ==========================================
-  // 1. RATE LIMITING
-  // ==========================================
-  const now = Date.now();
-  const rlData = rateLimitMap.get(ip) ?? { count: 0, lastReset: now };
-
-  if (now - rlData.lastReset > RATE_WINDOW) {
-    rlData.count = 0;
-    rlData.lastReset = now;
-  }
-  rlData.count++;
-  rateLimitMap.set(ip, rlData);
-
-  if (rlData.count > RATE_LIMIT) {
-    return new NextResponse("Too Many Requests", { status: 429 });
-  }
-
-  // ==========================================
-  // 2. JWT VERIFICATION (PROXY)
-  // ==========================================
-  const protectedRoutes = [
-    '/dashboard', 
-    '/configuracoes', 
-    '/historico', 
-    '/produtos', 
-    '/clientes', 
-    '/usuarios',
-    '/nova-venda'
-  ];
-  
-  const isProtected = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
-
-  if (isProtected) {
-    const token = request.cookies.get('token')?.value;
-    const payload = token ? await verifyJwtToken(token) : null;
-    
-    if (!payload) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    const { isAdmin, permissions } = payload as any;
-
-    if (!isAdmin) {
-      const pathname = request.nextUrl.pathname;
-      let moduleName = "";
-
-      if (pathname.startsWith("/dashboard")) moduleName = "dashboard";
-      else if (pathname.startsWith("/configuracoes")) moduleName = "configuracoes";
-      else if (pathname.startsWith("/historico")) moduleName = "historico";
-      else if (pathname.startsWith("/produtos")) moduleName = "produtos";
-      else if (pathname.startsWith("/clientes")) moduleName = "clientes";
-      else if (pathname.startsWith("/usuarios")) moduleName = "usuarios";
-      else if (pathname.startsWith("/nova-venda")) moduleName = "nova-venda";
-
-      if (moduleName) {
-        const hasViewPermission = Array.isArray(permissions?.[moduleName]) && permissions[moduleName].includes("Visualizar");
-        if (!hasViewPermission) {
-          // Redirecionar para o dashboard se não tiver permissão para a rota solicitada.
-          // Caso seja o próprio dashboard e ele não tenha acesso (muito raro, mas possível),
-          // direciona para login ou uma rota padrão que ele tenha acesso.
-          if (moduleName === "dashboard") {
-            const sequence = ["produtos", "nova-venda", "clientes", "historico", "configuracoes"];
-            const found = sequence.find((mod) => permissions?.[mod]?.includes("Visualizar"));
-            if (found) {
-              return NextResponse.redirect(new URL(`/${found}`, request.url));
-            } else {
-              return NextResponse.redirect(new URL('/login', request.url));
-            }
-          }
-          return NextResponse.redirect(new URL('/dashboard', request.url));
-        }
-      }
-    }
-  }
-
-  // ==========================================
-  // 3. SECURITY HEADERS E CACHE
-  // ==========================================
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-  `;
-
-  const contentSecurityPolicyHeaderValue = cspHeader
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-
-  response.headers.set('Content-Security-Policy', contentSecurityPolicyHeaderValue);
-  response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-
-  return response;
-}
-
-export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
-};

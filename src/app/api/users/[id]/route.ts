@@ -73,9 +73,6 @@ export async function PATCH(
           { status: 403 },
         );
       }
-      if (data.groupId && data.groupId !== targetUser.groupId) {
-        // Prevent changing owner's group if it would remove their access, but for now we just don't let it be restricted without care
-      }
     }
 
     if (data.email) {
@@ -108,6 +105,13 @@ export async function PATCH(
         return NextResponse.json(
           { error: "Grupo inválido ou não pertence à loja." },
           { status: 400 },
+        );
+      }
+
+      if (isTargetOwner && existingGroup.name !== "ADMIN") {
+        return NextResponse.json(
+          { error: "O proprietário não pode ser destituído do grupo ADMIN." },
+          { status: 403 },
         );
       }
     }

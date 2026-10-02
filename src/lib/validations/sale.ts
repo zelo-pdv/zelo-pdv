@@ -18,6 +18,14 @@ export const saleSchema = z.object({
   status: z.nativeEnum(SaleStatus),
   dueDate: z.string().max(30).optional().nullable(),
   notes: z.string().max(500, "A observação é muito longa").optional().nullable(),
+}).refine((data) => {
+  if (data.clientId) {
+    return !!data.clientName && data.clientName.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "O nome do cliente é obrigatório quando o cliente é selecionado",
+  path: ["clientName"]
 });
 
 export type SaleFormValues = z.infer<typeof saleSchema>;

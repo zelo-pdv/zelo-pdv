@@ -696,6 +696,7 @@ function ProductForm({
         <Label>Nome</Label>
         <Input
           className={requiredInputClass}
+          name="name"
           value={form.name}
           onChange={(e) => updateString("name", e.target.value)}
           placeholder="Nome do produto"
@@ -714,6 +715,7 @@ function ProductForm({
       <div className="col-span-2 sm:col-span-1 space-y-2">
         <Label>Código (Alternativo)</Label>
         <Input
+          name="sku"
           value={form.code}
           onChange={(e) => updateString("code", e.target.value)}
         />
@@ -723,6 +725,7 @@ function ProductForm({
         <Label>Código de Barras</Label>
         <div className="flex gap-2">
           <Input
+            name="barcode"
             value={form.barcode}
             onChange={(e) => handleBarcodeChange(e.target.value)}
             onBlur={() => handleBarcodeValidation(form.barcode)}
@@ -808,6 +811,7 @@ function ProductForm({
         <Label>Preço de venda</Label>
         <Input
           className={requiredInputClass}
+          name="salePrice"
           inputMode="decimal"
           value={rawValues.salePrice}
           onChange={(e) => handleNumericChange("salePrice", e.target.value)}
@@ -820,6 +824,7 @@ function ProductForm({
         <div className="space-y-2">
           <Label>Preço de custo</Label>
           <Input
+            name="costPrice"
             inputMode="decimal"
             value={rawValues.costPrice}
             onChange={(e) => handleNumericChange("costPrice", e.target.value)}
@@ -834,6 +839,7 @@ function ProductForm({
           <div className="space-y-2">
             <Label>Estoque atual</Label>
             <Input
+              name="stock"
               inputMode="decimal"
               value={rawValues.stock}
               onChange={(e) => handleNumericChange("stock", e.target.value)}

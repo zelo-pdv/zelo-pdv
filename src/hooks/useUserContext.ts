@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Permissions } from "@/store/useSettingsStore";
-
-interface UserContextData {
-  sub: string;
-  email: string;
-  name: string;
-  permissions: Permissions;
-}
+import { userContextSchema, type UserContextData } from "@/lib/validations/user_context";
 
 export function useUserContext() {
   const [user, setUser] = useState<UserContextData | null>(null);
@@ -21,7 +15,14 @@ export function useUserContext() {
       try {
         const base64Value = cookie.split("=")[1];
         const jsonString = atob(base64Value); // Decodifica Base64
-        setUser(JSON.parse(jsonString));
+        const rawObj = JSON.parse(jsonString);
+        
+        const parsed = userContextSchema.safeParse(rawObj);
+        if (parsed.success) {
+          setUser(parsed.data);
+        } else {
+          console.error("Contexto de usuário inválido", parsed.error);
+        }
       } catch (e) {
         console.error("Erro ao decodificar contexto do usuário", e);
       }

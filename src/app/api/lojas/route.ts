@@ -70,104 +70,145 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Documento inválido." }, { status: 400 });
     }
 
-    const { address, ...lojaData } = body;
+    const { address, ownerEmail, ownerPassword, ...lojaData } = body;
 
-    const loja = await prisma.loja.create({
-      data: {
-        name: lojaData.name,
-        ownerName: lojaData.ownerName,
-        document: lojaData.document,
-        phone: lojaData.phone,
-        email: lojaData.email,
-        ...(address && Object.values(address).some((v) => !!v && String(v).trim() !== "")
-          ? {
-              address: {
-                create: {
-                  street: address.street?.substring(0, 100) || "",
-                  number: address.number?.substring(0, 20) || "",
-                  complement: address.complement?.substring(0, 50) || "",
-                  neighborhood: address.neighborhood?.substring(0, 50) || "",
-                  city: address.city?.substring(0, 50) || "",
-                  state: address.state?.substring(0, 2) || "",
-                  zipCode: address.zipCode?.substring(0, 20) || "",
+    if (!ownerEmail || typeof ownerEmail !== 'string' || !ownerEmail.includes('@')) {
+      return NextResponse.json({ error: "E-mail do responsável inválido." }, { status: 400 });
+    }
+    if (!ownerPassword || typeof ownerPassword !== 'string' || ownerPassword.length < 6) {
+      return NextResponse.json({ error: "A senha do responsável deve ter pelo menos 6 caracteres." }, { status: 400 });
+    }
+
+    const emailExists = await prisma.user.findUnique({
+      where: { email: ownerEmail.trim().toLowerCase() }
+    });
+    if (emailExists) {
+      return NextResponse.json({ error: "Este e-mail já está em uso." }, { status: 400 });
+    }
+
+    const { hash } = await import('bcryptjs');
+    const hashedPassword = await hash(ownerPassword, 10);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const loja = await tx.loja.create({
+        data: {
+          name: lojaData.name,
+          ownerName: lojaData.ownerName,
+          document: lojaData.document,
+          phone: lojaData.phone,
+          email: lojaData.email,
+          ...(address && Object.values(address).some((v) => !!v && String(v).trim() !== "")
+            ? {
+                address: {
+                  create: {
+                    street: address.street?.substring(0, 100) || "",
+                    number: address.number?.substring(0, 20) || "",
+                    complement: address.complement?.substring(0, 50) || "",
+                    neighborhood: address.neighborhood?.substring(0, 50) || "",
+                    city: address.city?.substring(0, 50) || "",
+                    state: address.state?.substring(0, 2) || "",
+                    zipCode: address.zipCode?.substring(0, 20) || "",
+                  },
+                },
+              }
+            : {}),
+          accessGroups: {
+            create: [
+              {
+                name: "ADMIN",
+                description: "Administrador do Sistema (Acesso Total)",
+                permissions: {
+                  dashboard: ["Visualizar"],
+                  historico: ["Visualizar", "Editar", "Excluir"],
+                  "nova-venda": ["Visualizar", "Adicionar"],
+                  clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                  produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                  categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                  configuracoes: ["Visualizar", "Editar", "Excluir"],
+                  usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
                 },
               },
-            }
-          : {}),
-        accessGroups: {
-          create: [
-            {
-              name: "ADMIN",
-              description: "Administrador do Sistema (Acesso Total)",
-              permissions: {
-                dashboard: ["Visualizar"],
-                historico: ["Visualizar", "Editar", "Excluir"],
-                "nova-venda": ["Visualizar", "Adicionar"],
-                clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-                produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-                categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-                configuracoes: ["Visualizar", "Editar", "Excluir"],
-                usuarios: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+              {
+                name: "Gerente",
+                description: "Acesso gerencial com controle de vendas, produtos e clientes",
+                permissions: {
+                  dashboard: ["Visualizar"],
+                  historico: ["Visualizar", "Editar", "Excluir"],
+                  "nova-venda": ["Visualizar", "Adicionar"],
+                  clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                  produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                  categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+                },
               },
-            },
-            {
-              name: "Gerente",
-              description: "Acesso gerencial com controle de vendas, produtos e clientes",
-              permissions: {
-                dashboard: ["Visualizar"],
-                historico: ["Visualizar", "Editar", "Excluir"],
-                "nova-venda": ["Visualizar", "Adicionar"],
-                clientes: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-                produtos: ["Visualizar", "Adicionar", "Editar", "Excluir"],
-                categorias: ["Visualizar", "Adicionar", "Editar", "Excluir"],
+              {
+                name: "Operador de Caixa",
+                description: "Pode registrar vendas e consultar produtos e clientes",
+                permissions: {
+                  dashboard: ["Visualizar"],
+                  "nova-venda": ["Visualizar", "Adicionar"],
+                  clientes: ["Visualizar", "Adicionar"],
+                  produtos: ["Visualizar"],
+                  historico: ["Visualizar"],
+                },
               },
+            ],
+          },
+          clients: {
+            create: {
+              name: "Consumidor Final",
+              phone: "",
             },
-            {
-              name: "Operador de Caixa",
-              description: "Pode registrar vendas e consultar produtos e clientes",
-              permissions: {
-                dashboard: ["Visualizar"],
-                "nova-venda": ["Visualizar", "Adicionar"],
-                clientes: ["Visualizar", "Adicionar"],
-                produtos: ["Visualizar"],
-                historico: ["Visualizar"],
-              },
+          },
+          categories: {
+            create: {
+              name: "Geral",
             },
-          ],
-        },
-        clients: {
-          create: {
-            name: "Consumidor Final",
-            phone: "",
+          },
+          units: {
+            create: [
+              { name: "Unidade", abbreviation: "UN", decimalPlaces: 0 },
+              { name: "Quilo", abbreviation: "KG", decimalPlaces: 3 },
+              { name: "Grama", abbreviation: "G", decimalPlaces: 0 },
+              { name: "Litro", abbreviation: "L", decimalPlaces: 3 },
+              { name: "Caixa", abbreviation: "CX", decimalPlaces: 0 },
+              { name: "Pacote", abbreviation: "PCT", decimalPlaces: 0 },
+              { name: "Metro", abbreviation: "M", decimalPlaces: 2 },
+              { name: "Par", abbreviation: "PAR", decimalPlaces: 0 },
+            ],
           },
         },
-        categories: {
-          create: {
-            name: "Geral",
-          },
+        include: {
+          address: true,
+          accessGroups: true,
         },
-        units: {
-          create: [
-            { name: "Unidade", abbreviation: "UN", decimalPlaces: 0 },
-            { name: "Quilo", abbreviation: "KG", decimalPlaces: 3 },
-            { name: "Grama", abbreviation: "G", decimalPlaces: 0 },
-            { name: "Litro", abbreviation: "L", decimalPlaces: 3 },
-            { name: "Caixa", abbreviation: "CX", decimalPlaces: 0 },
-            { name: "Pacote", abbreviation: "PCT", decimalPlaces: 0 },
-            { name: "Metro", abbreviation: "M", decimalPlaces: 2 },
-            { name: "Par", abbreviation: "PAR", decimalPlaces: 0 },
-          ],
-        },
-      },
-      include: {
-        address: true,
-      },
+      });
+
+      const adminGroup = loja.accessGroups.find(g => g.name === "ADMIN");
+
+      const ownerUser = await tx.user.create({
+        data: {
+          name: lojaData.ownerName,
+          email: ownerEmail.trim().toLowerCase(),
+          password: hashedPassword,
+          lojaId: loja.id,
+          groupId: adminGroup!.id,
+          active: true,
+        }
+      });
+
+      const updatedLoja = await tx.loja.update({
+        where: { id: loja.id },
+        data: { ownerId: ownerUser.id },
+        include: { address: true }
+      });
+
+      return updatedLoja;
     });
 
-    const firstAddress = Array.isArray(loja.address) && loja.address.length > 0 ? loja.address[0] : null;
+    const firstAddress = Array.isArray(result.address) && result.address.length > 0 ? result.address[0] : null;
 
     return NextResponse.json({
-      ...loja,
+      ...result,
       address: firstAddress,
     });
   } catch (error) {
