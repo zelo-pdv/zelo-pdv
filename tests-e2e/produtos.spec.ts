@@ -12,8 +12,11 @@ test.describe('Produtos Flow', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000); // Wait for React hydration
     await page.fill('input[type="email"]', credentials.email);
     await page.fill('input[type="password"]', credentials.password);
+    await expect(page.locator('input[type="email"]')).toHaveValue(credentials.email);
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/.*\/dashboard|.*\/produtos/);
     
@@ -31,14 +34,13 @@ test.describe('Produtos Flow', () => {
       const fabMainBtn = page.locator('div.fixed.z-50 button:has(.bx-plus)').first();
       await fabMainBtn.waitFor({ state: 'visible', timeout: 15000 });
       await fabMainBtn.click();
-      await page.waitForTimeout(500); // Wait for fab to expand
       const novoBtn = page.locator('div.fixed.z-50 button:has-text("Novo")').first();
-      await novoBtn.click({ force: true });
+      await novoBtn.waitFor({ state: 'visible', timeout: 5000 });
+      await novoBtn.click();
     } else {
       await desktopAdd.waitFor({ state: 'visible', timeout: 15000 });
-      await desktopAdd.click({ force: true });
+      await desktopAdd.click();
     }
-    await page.waitForTimeout(1000); // Wait for Drawer/Dialog animations to complete
     
     // Fill form
     await page.locator('input[name="name"]').last().waitFor({ state: 'visible' });
@@ -50,10 +52,9 @@ test.describe('Produtos Flow', () => {
     await page.fill('input[name="stock"]', '50');
     
     // Submit
-    await page.locator('button:has-text("Salvar")').last().click({ force: true });
+    await page.locator('button:has-text("Salvar")').last().click();
     
-    // Verify toast or list
-    await expect(page.locator('text=Produto criado com sucesso').first()).toBeVisible({ timeout: 5000 }).catch(() => null); // Optional if toast disappears
+    await expect(page.locator('text=Produto Teste E2E').first()).toBeVisible();
     
     // Check in list
     await expect(page.locator('text=Produto Teste E2E').first()).toBeVisible();
@@ -64,17 +65,17 @@ test.describe('Produtos Flow', () => {
     
     if (isMobile) {
       await row.locator('button:has(.bx-dots-vertical-rounded)').first().click();
-      await page.waitForTimeout(500);
-      await page.locator('button:has-text("Editar produto")').last().click();
+      const editarBtn = page.locator('button:has-text("Editar produto")').last();
+      await editarBtn.waitFor({ state: 'visible' });
+      await editarBtn.click();
     } else {
-      await row.locator('button[title="Editar produto"]').first().click({ force: true });
+      await row.locator('button[title="Editar produto"]').first().click();
     }
-    await page.waitForTimeout(1000); // Wait for Drawer/Dialog
+    await page.locator('input[name="name"]').last().waitFor({ state: 'visible' });
 
     // Change name
     await page.fill('input[name="name"]', 'Produto Teste E2E Editado');
-    await page.locator('button:has-text("Salvar")').last().click({ force: true });
-    await page.waitForTimeout(1000); // Wait for update
+    await page.locator('button:has-text("Salvar")').last().click();
 
     // Verify in list
     await expect(page.locator('text=Produto Teste E2E Editado').first()).toBeVisible();
@@ -84,16 +85,17 @@ test.describe('Produtos Flow', () => {
     
     if (isMobile) {
       await editedRow.locator('button:has(.bx-dots-vertical-rounded)').first().click();
-      await page.waitForTimeout(500);
-      await page.locator('button:has-text("Remover produto")').last().click();
+      const removerBtn = page.locator('button:has-text("Remover produto")').last();
+      await removerBtn.waitFor({ state: 'visible' });
+      await removerBtn.click();
     } else {
-      await editedRow.locator('button[title="Remover produto"]').first().click({ force: true });
+      await editedRow.locator('button[title="Remover produto"]').first().click();
     }
-    await page.waitForTimeout(500);
     
     // Confirm exclusion
-    await page.click('button:has-text("Confirmar"), button:has-text("Excluir"), button:has-text("Sim"), button:has-text("Remover")', { force: true });
-    await page.waitForTimeout(1000);
+    const confirmBtn = page.locator('div[role="alertdialog"] button:has-text("Remover")').first();
+    await confirmBtn.waitFor({ state: 'visible' });
+    await confirmBtn.click();
     
     // Verify removal
     await expect(page.locator('text=Produto Teste E2E Editado').first()).not.toBeVisible();

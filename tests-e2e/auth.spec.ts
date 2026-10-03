@@ -16,11 +16,15 @@ test.describe('Auth Flows', () => {
     
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500); // Wait for hydration
+    await page.waitForTimeout(1000); // Wait for React hydration
+    await page.locator('input[type="email"]').waitFor({ state: 'visible' });
     
     // Fill credentials
     await page.fill('input[type="email"]', credentials.email);
     await page.fill('input[type="password"]', credentials.password);
+    
+    // Validate hydration didn't wipe inputs
+    await expect(page.locator('input[type="email"]')).toHaveValue(credentials.email);
     
     // Submit
     await page.click('button[type="submit"]');
@@ -35,13 +39,15 @@ test.describe('Auth Flows', () => {
   test('Deve falhar no login com senha incorreta', async ({ page }) => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000); // Wait for React hydration
+    await page.locator('input[type="email"]').waitFor({ state: 'visible' });
     await page.fill('input[type="email"]', credentials.email);
     await page.fill('input[type="password"]', 'senhaerrada123');
+    await expect(page.locator('input[type="email"]')).toHaveValue(credentials.email);
     await page.click('button[type="submit"]');
 
     // Toast error or text error
-    await expect(page.locator('.sonner-toast, [data-sonner-toast]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('body')).toContainText(/inválid/i, { timeout: 15000 });
     await expect(page).toHaveURL(/.*\/login/);
   });
 
@@ -52,9 +58,11 @@ test.describe('Auth Flows', () => {
 
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000); // Wait for React hydration
+    await page.locator('input[type="email"]').waitFor({ state: 'visible' });
     await page.fill('input[type="email"]', credentials.email);
     await page.fill('input[type="password"]', credentials.password);
+    await expect(page.locator('input[type="email"]')).toHaveValue(credentials.email);
     await page.click('button[type="submit"]');
     
     await expect(page).toHaveURL(/.*\/dashboard|.*\/produtos/);
@@ -65,7 +73,7 @@ test.describe('Auth Flows', () => {
       const settingsBtn = page.locator('header button:has(.bx-cog)').first();
       await expect(settingsBtn).toBeVisible({ timeout: 15000 });
       await settingsBtn.click();
-      await page.waitForTimeout(500); // wait for dropdown
+      await page.locator('[data-testid="logout-button"]').waitFor({ state: 'visible' });
     }
     
     const logoutBtn = page.locator('[data-testid="logout-button"]').first();

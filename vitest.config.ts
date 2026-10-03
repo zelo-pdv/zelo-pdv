@@ -5,5 +5,6 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 120000,
     fileParallelism: false,
+    exclude: ['tests-e2e/**', 'node_modules/**', 'dist/**', '.idea/**', '.git/**', '.cache/**'],
   },
 });

@@ -31,6 +31,10 @@ export async function PUT(
     }
     const { address, ...lojaData } = parsed.data;
 
+    // Avoid Prisma unique constraint errors for empty strings
+    if (lojaData.email === "") lojaData.email = null;
+    if (lojaData.document === "") lojaData.document = null;
+
     if (address) {
       const hasAnyValue = Object.values(address).some(
         (v) => !!v && String(v).trim() !== "",

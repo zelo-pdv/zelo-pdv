@@ -203,7 +203,7 @@ export async function POST(request: Request) {
       });
 
       return updatedLoja;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     const firstAddress = Array.isArray(result.address) && result.address.length > 0 ? result.address[0] : null;
 

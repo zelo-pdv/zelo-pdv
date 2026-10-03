@@ -57,8 +57,11 @@ test.describe('RBAC e Sincronização Flow', () => {
     const page = await context.newPage();
 
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000); // Wait for React hydration
     await page.fill('input[type="email"]', vendedorCreds.email);
     await page.fill('input[type="password"]', vendedorCreds.password);
+    await expect(page.locator('input[type="email"]')).toHaveValue(vendedorCreds.email);
     await page.click('button[type="submit"]');
     
     // Vendor should not see Configurações

@@ -30,7 +30,10 @@ export async function createLoja(uniquePrefix: string) {
   // Login to get the token
   const loginRes = await reqContext.post(`${API_URL}/auth/login`, {
     data: { email: payload.ownerEmail, password: payload.ownerPassword },
-    headers: { "Content-Type": "application/json" }
+    headers: { 
+      "Content-Type": "application/json",
+      "x-forwarded-for": `192.168.1.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
+    }
   });
   
   if (!loginRes.ok()) throw new Error("Failed to login after creating loja");
