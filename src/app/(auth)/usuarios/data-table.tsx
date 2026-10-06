@@ -36,11 +36,15 @@ export function UsersDataTable({
   data,
   groups,
   onCreateClick,
+  onExportClick,
+  isExporting,
 }: {
   columns: ColumnDef<UserTableData>[];
   data: UserTableData[];
   groups: { id: string; name: string }[];
   onCreateClick: () => void;
+  onExportClick?: () => void;
+  isExporting?: boolean;
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -208,13 +212,31 @@ export function UsersDataTable({
           </Popover>
         </div>
 
-        <Button
-          onClick={onCreateClick}
-          size="sm"
-          className="rounded-full hidden sm:flex shrink-0"
-        >
-          <BoxIcon name="plus" className="mr-1 text-base" /> Adicionar
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {onExportClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onExportClick}
+              disabled={isExporting}
+              className="rounded-full hidden sm:flex shrink-0 gap-1.5 cursor-pointer"
+            >
+              <BoxIcon name="download" className="text-base" />
+              <span>{isExporting ? "Exportando..." : "Exportar"}</span>
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            onClick={onCreateClick}
+            size="sm"
+            className="rounded-full hidden sm:flex shrink-0 gap-1 cursor-pointer"
+          >
+            <BoxIcon name="plus" className="text-base" />
+            <span>Adicionar</span>
+          </Button>
+        </div>
       </div>
 
       {/* Badges de Filtros Ativos */}

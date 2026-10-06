@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BoxIcon } from "@/components/ui/box-icon";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHasScrolled } from "@/hooks/use-has-scrolled";
 
 interface MobileActionFabProps {
   onAdd: () => void;
@@ -16,6 +17,7 @@ interface MobileActionFabProps {
 export function MobileActionFab({ onAdd, onExport, onConfig, onImport, isExporting }: MobileActionFabProps) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const hasScrolled = useHasScrolled(200);
 
   if (!isMobile) return null;
 
@@ -28,7 +30,14 @@ export function MobileActionFab({ onAdd, onExport, onConfig, onImport, isExporti
           onClick={() => setIsOpen(false)}
         />
       )}
-      <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-4 z-50 flex flex-col-reverse items-end gap-3 pointer-events-none">
+      <div
+        className={cn(
+          "fixed right-4 z-50 flex flex-col-reverse items-end gap-3 pointer-events-none transition-all duration-300 ease-in-out",
+          hasScrolled
+            ? "bottom-[calc(140px+env(safe-area-inset-bottom))]"
+            : "bottom-[calc(80px+env(safe-area-inset-bottom))]"
+        )}
+      >
         {/* Main FAB Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}

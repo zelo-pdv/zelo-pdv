@@ -48,14 +48,25 @@ export function ProductPicker({
   const blockOutOfStock = useSettingsStore(
     (s) => s.sales?.blockOutOfStock ?? false,
   );
+  const outOfStockWarning = useSettingsStore(
+    (s) => s.notifications?.outOfStockWarning ?? true,
+  );
 
   const handlePick = (p: import("@/types").Product) => {
-    if (trackStock) {
+    if (trackStock && blockOutOfStock) {
       const inCart = cartItems.find((i) => i.productId === p.id);
       const cartQty = inCart ? inCart.quantity : 0;
       if (p.stock <= cartQty) {
         toast.error(`Produto ${p.name} sem estoque disponível.`);
         return;
+      }
+    } else if (trackStock && !blockOutOfStock && outOfStockWarning) {
+      const inCart = cartItems.find((i) => i.productId === p.id);
+      const cartQty = inCart ? inCart.quantity : 0;
+      if (p.stock <= cartQty) {
+        toast.warning(`Aviso: Produto ${p.name} com estoque insuficiente/zerado.`, {
+          id: `warn-stock-${p.id}`,
+        });
       }
     }
     setJustAddedId(p.id);
@@ -76,11 +87,11 @@ export function ProductPicker({
     const t = q.trim().toLowerCase();
     return t
       ? availableProducts.filter(
-          (p) =>
-            p.name.toLowerCase().includes(t) ||
-            p.category?.toLowerCase().includes(t) ||
-            p.barcode?.toLowerCase() === t,
-        )
+        (p) =>
+          p.name.toLowerCase().includes(t) ||
+          p.category?.toLowerCase().includes(t) ||
+          p.barcode?.toLowerCase() === t,
+      )
       : availableProducts;
   }, [q, availableProducts]);
 
@@ -129,11 +140,11 @@ export function ProductPicker({
                 <button
                   key={p.id}
                   type="button"
-                  disabled={trackStock && remaining <= 0}
+                  disabled={trackStock && blockOutOfStock && remaining <= 0}
                   onClick={() => handlePick(p)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-all duration-200",
-                    trackStock && remaining <= 0
+                    trackStock && blockOutOfStock && remaining <= 0
                       ? "opacity-50 cursor-not-allowed bg-muted/20 border-border/40"
                       : "hover:border-primary/40 hover:bg-accent cursor-pointer",
                     isAdded
@@ -215,7 +226,7 @@ export function ProductPicker({
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="sm:max-w-125 p-0 gap-0 overflow-hidden grid-rows-[auto_1fr] max-h-[85vh] [&>button]:hidden">
           <DialogHeader className="flex-row items-center gap-2 p-4 pb-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 py-2">
               <DialogTitle>Produtos</DialogTitle>
             </div>
           </DialogHeader>

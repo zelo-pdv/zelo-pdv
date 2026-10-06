@@ -103,8 +103,6 @@ const userFormSchema = z.object({
   active: z.boolean(),
 });
 
-import { ClientsImportModal } from "@/components/usuarios/users-import-modal";
-
 export default function UsuariosPage() {
   const router = useRouter();
   const { user: currentUser, isAdmin } = usePermissions();
@@ -127,7 +125,6 @@ export default function UsuariosPage() {
     null,
   );
   const [isExporting, setIsExporting] = useState(false);
-  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -227,15 +224,15 @@ export default function UsuariosPage() {
         data={enrichedUsers}
         groups={groups as any}
         onCreateClick={() => setCreating(true)}
+        onExportClick={handleExport}
+        isExporting={isExporting}
       />
 
       <MobileActionFab 
         onAdd={() => setCreating(true)} 
         onExport={handleExport} 
-        onImport={() => setIsImportOpen(true)}
         isExporting={isExporting} 
       />
-      <ClientsImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
 
 
       <UserForm

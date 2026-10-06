@@ -6,6 +6,7 @@ import "boxicons/css/boxicons.min.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWAUpdater } from "@/components/pwa-updater";
 import { ThemeColorUpdater } from "@/components/theme-color-updater";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({
           <PWAUpdater />
           <ThemeColorUpdater />
           <Toaster position="top-right" richColors />
+          <ScrollToTop />
         </ThemeProvider>
       </body>
     </html>

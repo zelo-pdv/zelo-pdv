@@ -138,6 +138,7 @@ export async function POST(req: Request) {
       });
       const config = (storeSettings?.config as any) ?? {};
       const trackStock = config?.products?.trackStock ?? true;
+      const blockOutOfStock = config?.sales?.blockOutOfStock ?? false;
 
       for (const item of parsed.items) {
         if (item.quantity <= 0) {
@@ -148,8 +149,8 @@ export async function POST(req: Request) {
           throw new Error("Produto não encontrado.");
         }
         
-        // Verifica estoque apenas se o controle de estoque estiver ativo
-        if (trackStock && dbProduct.stock !== null && dbProduct.stock.toNumber() < item.quantity) {
+        // Verifica estoque apenas se o controle de estoque E o bloqueio de estoque insuficiente estiverem ativos
+        if (trackStock && blockOutOfStock && dbProduct.stock !== null && dbProduct.stock.toNumber() < item.quantity) {
           throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
         }
 
@@ -231,7 +232,7 @@ export async function POST(req: Request) {
               select: { stock: true }
             });
             
-            if (updatedProduct.stock !== null && updatedProduct.stock.toNumber() < 0) {
+            if (blockOutOfStock && updatedProduct.stock !== null && updatedProduct.stock.toNumber() < 0) {
               throw new Error(`Estoque insuficiente para o produto ${item.productName}.`);
             }
           }

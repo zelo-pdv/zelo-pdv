@@ -208,6 +208,10 @@ export default function ProdutosPage() {
         data={products}
         categories={categoryNames}
         onCreateClick={() => setCreating(true)}
+        onConfigClick={() => setIsConfigOpen(true)}
+        onImportClick={() => setIsImportOpen(true)}
+        onExportClick={handleExport}
+        isExporting={isExporting}
       />
 
       <MobileActionFab 

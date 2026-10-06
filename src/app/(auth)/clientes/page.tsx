@@ -17,6 +17,7 @@ import { BoxIcon } from "@/components/ui/box-icon";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 import { MobileActionFab } from "@/components/ui/mobile-action-fab";
 import { handleExportClients } from "@/lib/export";
+import { ClientsImportModal } from "@/components/clients/clients-import-modal";
 
 export default function ClientesPage() {
   const { can } = usePermissions();
@@ -29,6 +30,7 @@ export default function ClientesPage() {
   const [detail, setDetail] = useState<ClientWithAddress | null>(null);
   const [deleting, setDeleting] = useState<ClientWithAddress | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -145,15 +147,21 @@ export default function ClientesPage() {
         data={enrichedClients}
         onCreateClick={() => setCreating(true)}
         canAdd={can("clientes", "Adicionar")}
+        onImportClick={can("clientes", "Adicionar") ? () => setIsImportOpen(true) : undefined}
+        onExportClick={handleExport}
+        isExporting={isExporting}
       />
 
       {can("clientes", "Adicionar") && (
         <MobileActionFab 
           onAdd={() => setCreating(true)} 
           onExport={handleExport} 
+          onImport={() => setIsImportOpen(true)}
           isExporting={isExporting} 
         />
       )}
+
+      <ClientsImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
 
       <ClientForm
         key={editing?.id ?? "new"}

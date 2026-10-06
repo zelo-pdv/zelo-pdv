@@ -38,6 +38,10 @@ interface ProductsDataTableProps {
   data: ProductFrontend[];
   categories: string[];
   onCreateClick: () => void;
+  onConfigClick?: () => void;
+  onImportClick?: () => void;
+  onExportClick?: () => void;
+  isExporting?: boolean;
 }
 
 export function ProductsDataTable({
@@ -45,6 +49,10 @@ export function ProductsDataTable({
   data,
   categories,
   onCreateClick,
+  onConfigClick,
+  onImportClick,
+  onExportClick,
+  isExporting,
 }: ProductsDataTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -218,13 +226,57 @@ export function ProductsDataTable({
           </Popover>
         </div>
 
-        <Button
-          onClick={onCreateClick}
-          size="sm"
-          className="rounded-full hidden sm:flex shrink-0"
-        >
-          <BoxIcon name="plus" className="mr-1 text-base" /> Adicionar
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {onConfigClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onConfigClick}
+              className="rounded-full hidden sm:flex shrink-0 gap-1.5 cursor-pointer"
+            >
+              <BoxIcon name="cog" className="text-base" />
+              <span>Configurações</span>
+            </Button>
+          )}
+
+          {onImportClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onImportClick}
+              className="rounded-full hidden sm:flex shrink-0 gap-1.5 cursor-pointer"
+            >
+              <BoxIcon name="upload" className="text-base" />
+              <span>Importar</span>
+            </Button>
+          )}
+
+          {onExportClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onExportClick}
+              disabled={isExporting}
+              className="rounded-full hidden sm:flex shrink-0 gap-1.5 cursor-pointer"
+            >
+              <BoxIcon name="download" className="text-base" />
+              <span>{isExporting ? "Exportando..." : "Exportar"}</span>
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            onClick={onCreateClick}
+            size="sm"
+            className="rounded-full hidden sm:flex shrink-0 gap-1 cursor-pointer"
+          >
+            <BoxIcon name="plus" className="text-base" />
+            <span>Adicionar</span>
+          </Button>
+        </div>
       </div>
 
       {/* Badges de Filtros Ativos */}
