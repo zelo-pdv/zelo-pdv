@@ -83,9 +83,14 @@ export default function RegistrosPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Registros de Atividade</h2>
+    <div className="w-full px-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Registros de Atividade</h1>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe as últimas ações realizadas no sistema.
+          </p>
+        </div>
       </div>
 
       <Card>

@@ -458,7 +458,7 @@ export default function Dashboard() {
   const firstName = user?.name ? user.name.split(" ")[0] : "Usuário";
 
   return (
-    <div className="px-4">
+    <div className="w-full px-4">
       {/* Header com Saudação e Botão de Configurações do Dashboard */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>

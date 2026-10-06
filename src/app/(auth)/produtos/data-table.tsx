@@ -114,9 +114,9 @@ export function ProductsDataTable({
 
   return (
     <div>
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center w-full">
-        <div className="flex items-center gap-2 w-full">
-          <div className="relative flex-1 min-w-0">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
+        <div className="flex items-center gap-2 w-full sm:flex-1">
+          <div className="relative w-full sm:w-[40%] sm:max-w-[40%] min-w-0">
             <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
             <Input
               placeholder="Buscar produtos..."
@@ -125,7 +125,7 @@ export function ProductsDataTable({
               autoComplete="new-password"
               name="search-table"
               id="search-table"
-              className="rounded-xl pl-9"
+              className="rounded-xl pl-9 w-full"
             />
           </div>
 

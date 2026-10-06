@@ -161,30 +161,24 @@ export function SalesDataTable({
   return (
     <div>
       {/* Barra de Busca, Filtros e Exportação */}
-      <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-0">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
+        {/* Lado Esquerdo: Pesquisa e Filtros */}
+        <div className="flex items-center gap-2 w-full sm:flex-1">
+          <div className="relative w-full sm:w-[40%] sm:max-w-[40%] min-w-0">
             <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
             <Input
               placeholder="Buscar por cliente..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="rounded-xl pl-9"
+              autoComplete="new-password"
+              name="search-table"
+              id="search-table"
+              className="rounded-xl pl-9 w-full"
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
-              onClick={handleExportSales}
-            >
-              <BoxIcon name="download" className="text-base" />
-              <span className="hidden sm:inline">Exportar</span>
-            </Button>
-
-            {/* Botão de Filtros (Popover) */}
-            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          {/* Botão de Filtros (Popover) */}
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger
               render={
                 <Button
@@ -368,7 +362,19 @@ export function SalesDataTable({
           </Popover>
         </div>
 
-      </div>
+        {/* Lado Direito: Ações (Exportação) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportSales}
+            className="rounded-full shrink-0 gap-1.5 cursor-pointer"
+          >
+            <BoxIcon name="download" className="text-base" />
+            <span className="hidden sm:inline">Exportar</span>
+          </Button>
+        </div>
       </div>
 
       {/* Badges de Filtros Ativos */}
