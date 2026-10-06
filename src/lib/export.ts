@@ -206,3 +206,55 @@ export const handleExportSales = async () => {
     toast.error("Erro ao exportar vendas.");
   }
 };
+
+export const handleExportLowStockPdf = async (lowStockProducts: any[], globalThreshold: number) => {
+  try {
+    if (!lowStockProducts || lowStockProducts.length === 0) {
+      toast.warning("Nenhum produto com estoque baixo para gerar a lista.");
+      return;
+    }
+
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Lista de Compras (Estoque Baixo)", 14, 22);
+
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 30);
+
+    const headers = [["Produto", "Categoria", "Estoque Atual", "Estoque Mínimo", "Sugestão de Reposição"]];
+
+    const data = lowStockProducts.map((p) => {
+      const min = p.minStock !== null && p.minStock !== undefined ? Number(p.minStock) : globalThreshold;
+      const current = Number(p.stock ?? 0);
+      const suggest = Math.max(0, min - current + 1); // Sugestão para ficar acima do mínimo
+
+      return [
+        p.name,
+        p.category?.name || p.category || "Geral",
+        current.toString(),
+        min.toString(),
+        suggest.toString()
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 35,
+      head: headers,
+      body: data,
+      theme: 'grid',
+      headStyles: { fillColor: [40, 40, 40] },
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    doc.save(`lista_de_compras_${today}.pdf`);
+    toast.success("Lista de compras em PDF gerada com sucesso!");
+  } catch (error) {
+    console.error(error);
+    toast.error("Erro ao gerar o PDF.");
+  }
+};

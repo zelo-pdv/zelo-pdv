@@ -17,6 +17,7 @@ export default async function AuthLayout({
   return (
     <PermissionsProviderWrapper>
       <SidebarProvider
+        defaultOpen={false}
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 48)",

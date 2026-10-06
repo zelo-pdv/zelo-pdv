@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { productSchema } from "@/lib/validations/product";
 import { requirePermission } from "@/lib/require-permission";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET() {
   const auth = await requirePermission("produtos", "Visualizar");
@@ -73,6 +74,15 @@ export async function POST(request: Request) {
       include: {
         category: true,
       },
+    });
+
+    await createAuditLog({
+      action: "CREATE",
+      entity: "Product",
+      entityId: product.id,
+      details: { name: product.name, salePrice: product.salePrice, stock: product.stock },
+      userId: auth.user.id,
+      lojaId: auth.user.lojaId,
     });
 
     return NextResponse.json(

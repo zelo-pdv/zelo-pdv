@@ -25,6 +25,7 @@ import { currency } from "@/lib/format";
 import { ProductThumb } from "@/components/product-thumb";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 
+import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 export function ProductPicker({
@@ -50,6 +51,14 @@ export function ProductPicker({
   );
 
   const handlePick = (p: import("@/types").Product) => {
+    if (trackStock) {
+      const inCart = cartItems.find((i) => i.productId === p.id);
+      const cartQty = inCart ? inCart.quantity : 0;
+      if (p.stock <= cartQty) {
+        toast.error(`Produto ${p.name} sem estoque disponível.`);
+        return;
+      }
+    }
     setJustAddedId(p.id);
     onPick(p);
     setTimeout(() => {
@@ -120,12 +129,18 @@ export function ProductPicker({
               return (
                 <button
                   key={p.id}
+                  type="button"
+                  disabled={trackStock && remaining <= 0}
                   onClick={() => handlePick(p)}
-                  className={`flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-all duration-200 disabled:opacity-50 ${
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-all duration-200",
+                    trackStock && remaining <= 0
+                      ? "opacity-50 cursor-not-allowed bg-muted/20 border-border/40"
+                      : "hover:border-primary/40 hover:bg-accent cursor-pointer",
                     isAdded
                       ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 ring-2 ring-emerald-500/20 scale-[0.99]"
-                      : "border-border/60 hover:border-primary/40 hover:bg-accent"
-                  }`}
+                      : "border-border/60",
+                  )}
                 >
                   <ProductThumb name={p.name} image={p.image} />
                   <div className="min-w-0 flex-1">
@@ -180,9 +195,6 @@ export function ProductPicker({
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 mb-1">
               <div className="flex items-center gap-2">
-                <Button data-testid="product-picker-close" size="icon" variant="ghost" onClick={onClose} className="text-foreground">
-                  <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
-                </Button>
                 <DrawerTitle>Produtos</DrawerTitle>
               </div>
             </DrawerHeader>
@@ -205,15 +217,6 @@ export function ProductPicker({
         <DialogContent className="sm:max-w-125 p-0 gap-0 overflow-hidden grid-rows-[auto_1fr] max-h-[85vh] [&>button]:hidden">
           <DialogHeader className="flex-row items-center gap-2 p-4 pb-0">
             <div className="flex items-center gap-2">
-              <Button
-                data-testid="product-picker-close"
-                size="icon"
-                variant="ghost"
-                onClick={onClose}
-                className="ml-0 text-foreground"
-              >
-                <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
-              </Button>
               <DialogTitle>Produtos</DialogTitle>
             </div>
           </DialogHeader>

@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import Link from "next/link";
-import { PAYMENT_LABELS, type Sale } from "@/types";
+import { getPaymentLabel, type Sale } from "@/types";
 import { cn } from "@/lib/utils";
 
 function ClientSaleCard({ sale }: { sale: Sale }) {
@@ -43,7 +43,7 @@ function ClientSaleCard({ sale }: { sale: Sale }) {
             </div>
             <div className="text-[11px] text-muted-foreground">
               {sale.items.length} {sale.items.length === 1 ? "item" : "itens"} ·{" "}
-              {PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod}
+              {getPaymentLabel(sale.paymentMethod)}
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ function ClientSaleCard({ sale }: { sale: Sale }) {
 
           <div className="pt-1 flex items-center justify-between">
             <span className="text-muted-foreground text-[11px]">
-              Forma: {PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod}
+              Forma: {getPaymentLabel(sale.paymentMethod)}
             </span>
             <Link
               href={`/historico?saleId=${sale.id}`}

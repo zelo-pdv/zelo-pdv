@@ -28,13 +28,21 @@ export type ProductFrontend = Omit<Product, "costPrice" | "salePrice"> & {
 
 export function isProductLowStock(
   product: ProductFrontend,
-  globalThreshold = 5
+  globalThreshold = 5,
+  categoryThresholds?: Record<string, number>
 ): boolean {
   const minStockNum =
     product.minStock !== null && product.minStock !== undefined
       ? Number(product.minStock)
       : 0;
-  const min = minStockNum > 0 ? minStockNum : globalThreshold;
+  let min = minStockNum > 0 ? minStockNum : globalThreshold;
+
+  if (minStockNum <= 0 && product.category?.lowStockThreshold != null) {
+    min = product.category.lowStockThreshold;
+  } else if (minStockNum <= 0 && product.categoryId && categoryThresholds?.[product.categoryId]) {
+    min = categoryThresholds[product.categoryId];
+  }
+
   const stockNum = Number(product.stock ?? 0);
   return min > 0 && stockNum <= min;
 }
@@ -46,6 +54,7 @@ export type ProductActions = {
   onToggleActive?: (product: ProductFrontend) => void;
   can: PermissionChecker;
   globalLowStockThreshold?: number;
+  categoryLowStockThresholds?: Record<string, number>;
   trackStock?: boolean;
 };
 
@@ -56,6 +65,7 @@ export function getProductColumns({
   onToggleActive,
   can,
   globalLowStockThreshold = 5,
+  categoryLowStockThresholds = {},
   trackStock = true,
 }: ProductActions): ColumnDef<ProductFrontend>[] {
   const canStock = trackStock && can("produtos", "Editar");
@@ -82,7 +92,7 @@ export function getProductColumns({
 
       cell: ({ row }) => {
         const product = row.original;
-        const low = trackStock && isProductLowStock(product, globalLowStockThreshold);
+        const low = trackStock && isProductLowStock(product, globalLowStockThreshold, categoryLowStockThresholds);
         const active = product.active ?? true;
 
         const hasMobileActions = hasAnyAction;
@@ -252,7 +262,7 @@ export function getProductColumns({
             cell: ({ row }: any) => {
               const product = row.original;
               const stockNum = Number(product.stock ?? 0);
-              const low = isProductLowStock(product, globalLowStockThreshold);
+              const low = isProductLowStock(product, globalLowStockThreshold, categoryLowStockThresholds);
               return (
                 <div className="flex items-center justify-end text-right text-sm tabular-nums">
                   <span

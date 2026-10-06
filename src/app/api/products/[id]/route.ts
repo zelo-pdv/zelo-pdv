@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { productSchema } from "@/lib/validations/product";
 import { requirePermission } from "@/lib/require-permission";
+import { createAuditLog } from "@/lib/audit";
 
 export async function PATCH(
   request: Request,
@@ -35,6 +36,19 @@ export async function PATCH(
           },
         },
         include: { category: true },
+      });
+
+      await createAuditLog({
+        action: "UPDATE_STOCK",
+        entity: "Product",
+        entityId: id,
+        details: {
+          oldStock: Number(existingProduct.stock),
+          newStock: Number(product.stock),
+          increment: Number(body.incrementStock),
+        },
+        userId: auth.user.id,
+        lojaId: auth.user.lojaId,
       });
 
       return NextResponse.json({
@@ -106,6 +120,31 @@ export async function PATCH(
         category: true,
       },
     });
+
+    const changedFields: any = {};
+    if (normalizedData.salePrice !== undefined && Number(normalizedData.salePrice) !== Number(existingProduct.salePrice)) {
+      changedFields.oldSalePrice = Number(existingProduct.salePrice);
+      changedFields.newSalePrice = Number(product.salePrice);
+    }
+    if (normalizedData.costPrice !== undefined && Number(normalizedData.costPrice) !== Number(existingProduct.costPrice)) {
+      changedFields.oldCostPrice = Number(existingProduct.costPrice);
+      changedFields.newCostPrice = Number(product.costPrice);
+    }
+    if (normalizedData.stock !== undefined && Number(normalizedData.stock) !== Number(existingProduct.stock)) {
+      changedFields.oldStock = Number(existingProduct.stock);
+      changedFields.newStock = Number(product.stock);
+    }
+
+    if (Object.keys(changedFields).length > 0) {
+      await createAuditLog({
+        action: "UPDATE_PRODUCT",
+        entity: "Product",
+        entityId: id,
+        details: changedFields,
+        userId: auth.user.id,
+        lojaId: auth.user.lojaId,
+      });
+    }
 
     return NextResponse.json({
       ...product,

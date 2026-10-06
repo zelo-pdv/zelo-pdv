@@ -154,6 +154,8 @@ export default function NovaVenda() {
   }, [items, client, discountType, discountValue, notes]);
 
   // Item #2 e Item #3: Atualiza forma de pagamento e status padrão caso alterados nas configurações
+  const paymentMethodsList = salesSettings?.paymentMethods?.length ? salesSettings.paymentMethods : Object.values(PaymentMethod);
+
   useEffect(() => {
     if (salesSettings.defaultPaymentMethod && step === "cart") {
       setPayment(salesSettings.defaultPaymentMethod);
@@ -246,8 +248,8 @@ export default function NovaVenda() {
     const existing = items.find((i) => i.productId === p.id);
     const currentQty = existing ? existing.quantity : 0;
 
-    // Item #1: Bloquear venda com estoque zerado (se controle de estoque ativo)
-    if (trackStock && salesSettings.blockOutOfStock && currentQty + 1 > p.stock) {
+    // Bloquear venda com estoque zerado ou insuficiente se controle de estoque ativo
+    if (trackStock && currentQty + 1 > p.stock) {
       toast.error(
         `Venda bloqueada: Estoque insuficiente para ${p.name}. (Disponível: ${p.stock})`,
         {
@@ -256,20 +258,6 @@ export default function NovaVenda() {
         },
       );
       return;
-    }
-
-    if (
-      trackStock &&
-      notifications.outOfStockWarning &&
-      currentQty + 1 > p.stock
-    ) {
-      toast.warning(
-        `Atenção: Estoque insuficiente para ${p.name}. (Em estoque: ${p.stock})`,
-        {
-          id: `stock-warning-${p.id}`,
-          duration: 3500,
-        },
-      );
     }
 
     setItems((prev) => {
@@ -297,8 +285,8 @@ export default function NovaVenda() {
 
     const product = products.find((p) => p.id === id);
 
-    // Item #1: Bloquear venda com estoque zerado (se controle de estoque ativo)
-    if (trackStock && salesSettings.blockOutOfStock && product && qty > product.stock) {
+    // Bloquear venda com estoque zerado ou insuficiente se controle de estoque ativo
+    if (trackStock && product && qty > product.stock) {
       toast.error(
         `Venda bloqueada: Estoque insuficiente para ${product.name}. (Disponível: ${product.stock})`,
         {
@@ -307,21 +295,6 @@ export default function NovaVenda() {
         },
       );
       return;
-    }
-
-    if (
-      trackStock &&
-      notifications.outOfStockWarning &&
-      product &&
-      qty > product.stock
-    ) {
-      toast.warning(
-        `Atenção: Estoque insuficiente para ${product.name}. (Em estoque: ${product.stock})`,
-        {
-          id: `stock-warning-${id}`,
-          duration: 3500,
-        },
-      );
     }
 
     setItems((prev) =>
@@ -620,9 +593,6 @@ export default function NovaVenda() {
         >
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 shrink-0 px-4 md:px-6">
-              <Button size="icon" variant="ghost" onClick={handleCheckoutBack}>
-                <BoxIcon name="left-arrow-alt" className="text-lg" />
-              </Button>
               <DrawerTitle>
                 Pagamento
               </DrawerTitle>
@@ -721,9 +691,9 @@ export default function NovaVenda() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(PAYMENT_LABELS).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>
-                              {v}
+                          {paymentMethodsList.map((pm) => (
+                            <SelectItem key={pm} value={pm}>
+                              {PAYMENT_LABELS[pm] || pm.replace(/_/g, " ")}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -828,9 +798,6 @@ export default function NovaVenda() {
         >
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md p-0 flex flex-col gap-0">
             <DialogHeader className="flex-row items-center gap-2 shrink-0 px-6 pt-6 pb-2">
-              <Button size="icon" variant="ghost" onClick={handleCheckoutBack}>
-                <BoxIcon name="left-arrow-alt" className="text-lg" />
-              </Button>
               <DialogTitle className="mt-0 pt-0">
                 Pagamento
               </DialogTitle>
@@ -930,9 +897,9 @@ export default function NovaVenda() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PAYMENT_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
-                        {v}
+                    {paymentMethodsList.map((pm) => (
+                      <SelectItem key={pm} value={pm}>
+                        {PAYMENT_LABELS[pm] || pm.replace(/_/g, " ")}
                       </SelectItem>
                     ))}
                   </SelectContent>

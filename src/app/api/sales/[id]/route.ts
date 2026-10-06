@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-permission";
 import { SaleStatus } from "@/prisma/client";
+import { createAuditLog } from "@/lib/audit";
 
 export async function PATCH(
   request: Request,
@@ -62,6 +63,20 @@ export async function PATCH(
       },
     });
 
+    if (existing.status !== updatedSale.status) {
+      await createAuditLog({
+        action: "UPDATE_SALE_STATUS",
+        entity: "Sale",
+        entityId: id,
+        details: {
+          oldStatus: existing.status,
+          newStatus: updatedSale.status,
+        },
+        userId: auth.user.id,
+        lojaId: auth.user.lojaId,
+      });
+    }
+
     return NextResponse.json(updatedSale);
   } catch (error: any) {
     console.error("Erro ao atualizar venda:", error);
@@ -104,22 +119,42 @@ export async function DELETE(
       // 1. Delete sale items (or rely on Cascade, but let's be explicit or just let cascade do it if defined, Prisma usually does it on delete sale if onDelete: Cascade. 
       // But we need to update stock first.)
       
-      // Restore stock
-      for (const item of existing.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              increment: item.quantity,
+      const storeSettings = await tx.settings.findUnique({
+        where: { lojaId: auth.user.lojaId },
+      });
+      const config = (storeSettings?.config as any) ?? {};
+      const trackStock = config?.products?.trackStock ?? true;
+
+      // Restore stock somente se controle de estoque ativo
+      if (trackStock) {
+        for (const item of existing.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
             },
-          },
-        });
+          });
+        }
       }
 
       // Delete the sale (this will also delete saleItems due to cascade in schema)
       await tx.sale.delete({
         where: { id },
       });
+    });
+
+    await createAuditLog({
+      action: "DELETE_SALE",
+      entity: "Sale",
+      entityId: id,
+      details: {
+        saleNumber: existing.saleNumber,
+        total: Number(existing.total),
+      },
+      userId: auth.user.id,
+      lojaId: auth.user.lojaId,
     });
 
     return NextResponse.json({ success: true });

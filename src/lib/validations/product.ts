@@ -6,6 +6,7 @@ export const categorySchema = z.object({
     .min(2, "O nome da categoria deve ter no mínimo 2 caracteres")
     .max(50, "O nome da categoria é muito longo"),
   active: z.boolean().default(true),
+  lowStockThreshold: z.coerce.number().min(0, "O valor mínimo é 0").optional().nullable(),
 });
 
 export const productSchema = z.object({

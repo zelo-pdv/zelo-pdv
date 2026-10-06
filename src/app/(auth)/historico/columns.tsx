@@ -3,7 +3,7 @@ import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { currency, dateTime } from "@/lib/format";
-import { PAYMENT_LABELS, type Sale } from "@/types";
+import { getPaymentLabel, type Sale } from "@/types";
 
 export type SaleActions = {
   onView: (s: Sale) => void;
@@ -30,7 +30,7 @@ export function getSaleColumns({
             </div>
             {/* Info resumida para Mobile */}
             <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
-              <span>{PAYMENT_LABELS[s.paymentMethod]}</span>
+              <span>{getPaymentLabel(s.paymentMethod)}</span>
               <span>·</span>
               <span className="font-medium text-foreground">
                 {currency(s.total)}
@@ -45,7 +45,7 @@ export function getSaleColumns({
       header: "Pagamento",
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground hidden sm:block">
-          {PAYMENT_LABELS[row.original.paymentMethod]}
+          {getPaymentLabel(row.original.paymentMethod)}
         </div>
       ),
     },

@@ -8,10 +8,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface MobileActionFabProps {
   onAdd: () => void;
   onExport: () => void;
+  onConfig?: () => void;
+  onImport?: () => void;
   isExporting?: boolean;
 }
 
-export function MobileActionFab({ onAdd, onExport, isExporting }: MobileActionFabProps) {
+export function MobileActionFab({ onAdd, onExport, onConfig, onImport, isExporting }: MobileActionFabProps) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,6 +42,26 @@ export function MobileActionFab({ onAdd, onExport, isExporting }: MobileActionFa
 
         {/* Action Buttons */}
         <div className="flex flex-col items-end gap-3">
+          {/* Import Button */}
+          {onImport && (
+            <button
+              onClick={() => {
+                onImport();
+                setIsOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-full bg-background border border-border pr-6 pl-1.5 py-1.5 shadow-lg transition-all duration-300 pointer-events-auto",
+                isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none"
+              )}
+              style={{ transitionDelay: isOpen ? "75ms" : "25ms" }}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+                <BoxIcon name="upload" className="text-xl" />
+              </div>
+              <span className="text-sm font-semibold">Importar</span>
+            </button>
+          )}
+
           {/* Export Button */}
           <button
             onClick={() => {
@@ -62,6 +84,26 @@ export function MobileActionFab({ onAdd, onExport, isExporting }: MobileActionFa
             </div>
             <span className="text-sm font-semibold">Exportar</span>
           </button>
+
+          {/* Config Button */}
+          {onConfig && (
+            <button
+              onClick={() => {
+                onConfig();
+                setIsOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-full bg-background border border-border pr-6 pl-1.5 py-1.5 shadow-lg transition-all duration-300 pointer-events-auto",
+                isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none"
+              )}
+              style={{ transitionDelay: isOpen ? "75ms" : "25ms" }}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+                <BoxIcon name="cog" className="text-xl" />
+              </div>
+              <span className="text-sm font-semibold">Configurações</span>
+            </button>
+          )}
 
           {/* Add Button */}
           <button

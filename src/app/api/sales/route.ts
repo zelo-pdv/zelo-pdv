@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Ajuste o caminho do seu prisma se necessário
 import { saleSchema } from "@/lib/validations/sale";
 import { requirePermission } from "@/lib/require-permission";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(req: Request) {
   try {
@@ -131,6 +132,13 @@ export async function POST(req: Request) {
       });
       const productMap = new Map(productsInDb.map(p => [p.id, p]));
 
+      // Recupera configurações da loja para verificar se o controle de estoque está ativo
+      const storeSettings = await tx.settings.findUnique({
+        where: { lojaId: user.lojaId },
+      });
+      const config = (storeSettings?.config as any) ?? {};
+      const trackStock = config?.products?.trackStock ?? true;
+
       for (const item of parsed.items) {
         if (item.quantity <= 0) {
           throw new Error("Quantidade inválida para o produto.");
@@ -140,8 +148,8 @@ export async function POST(req: Request) {
           throw new Error("Produto não encontrado.");
         }
         
-        // Verifica estoque
-        if (dbProduct.stock !== null && dbProduct.stock.toNumber() < item.quantity) {
+        // Verifica estoque apenas se o controle de estoque estiver ativo
+        if (trackStock && dbProduct.stock !== null && dbProduct.stock.toNumber() < item.quantity) {
           throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
         }
 
@@ -208,22 +216,24 @@ export async function POST(req: Request) {
         },
       });
 
-      // 2. Decrementa o estoque atômicamente e valida sob underflow (concorrência)
-      for (const item of saleItemsData) {
-        const dbProduct = productMap.get(item.productId);
-        if (dbProduct && dbProduct.stock !== null) {
-          const updatedProduct = await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
+      // 2. Decrementa o estoque atomicamente e valida sob underflow somente se o controle de estoque estiver ativo
+      if (trackStock) {
+        for (const item of saleItemsData) {
+          const dbProduct = productMap.get(item.productId);
+          if (dbProduct && dbProduct.stock !== null) {
+            const updatedProduct = await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity,
+                },
               },
-            },
-            select: { stock: true }
-          });
-          
-          if (updatedProduct.stock !== null && updatedProduct.stock.toNumber() < 0) {
-            throw new Error(`Estoque insuficiente para o produto ${item.productName}.`);
+              select: { stock: true }
+            });
+            
+            if (updatedProduct.stock !== null && updatedProduct.stock.toNumber() < 0) {
+              throw new Error(`Estoque insuficiente para o produto ${item.productName}.`);
+            }
           }
         }
       }
@@ -247,6 +257,22 @@ export async function POST(req: Request) {
         throw error; // Outros erros repassa pra cima
       }
     }
+
+    if (sale) {
+      await createAuditLog({
+        action: "CREATE_SALE",
+        entity: "Sale",
+        entityId: sale.id,
+        details: {
+          saleNumber: sale.saleNumber,
+          total: Number(sale.total),
+          itemsCount: sale.items.length,
+        },
+        userId: user.id,
+        lojaId: user.lojaId,
+      });
+    }
+
     return NextResponse.json(sale, { status: 201 });
   } catch (error: any) {
     if (error.name === "ZodError") {

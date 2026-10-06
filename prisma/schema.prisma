@@ -7,14 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum PaymentMethod {
-  DINHEIRO
-  PIX
-  CARTAO_DE_CREDITO
-  CARTAO_DEBITO
-  FIADO
-}
-
 enum SaleStatus {
   PAGO
   PENDENTE
@@ -41,6 +33,8 @@ model Loja {
   units        Unit[]
   products     Product[]
   sales        Sale[]
+  auditLogs    AuditLog[]
+  settings     Settings?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -114,6 +108,7 @@ model User {
   address Address[]
   sales   Sale[]
   ownedStores Loja[] @relation("StoreOwner")
+  auditLogs AuditLog[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -168,6 +163,7 @@ model Category {
   id     String  @id @default(cuid())
   name   String
   active Boolean @default(true)
+  lowStockThreshold Int?
 
   lojaId String
   loja   Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
@@ -224,7 +220,7 @@ model Sale {
   date          DateTime      @default(now())
   total         Decimal       @db.Decimal(10, 2)
   discount      Decimal?      @default(0.00) @db.Decimal(10, 2)
-  paymentMethod PaymentMethod
+  paymentMethod String
   status        SaleStatus    @default(PAGO)
   dueDate       DateTime?
   notes         String?
@@ -272,4 +268,34 @@ model SaleItem {
   @@index([saleId])
   @@index([productId])
   @@index([updatedAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  details   Json
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lojaId    String
+  loja      Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@index([lojaId])
+  @@index([userId])
+  @@index([entity, entityId])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  lojaId    String   @unique
+  loja      Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  config    Json
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -12,6 +12,7 @@ import {
 import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { handleExportSales } from "@/lib/export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PAYMENT_LABELS, PaymentMethod, type Sale, SaleStatus } from "@/types";
+import { getPaymentLabel, PaymentMethod, type Sale, SaleStatus } from "@/types";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export function SalesDataTable({
   columns,
@@ -46,6 +48,9 @@ export function SalesDataTable({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const salesSettings = useSettingsStore((s) => s.sales);
+  const paymentMethodsList = salesSettings?.paymentMethods?.length ? salesSettings.paymentMethods : Object.values(PaymentMethod);
 
   // Filtra os dados com base nos filtros selecionados (Itens #18, #19, #20)
   const filteredData = useMemo(() => {
@@ -168,8 +173,18 @@ export function SalesDataTable({
             />
           </div>
 
-          {/* Botão de Filtros (Popover) */}
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="rounded-xl shrink-0 gap-1.5 text-xs sm:text-sm font-medium"
+              onClick={handleExportSales}
+            >
+              <BoxIcon name="download" className="text-base" />
+              <span className="hidden sm:inline">Exportar</span>
+            </Button>
+
+            {/* Botão de Filtros (Popover) */}
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger
               render={
                 <Button
@@ -239,9 +254,9 @@ export function SalesDataTable({
                   className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                 >
                   <option value="all">Todas as formas</option>
-                  {Object.values(PaymentMethod).map((pm) => (
+                  {paymentMethodsList.map((pm) => (
                     <option key={pm} value={pm}>
-                      {PAYMENT_LABELS[pm] || pm}
+                      {getPaymentLabel(pm)}
                     </option>
                   ))}
                 </select>
@@ -354,6 +369,7 @@ export function SalesDataTable({
         </div>
 
       </div>
+      </div>
 
       {/* Badges de Filtros Ativos */}
       {activeFiltersCount > 0 && (
@@ -374,7 +390,7 @@ export function SalesDataTable({
 
           {paymentFilter !== "all" && (
             <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Pagamento: {PAYMENT_LABELS[paymentFilter as PaymentMethod] || paymentFilter}
+              Pagamento: {getPaymentLabel(paymentFilter as string)}
               <button
                 type="button"
                 onClick={() => setPaymentFilter("all")}

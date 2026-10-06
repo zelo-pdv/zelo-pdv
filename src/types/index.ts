@@ -41,24 +41,31 @@ export interface Sale {
   } | null;
 }
 
-export enum PaymentMethod {
-  DINHEIRO = "DINHEIRO",
-  PIX = "PIX",
-  CARTAO_DE_CREDITO = "CARTAO_DE_CREDITO",
-  CARTAO_DEBITO = "CARTAO_DEBITO",
-}
+export const PaymentMethod = {
+  DINHEIRO: "DINHEIRO",
+  PIX: "PIX",
+  CARTAO_DE_CREDITO: "CARTAO_DE_CREDITO",
+  CARTAO_DEBITO: "CARTAO_DEBITO",
+} as const;
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod] | string;
 
 export enum SaleStatus {
   PAGO = "PAGO",
   PENDENTE = "PENDENTE",
 }
 
-export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+export const PAYMENT_LABELS: Record<string, string> = {
   [PaymentMethod.DINHEIRO]: "Dinheiro",
   [PaymentMethod.PIX]: "PIX",
   [PaymentMethod.CARTAO_DE_CREDITO]: "Cartão de Crédito",
   [PaymentMethod.CARTAO_DEBITO]: "Cartão de Débito",
 };
+
+export function getPaymentLabel(method: string): string {
+  if (!method) return "";
+  return PAYMENT_LABELS[method] || method.replace(/_/g, " ");
+}
 
 export interface Client {
   id: string;

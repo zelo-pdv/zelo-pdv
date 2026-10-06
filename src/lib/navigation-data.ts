@@ -63,6 +63,13 @@ export const SECONDARY_NAV: NavItem[] = [
     adminOnly: true,
   },
   {
+    to: "/registros",
+    label: "Registros",
+    short: "Registros",
+    icon: createBoxIcon("list-ol"),
+    adminOnly: true,
+  },
+  {
     to: "/configuracoes",
     label: "Configurações",
     short: "Config",
@@ -79,6 +86,7 @@ export const TitlePages: TitlePage[] = [
   { label: "Histórico", to: "/historico" },
   { label: "Configurações", to: "/configuracoes" },
   { label: "Usuários", to: "/usuarios" },
+  { label: "Registros", to: "/registros" },
 ];
 
 export const SettingsItens: NavItem[] = [

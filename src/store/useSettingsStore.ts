@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { PaymentMethod, SaleStatus } from "@/types";
+import { settingsService } from "@/services/settings.service";
 
 export type ModuleKey =
   | "dashboard"
@@ -113,41 +113,47 @@ export const defaultNotificationSettings: NotificationSettings = {
 export interface SalesSettings {
   requireClient: boolean;
   blockOutOfStock: boolean;
-  defaultPaymentMethod: PaymentMethod;
+  defaultPaymentMethod: string;
   defaultSaleStatus: SaleStatus;
+  paymentMethods: string[];
 }
 
 export const defaultSalesSettings: SalesSettings = {
   requireClient: false,
   blockOutOfStock: false,
-  defaultPaymentMethod: PaymentMethod.DINHEIRO,
+  defaultPaymentMethod: "DINHEIRO",
   defaultSaleStatus: SaleStatus.PAGO,
-};
+  paymentMethods: ["DINHEIRO", "PIX", "CARTAO_DE_CREDITO", "CARTAO_DEBITO"],
+}
 
 export type DashboardPeriod = "today" | "week" | "month";
 
 export interface DashboardSettings {
   defaultPeriod: DashboardPeriod;
-  recentSalesCount: number;
+  recentSalesCount?: number;
   hideLowStockCard: boolean;
+  hideRecentSales?: boolean;
 }
 
 export const defaultDashboardSettings: DashboardSettings = {
   defaultPeriod: "today",
   recentSalesCount: 5,
   hideLowStockCard: false,
+  hideRecentSales: false,
 };
 
 export interface ProductsSettings {
   trackStock: boolean;
   globalLowStockThreshold: number;
   hideCostPrice: boolean;
+  categoryLowStockThresholds?: Record<string, number>;
 }
 
 export const defaultProductsSettings: ProductsSettings = {
   trackStock: true,
   globalLowStockThreshold: 5,
   hideCostPrice: false,
+  categoryLowStockThresholds: {},
 };
 
 interface SettingsState {
@@ -168,6 +174,7 @@ interface SettingsState {
   updateGroup: (id: string, g: Partial<AccessGroup>) => void;
   removeGroup: (id: string) => void;
   toggleGroup: (id: string) => void;
+  fetchSettings: () => Promise<void>;
 }
 
 const uid = () => "g_" + Math.random().toString(36).slice(2, 10);
@@ -245,88 +252,88 @@ const defaultGroups: AccessGroup[] = [
   },
 ];
 
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set) => ({
-      store: defaultStore,
-      groups: defaultGroups,
-      voucher: defaultVoucher,
-      notifications: defaultNotificationSettings,
-      sales: defaultSalesSettings,
-      dashboard: defaultDashboardSettings,
-      products: defaultProductsSettings,
-      setStore: (s) => set({ store: s }),
-      setVoucher: (v) => set({ voucher: v }),
-      setNotificationSettings: (s) =>
+export const useSettingsStore = create<SettingsState>()((set, get) => ({
+  store: defaultStore,
+  groups: defaultGroups,
+  voucher: defaultVoucher,
+  notifications: defaultNotificationSettings,
+  sales: defaultSalesSettings,
+  dashboard: defaultDashboardSettings,
+  products: defaultProductsSettings,
+  
+  fetchSettings: async () => {
+    try {
+      const config: any = await settingsService.get();
+      if (config) {
         set((state) => ({
-          notifications: {
-            ...(state.notifications ?? defaultNotificationSettings),
-            ...s,
-          },
-        })),
-      setSalesSettings: (s) =>
-        set((state) => ({
-          sales: {
-            ...(state.sales ?? defaultSalesSettings),
-            ...s,
-          },
-        })),
-      setDashboardSettings: (s) =>
-        set((state) => ({
-          dashboard: {
-            ...(state.dashboard ?? defaultDashboardSettings),
-            ...s,
-          },
-        })),
-      setProductsSettings: (s) =>
-        set((state) => ({
-          products: {
-            ...(state.products ?? defaultProductsSettings),
-            ...s,
-          },
-        })),
-      addGroup: (g) =>
-        set((state) => ({
-          groups: [
-            { ...g, id: uid(), createdAt: new Date().toISOString() },
-            ...state.groups,
-          ],
-        })),
-      updateGroup: (id, g) =>
-        set((state) => ({
-          groups: state.groups.map((it) =>
-            it.id === id ? { ...it, ...g } : it,
-          ),
-        })),
-      removeGroup: (id) =>
-        set((state) => ({ groups: state.groups.filter((it) => it.id !== id) })),
-      toggleGroup: (id) =>
-        set((state) => ({
-          groups: state.groups.map((it) =>
-            it.id === id ? { ...it, active: !it.active } : it,
-          ),
-        })),
-    }),
-    {
-      name: "revenda-settings-v1",
-      storage: createJSONStorage(() =>
-        typeof window !== "undefined"
-          ? window.localStorage
-          : (undefined as unknown as Storage),
-      ),
-      skipHydration: true,
-      onRehydrateStorage: () => (state) => {
-        if (state?.voucher?.footerText) {
-          state.voucher.footerText = state.voucher.footerText
-            .replace(/\.?\s*documento sem valor fiscal\.?/gi, "")
-            .replace(/\.?\s*sem valor fiscal\.?/gi, "")
-            .trim();
-        }
-      },
-    },
-  ),
-);
+          ...state,
+          store: config.store ?? state.store,
+          groups: config.groups ?? state.groups,
+          voucher: config.voucher ?? state.voucher,
+          notifications: config.notifications ?? state.notifications,
+          sales: config.sales ?? state.sales,
+          dashboard: config.dashboard ?? state.dashboard,
+          products: config.products ?? state.products,
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to fetch settings", e);
+    }
+  },
 
-if (typeof window !== "undefined") {
-  void useSettingsStore.persist.rehydrate();
-}
+  setStore: (s) => {
+    set({ store: s });
+    settingsService.update(get());
+  },
+  setVoucher: (v) => {
+    set({ voucher: v });
+    settingsService.update(get());
+  },
+  setNotificationSettings: (s) => {
+    set((state) => ({
+      notifications: { ...(state.notifications ?? defaultNotificationSettings), ...s },
+    }));
+    settingsService.update(get());
+  },
+  setSalesSettings: (s) => {
+    set((state) => ({
+      sales: { ...(state.sales ?? defaultSalesSettings), ...s },
+    }));
+    settingsService.update(get());
+  },
+  setDashboardSettings: (s) => {
+    set((state) => ({
+      dashboard: { ...(state.dashboard ?? defaultDashboardSettings), ...s },
+    }));
+    settingsService.update(get());
+  },
+  setProductsSettings: (s) => {
+    set((state) => ({
+      products: { ...(state.products ?? defaultProductsSettings), ...s },
+    }));
+    settingsService.update(get());
+  },
+  addGroup: (g) => {
+    set((state) => ({
+      groups: [{ ...g, id: uid(), createdAt: new Date().toISOString() }, ...state.groups],
+    }));
+    settingsService.update(get());
+  },
+  updateGroup: (id, g) => {
+    set((state) => ({
+      groups: state.groups.map((it) => (it.id === id ? { ...it, ...g } : it)),
+    }));
+    settingsService.update(get());
+  },
+  removeGroup: (id) => {
+    set((state) => ({ groups: state.groups.filter((it) => it.id !== id) }));
+    settingsService.update(get());
+  },
+  toggleGroup: (id) => {
+    set((state) => ({
+      groups: state.groups.map((it) => (it.id === id ? { ...it, active: !it.active } : it)),
+    }));
+    settingsService.update(get());
+  },
+}));
+

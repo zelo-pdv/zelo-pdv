@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import { PermissionsProvider } from "./permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
 import { userContextSchema, type UserContextData } from "@/lib/validations/user_context";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useEffect } from "react";
 
 function getUserContext(): UserContextData | null {
   if (typeof document === "undefined") {
@@ -47,6 +49,11 @@ export function PermissionsProviderWrapper({
   children: ReactNode;
 }) {
   const [context, setContext] = useState<UserContextData | null>(() => getUserContext());
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
+
+  useEffect(() => {
+    void fetchSettings();
+  }, [fetchSettings]);
 
   useDataSync({
     types: ["session"],

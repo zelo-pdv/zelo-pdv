@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSettingsStore, StoreInfo } from "@/store/useSettingsStore";
 import { currency, formatDateOnly } from "@/lib/format";
-import { PAYMENT_LABELS, type Sale } from "@/types";
+import { getPaymentLabel, type Sale } from "@/types";
 
 interface Props {
   sale: Sale | null;
@@ -444,7 +444,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
       <div className="mt-3 pt-2 text-xs text-slate-950">
         <div className="font-extrabold uppercase mb-1">
           FORMA DE PGTO. :{" "}
-          {PAYMENT_LABELS[sale.paymentMethod]?.toUpperCase() || "À VISTA"}
+          {getPaymentLabel(sale.paymentMethod)?.toUpperCase() || "À VISTA"}
         </div>
         <div className="flex justify-between font-bold text-[11px] uppercase tracking-tight text-slate-700">
           <span className="w-1/3 text-left">DATA PGTO</span>
@@ -457,7 +457,7 @@ export function SaleVoucher({ sale, open, onClose, clientPhone }: Props) {
             {currency(sale.total).replace("R$", "").trim()}
           </span>
           <span className="w-1/3 text-right uppercase">
-            {PAYMENT_LABELS[sale.paymentMethod]?.toUpperCase()}
+            {getPaymentLabel(sale.paymentMethod)?.toUpperCase()}
           </span>
         </div>
       </div>

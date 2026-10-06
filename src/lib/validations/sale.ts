@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PaymentMethod, SaleStatus } from "@/prisma/client";
+import { SaleStatus } from "@/prisma/client";
 
 export const saleItemSchema = z.object({
   productId: z.string(),
@@ -14,7 +14,7 @@ export const saleSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Adicione pelo menos um produto").max(500, "Muitos itens na venda"),
   total: z.number().nonnegative("O total não pode ser negativo"),
   discount: z.number().nonnegative().optional().nullable(),
-  paymentMethod: z.nativeEnum(PaymentMethod),
+  paymentMethod: z.string(),
   status: z.nativeEnum(SaleStatus),
   dueDate: z.string().max(30).optional().nullable(),
   notes: z.string().max(500, "A observação é muito longa").optional().nullable(),

@@ -79,7 +79,7 @@ export function LoginForm() {
         {/* Detalhes sutis de iluminação */}
         <div className="absolute inset-0 z-0 opacity-25 dark:opacity-15 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.4),transparent_50%)]" />
         <div className="absolute bottom-0 right-0 z-0 opacity-20 dark:opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.4),transparent_60%)] w-150 h-150" />
-        
+
         {/* Topo - Nome Zelo PDV */}
         <div className="relative z-10 flex items-center">
           <span className="text-2xl font-bold tracking-tight text-white">Zelo PDV</span>
@@ -119,17 +119,17 @@ export function LoginForm() {
         <div className="relative z-10 w-full max-w-100">
           {/* Mobile Logo */}
           <div className="flex lg:hidden flex-col items-center mb-8 gap-3">
-            <Image 
-              src="/zelo-black.png" 
-              alt="Zelo PDV Logo" 
-              width={96} 
+            <Image
+              src="/zelo-black.png"
+              alt="Zelo PDV Logo"
+              width={96}
               height={96}
               className="object-contain dark:hidden"
             />
-            <Image 
-              src="/zelo-white.png" 
-              alt="Zelo PDV Logo" 
-              width={96} 
+            <Image
+              src="/zelo-white.png"
+              alt="Zelo PDV Logo"
+              width={96}
               height={96}
               className="object-contain hidden dark:block"
             />
@@ -166,12 +166,12 @@ export function LoginForm() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="font-semibold text-foreground/90">Senha</Label>
                   <a href="#" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
                     Esqueceu a senha?
                   </a>
-                </div>
+                </div> */}
                 <div className="relative">
                   <Input
                     id="password"
@@ -212,9 +212,9 @@ export function LoginForm() {
               </label>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-black/10 dark:shadow-white/5 transition-all active:scale-[0.98] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200" 
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-black/10 dark:shadow-white/5 transition-all active:scale-[0.98] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
               disabled={loading}
             >
               {loading ? (

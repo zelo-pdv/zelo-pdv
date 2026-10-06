@@ -13,42 +13,46 @@ import { salesService } from "@/services/sales.service";
 import { productsService } from "@/services/products.service";
 import type { Sale } from "@/types";
 import type { ProductFrontend } from "../produtos/columns";
+import { handleExportLowStockPdf } from "@/lib/export";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync } from "@/hooks/use-data-sync";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, DashboardPeriod } from "@/store/useSettingsStore";
 import { getFirstAccessibleRoute } from "@/lib/navigation-data";
+import { DashboardConfigModal } from "@/components/dashboard/dashboard-config-modal";
 
 function StatCard({
-  icon,
   label,
   value,
   hint,
+  tone = "default",
 }: {
-  icon: string;
   label: string;
   value: string;
   hint?: string;
-  tone?: "default" | "warn" | "success";
+  tone?: "default" | "warn" | "success" | "pending";
 }) {
+
   return (
-    <Card className="@container/card">
+
+    <Card className={cn(
+      "@container/card relative overflow-hidden transition-all duration-200",
+      tone === "default" && "border-l-4 border-l-primary/60",
+      tone === "pending" && "border-l-4 border-l-amber-500/60",
+      tone === "warn" && "border-l-4 border-l-destructive/60",
+      tone === "success" && "border-l-4 border-l-emerald-500/60",
+    )}>
       <CardContent className="p-4 md:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-muted-foreground">
-              {label}
-            </div>
-            <div className="mt-1 truncate text-xl font-semibold tracking-tight md:text-2xl">
-              {value}
-            </div>
-            {hint && (
-              <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
-            )}
+        <div className="flex flex-col min-w-0">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            {label}
           </div>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-            <BoxIcon name={icon} className="text-xl text-current" />
+          <div className="mt-1.5 truncate text-xl font-semibold tracking-tight md:text-2xl">
+            {value}
           </div>
+          {hint && (
+            <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -257,10 +261,11 @@ function SalesWeekChart({
 export default function Dashboard() {
   const router = useRouter();
   const { can, user } = usePermissions();
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const dashboardSettings = useSettingsStore((s) => s.dashboard) ?? {
     defaultPeriod: "today",
-    recentSalesCount: 5,
     hideLowStockCard: false,
+    hideRecentSales: false,
   };
   const productsSettings = useSettingsStore((s) => s.products) ?? {
     globalLowStockThreshold: 5,
@@ -280,6 +285,7 @@ export default function Dashboard() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExportingList, setIsExportingList] = useState(false);
 
   const refreshData = async (silent = false) => {
     try {
@@ -352,18 +358,26 @@ export default function Dashboard() {
     const pendingCount = sales.filter((s) => s.status === "PENDENTE").length;
 
     const threshold = productsSettings.globalLowStockThreshold ?? 5;
+    const catThresholds = productsSettings.categoryLowStockThresholds;
     const low = products.filter((p) => {
       const minStockNum =
         p.minStock !== null && p.minStock !== undefined
           ? Number(p.minStock)
           : 0;
-      const min = minStockNum > 0 ? minStockNum : threshold;
+      let min = minStockNum > 0 ? minStockNum : threshold;
+      
+      if (minStockNum <= 0 && p.category?.lowStockThreshold != null) {
+        min = p.category.lowStockThreshold;
+      } else if (minStockNum <= 0 && p.categoryId && catThresholds?.[p.categoryId]) {
+        min = catThresholds[p.categoryId];
+      }
+
       const stockNum = Number(p.stock ?? 0);
       return min > 0 && stockNum <= min;
     });
 
     return { soldInPeriod, countInPeriod, pending, pendingCount, low };
-  }, [sales, products, period, productsSettings.globalLowStockThreshold]);
+  }, [sales, products, period, productsSettings.globalLowStockThreshold, productsSettings.categoryLowStockThresholds]);
 
   // Item #12: Dados dos últimos 7 dias para o gráfico
   const last7DaysData = useMemo(() => {
@@ -423,9 +437,8 @@ export default function Dashboard() {
     );
   }, [sales]);
 
-  // Item #6: Limite de vendas recentes configurável
-  const recentCount = dashboardSettings.recentSalesCount || 5;
-  const latest = sortedSales.slice(0, recentCount);
+  // Limite fixo de vendas recentes (padrão até 5)
+  const latest = sortedSales.slice(0, 5);
 
   if (isLoading || (!can("dashboard", "Visualizar") && getFirstAccessibleRoute(can) !== "/dashboard")) {
     return <GlobalLoader />;
@@ -446,25 +459,25 @@ export default function Dashboard() {
 
   return (
     <div className="px-4">
-      {/* Header com Saudação e Item #14: Atalho rápido Nova Venda */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header com Saudação e Botão de Configurações do Dashboard */}
+      <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Olá, {firstName}</h1>
           <p className="text-sm text-muted-foreground">
             Aqui está o resumo da sua loja.
           </p>
         </div>
-        {can("nova-venda", "Adicionar") && (
-          <Link href="/nova-venda">
-            <Button
-              size="lg"
-              className="rounded-full shadow-xs gap-2 font-medium shrink-0 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 px-5 h-10 cursor-pointer"
-            >
-              <BoxIcon name="cart" className="text-lg mr-1 text-current" />
-              Nova Venda
-            </Button>
-          </Link>
-        )}
+        <div>
+          <Button
+            variant="outline"
+            onClick={() => setIsConfigOpen(true)}
+            className="h-10 px-3 sm:px-4 rounded-full shadow-xs gap-2 font-medium shrink-0 cursor-pointer"
+            aria-label="Configurações do Dashboard"
+          >
+            <BoxIcon name="cog" className="text-lg text-foreground" />
+            <span className="hidden sm:inline text-sm">Configurações</span>
+          </Button>
+        </div>
       </div>
 
       {/* Item #13: Filtro de período nos cards */}
@@ -507,24 +520,17 @@ export default function Dashboard() {
             Mês
           </button>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {period === "today"
-            ? "Exibindo dados de hoje"
-            : period === "week"
-            ? "Exibindo dados dos últimos 7 dias"
-            : "Exibindo dados deste mês"}
-        </span>
       </div>
 
       {/* Item #5 & Item #7: StatCards dinâmicos com opção de ocultar Estoque Baixo */}
       <div
         className={cn(
-          "grid grid-cols-1 gap-3 sm:grid-cols-2",
-          dashboardSettings.hideLowStockCard ? "lg:grid-cols-2" : "lg:grid-cols-3"
+          "flex overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory gap-3 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:overflow-visible",
+          dashboardSettings.hideLowStockCard ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3",
+          "[&>div]:min-w-[85vw] [&>div]:snap-center sm:[&>div]:min-w-0"
         )}
       >
         <StatCard
-          icon="dollar-circle"
           label={
             period === "today"
               ? "Vendido hoje"
@@ -534,19 +540,20 @@ export default function Dashboard() {
           }
           value={currency(stats.soldInPeriod)}
           hint={`${stats.countInPeriod} venda${stats.countInPeriod === 1 ? "" : "s"} no período`}
+          tone="default"
         />
         <StatCard
-          icon="time-five"
           label="A receber"
           value={currency(stats.pending)}
           hint={`${stats.pendingCount} venda${stats.pendingCount === 1 ? "" : "s"} pendente${stats.pendingCount === 1 ? "" : "s"}`}
+          tone="pending"
         />
         {!dashboardSettings.hideLowStockCard && (
           <StatCard
-            icon="error"
             label="Estoque baixo"
             value={`${stats.low.length} produto${stats.low.length === 1 ? "" : "s"}`}
             hint={stats.low.length ? "Reponha em breve" : "Tudo em ordem"}
+            tone={stats.low.length ? "warn" : "success"}
           />
         )}
       </div>
@@ -557,11 +564,30 @@ export default function Dashboard() {
       {/* Item #7: Ocultar seção de Estoque Baixo se configurado ou se controle de estoque estiver desativado */}
       {!dashboardSettings.hideLowStockCard && (productsSettings?.trackStock ?? true) && products.length > 0 && stats.low.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-            Produtos com estoque baixo
-          </h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">
+              Produtos com estoque baixo
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-medium gap-1.5 shrink-0"
+              onClick={async () => {
+                setIsExportingList(true);
+                await handleExportLowStockPdf(stats.low, productsSettings.globalLowStockThreshold ?? 5);
+                setIsExportingList(false);
+              }}
+              disabled={isExportingList}
+            >
+              <BoxIcon name={isExportingList ? "loader-alt" : "download"} className={cn("text-sm", isExportingList && "animate-spin")} />
+              <span className="hidden sm:inline">Gerar Lista (PDF)</span>
+              <span className="sm:hidden">PDF</span>
+            </Button>
+          </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {stats.low.slice(0, 4).map((p) => (
+            {stats.low
+              .slice(0, 4)
+              .map((p) => (
               <Card key={p.id} className="border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-foreground">
@@ -589,7 +615,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      {latest.length > 0 && (
+      {!dashboardSettings.hideRecentSales && latest.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground">
@@ -638,6 +664,8 @@ export default function Dashboard() {
           </Card>
         </section>
       )}
+
+      <DashboardConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
     </div>
   );
 }

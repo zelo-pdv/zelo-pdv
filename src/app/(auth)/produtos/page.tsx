@@ -54,6 +54,8 @@ import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { MobileActionFab } from "@/components/ui/mobile-action-fab";
 import { handleExportProducts } from "@/lib/export";
+import { ProductsImportModal } from "@/components/produtos/products-import-modal";
+import { ProductsConfigModal } from "@/components/produtos/products-config-modal";
 
 // 1. Estado do Formulário usa NUMBER agora, compatível com frontend
 export type FormState = {
@@ -97,6 +99,10 @@ export default function ProdutosPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
+
 
   const [editing, setEditing] = useState<ProductFrontend | null>(null);
   const [creating, setCreating] = useState(false);
@@ -185,9 +191,10 @@ export default function ProdutosPage() {
         onToggleActive: handleToggleActive,
         can,
         globalLowStockThreshold: productsSettings.globalLowStockThreshold,
+        categoryLowStockThresholds: productsSettings.categoryLowStockThresholds,
         trackStock: productsSettings.trackStock ?? true,
       }),
-    [can, productsSettings.globalLowStockThreshold, productsSettings.trackStock],
+    [can, productsSettings.globalLowStockThreshold, productsSettings.categoryLowStockThresholds, productsSettings.trackStock],
   );
 
   if (loading) {
@@ -206,8 +213,14 @@ export default function ProdutosPage() {
       <MobileActionFab 
         onAdd={() => setCreating(true)} 
         onExport={handleExport} 
+        onConfig={() => setIsConfigOpen(true)}
+        onImport={() => setIsImportOpen(true)}
         isExporting={isExporting} 
       />
+      <ProductsImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+
+      <ProductsConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+
 
       <ProductForm
         key={editing?.id ?? "new"}

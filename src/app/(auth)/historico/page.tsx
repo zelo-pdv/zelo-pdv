@@ -23,7 +23,7 @@ import { GlobalLoader } from "@/components/ui/global-loader";
 import { SaleVoucher } from "@/components/sale-voucher";
 import { useVouchersStore, voucherCode } from "@/store/useVouchersStore";
 import { currency, dateTime, formatDateOnly } from "@/lib/format";
-import { PAYMENT_LABELS, type Sale, SaleStatus } from "@/types";
+import { getPaymentLabel, type Sale, SaleStatus } from "@/types";
 import { salesService } from "@/services/sales.service";
 import { getSaleColumns } from "./columns";
 import { SalesDataTable } from "./data-table";
@@ -236,7 +236,7 @@ export default function HistoricoPage() {
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pagamento</span>
-                  <span>{PAYMENT_LABELS[detail.paymentMethod]}</span>
+                  <span>{getPaymentLabel(detail.paymentMethod)}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
@@ -368,7 +368,7 @@ export default function HistoricoPage() {
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pagamento</span>
-                  <span>{PAYMENT_LABELS[detail.paymentMethod]}</span>
+                  <span>{getPaymentLabel(detail.paymentMethod)}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">

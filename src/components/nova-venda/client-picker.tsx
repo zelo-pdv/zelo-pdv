@@ -40,9 +40,12 @@ export function ClientPicker({
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
+    const withoutDefault = clients.filter(
+      (c) => !c.name.toLowerCase().includes("consumidor final") && !c.name.toLowerCase().includes("ao consumidor")
+    );
     return t
-      ? clients.filter((c) => c.name.toLowerCase().includes(t))
-      : clients;
+      ? withoutDefault.filter((c) => c.name.toLowerCase().includes(t))
+      : withoutDefault;
   }, [q, clients]);
 
   const PickerContent = (
@@ -102,9 +105,6 @@ export function ClientPicker({
       <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="flex-row items-center gap-2 mb-1">
-            <Button size="icon" variant="ghost" onClick={onClose} className="text-foreground">
-              <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
-            </Button>
             <DrawerTitle>Escolher cliente</DrawerTitle>
           </DrawerHeader>
           {PickerContent}
@@ -117,14 +117,6 @@ export function ClientPicker({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-125 p-0 gap-0 overflow-hidden grid-rows-[auto_1fr] max-h-[85vh] [&>button]:hidden">
         <DialogHeader className="flex-row items-center gap-2 p-4 pb-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onClose}
-            className="ml-0 text-foreground"
-          >
-            <BoxIcon name="left-arrow-alt" className="text-xl text-foreground" />
-          </Button>
           <DialogTitle>Escolher cliente</DialogTitle>
         </DialogHeader>
         {PickerContent}
