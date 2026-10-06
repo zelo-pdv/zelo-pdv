@@ -87,6 +87,7 @@ export const TitlePages: TitlePage[] = [
   { label: "Configurações", to: "/configuracoes" },
   { label: "Usuários", to: "/usuarios" },
   { label: "Registros", to: "/registros" },
+  { label: "Mais", to: "/mais" },
 ];
 
 export const SettingsItens: NavItem[] = [

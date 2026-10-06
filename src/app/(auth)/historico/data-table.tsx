@@ -12,7 +12,6 @@ import {
 import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { handleExportSales } from "@/lib/export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -160,9 +159,8 @@ export function SalesDataTable({
 
   return (
     <div>
-      {/* Barra de Busca, Filtros e Exportação */}
+      {/* Barra de Busca e Filtros */}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
-        {/* Lado Esquerdo: Pesquisa e Filtros */}
         <div className="flex items-center gap-2 w-full sm:flex-1">
           <div className="relative w-full sm:w-[40%] sm:max-w-[40%] min-w-0">
             <BoxIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground" />
@@ -360,20 +358,6 @@ export function SalesDataTable({
               </div>
             </PopoverContent>
           </Popover>
-        </div>
-
-        {/* Lado Direito: Ações (Exportação) */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleExportSales}
-            className="rounded-full shrink-0 gap-1.5 cursor-pointer"
-          >
-            <BoxIcon name="download" className="text-base" />
-            <span className="hidden sm:inline">Exportar</span>
-          </Button>
         </div>
       </div>
 

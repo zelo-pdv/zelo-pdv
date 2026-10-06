@@ -6,13 +6,26 @@ import { cn } from "@/lib/utils";
 import { NAV } from "@/lib/navigation-data";
 import { usePermissions } from "@/components/auth/permissions-provider";
 
+import { createBoxIcon } from "@/components/ui/box-icon";
+
 export function BottomNavigation() {
   const pathname = usePathname();
   const { can } = usePermissions();
 
   const visibleNav = NAV.filter(
     (n) => !n.module || can(n.module, "Visualizar"),
-  );
+  ).map((n) => {
+    if (n.to === "/historico") {
+      return {
+        ...n,
+        to: "/mais",
+        label: "Mais",
+        short: "Mais",
+        icon: createBoxIcon("menu"),
+      };
+    }
+    return n;
+  });
 
   // Se tiver somente um item (ou nenhum), não precisa mostrar a navegação
   if (visibleNav.length <= 1) {
