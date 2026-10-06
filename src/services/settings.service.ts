@@ -2,11 +2,11 @@ import { apiRequest } from "@/lib/api-request";
 
 export const settingsService = {
   get: async () => {
-    return apiRequest("/api/settings");
+    return apiRequest("/settings");
   },
   
   update: async (config: any) => {
-    return apiRequest("/api/settings", {
+    return apiRequest("/settings", {
       method: "PUT",
       body: JSON.stringify(config),
     });

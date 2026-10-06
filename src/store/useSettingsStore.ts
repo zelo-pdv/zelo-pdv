@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PaymentMethod, SaleStatus } from "@/types";
+import { SaleStatus } from "@/types";
 import { settingsService } from "@/services/settings.service";
 
 export type ModuleKey =

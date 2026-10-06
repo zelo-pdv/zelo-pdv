@@ -21,7 +21,6 @@ type UnitFormData = { name: string; abbreviation: string; decimalPlaces: number 
 
 export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const isMobile = useIsMobile();
-  const [isExpanded, setIsExpanded] = useState(false);
   const productsSettings = useSettingsStore((s) => s.products) ?? {
     trackStock: true,
     globalLowStockThreshold: 5,
@@ -415,7 +414,8 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
                                 const val = e.target.value;
                                 const current = productsSettings.categoryLowStockThresholds || {};
                                 if (!val) {
-                                  const { [cat.id]: _, ...rest } = current;
+                                  const rest = { ...current };
+                                  delete rest[cat.id];
                                   setProductsSettings({ categoryLowStockThresholds: rest });
                                 } else {
                                   setProductsSettings({ categoryLowStockThresholds: { ...current, [cat.id]: Number(val) } });

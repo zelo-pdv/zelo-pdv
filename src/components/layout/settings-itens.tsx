@@ -11,13 +11,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePermissions } from "@/components/auth/permissions-provider";
 
 export default function SettingsItem() {
-  const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { isAdmin } = usePermissions();
 

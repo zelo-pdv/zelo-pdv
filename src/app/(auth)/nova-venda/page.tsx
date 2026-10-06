@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -72,10 +71,6 @@ type CartItem = {
 export default function NovaVenda() {
   const { can } = usePermissions();
   const isMobile = useIsMobile();
-  const notifications = useSettingsStore((s) => s.notifications) ?? {
-    enableToasts: true,
-    outOfStockWarning: true,
-  };
   const salesSettings = useSettingsStore((s) => s.sales) ?? {
     requireClient: false,
     blockOutOfStock: false,
@@ -326,9 +321,6 @@ export default function NovaVenda() {
     setNotes("");
   };
 
-  const handleCheckoutBack = () => {
-    setStep("cart");
-  };
 
   const finalize = async () => {
     if (items.length === 0) return;

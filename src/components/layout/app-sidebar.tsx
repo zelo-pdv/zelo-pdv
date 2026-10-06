@@ -15,13 +15,12 @@ import { NAV, SECONDARY_NAV } from "@/lib/navigation-data";
 import { BoxIcon } from "@/components/ui/box-icon";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { cn } from "@/lib/utils";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const router = useRouter();
   const { can, isAdmin } = usePermissions();
 
   const visibleNav = NAV.filter(

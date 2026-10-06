@@ -27,7 +27,8 @@ export async function GET() {
     });
     
     const safeUsers = users.map((u) => {
-      const { password, ...safeUser } = u;
+      const safeUser = { ...u } as Record<string, unknown>;
+      delete safeUser.password;
       return safeUser;
     });
     
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
       include: { group: true },
     });
 
-    const { password, ...safeUser } = user;
+    const safeUser = { ...user } as Record<string, unknown>;
+    delete safeUser.password;
 
     return NextResponse.json(safeUser, { status: 201 });
   } catch (error) {

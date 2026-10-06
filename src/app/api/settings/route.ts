@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-permission";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const auth = await requirePermission("dashboard", "Visualizar");
     if (!auth.authorized) return auth.response;

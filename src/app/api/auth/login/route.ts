@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { SignJWT } from "jose";
 import prisma from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";

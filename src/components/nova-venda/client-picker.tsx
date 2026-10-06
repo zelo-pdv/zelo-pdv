@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { BoxIcon } from "@/components/ui/box-icon";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import {
@@ -10,7 +9,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
 } from "@/components/ui/drawer";
 import {
   Dialog,

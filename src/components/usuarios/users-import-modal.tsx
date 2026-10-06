@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { BoxIcon } from '@/components/ui/box-icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
