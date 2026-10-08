@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -55,6 +55,7 @@ import { MobileActionFab } from "@/components/ui/mobile-action-fab";
 import { handleExportProducts } from "@/lib/export";
 import { ProductsImportModal } from "@/components/produtos/products-import-modal";
 import { ProductsConfigModal } from "@/components/produtos/products-config-modal";
+import { storageService } from "@/services/storage.service";
 
 // 1. Estado do Formulário usa NUMBER agora, compatível com frontend
 export type FormState = {
@@ -562,7 +563,10 @@ function ProductForm({
   const [form, setForm] = useState<FormState>(initial);
   const [busy, setBusy] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>(initial.image || "");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [rawValues, setRawValues] = useState<Record<string, string>>({
     costPrice: initial.costPrice === 0 ? "" : String(initial.costPrice),
@@ -575,6 +579,8 @@ function ProductForm({
 
   useEffect(() => {
     if (open) {
+      setImageFile(null);
+      setUploadingImage(false);
       if (isEdit) {
         setForm(initial);
         setImagePreview(initial.image || "");
@@ -836,6 +842,65 @@ function ProductForm({
   const requiredInputClass =
     "border-primary/50 focus:ring-primary/50 bg-primary/[0.03]";
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("A imagem deve ter no máximo 5MB.");
+        return;
+      }
+      setImageFile(file);
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setForm((prev) => ({ ...prev, image: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  };
+
+  const handleFormSubmit = async () => {
+    setBusy(true);
+    try {
+      let finalImageUrl = form.image || "";
+
+      // Se há um novo arquivo selecionado, faz upload para o Supabase Storage
+      if (imageFile) {
+        setUploadingImage(true);
+        try {
+          
+          const { url } = await storageService.uploadProductImage(imageFile);
+          finalImageUrl = url;
+          toast.success("Imagem enviada com sucesso!", { id: "upload-product-image" });
+        } catch (uploadError: any) {
+          toast.error(uploadError.message || "Erro ao fazer upload da imagem", { id: "upload-product-image" });
+          setBusy(false);
+          setUploadingImage(false);
+          return;
+        } finally {
+          setUploadingImage(false);
+        }
+      } else if (!imagePreview) {
+        finalImageUrl = "";
+      }
+
+      await onSubmit({
+        ...form,
+        image: finalImageUrl,
+      });
+
+      if (!isEdit) {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const FormFields = (
     <div className="grid grid-cols-2 gap-3">
       <div className="col-span-2 space-y-2">
@@ -1042,80 +1107,101 @@ function ProductForm({
 
       <div className="col-span-2 space-y-2">
         <Label>Imagem do Produto</Label>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl border border-border/70 bg-muted/20">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl border border-border/70 bg-muted/20">
           <input
             type="file"
             ref={fileInputRef}
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                const url = URL.createObjectURL(file);
-                setImagePreview(url);
-              }
-            }}
+            onChange={handleFileChange}
           />
+          <input
+            type="file"
+            ref={cameraInputRef}
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          
           {imagePreview ? (
-            <div className="relative group shrink-0">
+            <div className="relative group shrink-0 mx-auto sm:mx-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imagePreview}
                 alt="Prévia do produto"
-                className="h-20 w-20 rounded-xl object-cover border border-border shadow-xs"
+                className="h-24 w-24 rounded-xl object-cover border border-border shadow-xs"
               />
+              {uploadingImage && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-xl">
+                  <BoxIcon name="loader-alt" className="animate-spin text-2xl text-primary mb-1" />
+                  <span className="text-[9px] font-medium text-primary">Enviando...</span>
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => {
-                  setImagePreview("");
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-                className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm hover:opacity-90 cursor-pointer"
+                onClick={handleRemoveImage}
+                disabled={busy}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm hover:opacity-90 cursor-pointer disabled:opacity-50"
                 title="Remover imagem"
               >
-                <BoxIcon name="x" className="text-xs" />
+                <BoxIcon name="x" className="text-sm" />
               </button>
             </div>
           ) : (
             <div
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center h-20 w-20 rounded-xl border border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => !busy && fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center h-24 w-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors shrink-0 text-muted-foreground hover:text-foreground mx-auto sm:mx-0"
               title="Adicionar imagem"
             >
-              <BoxIcon name="image-add" className="text-2xl" />
-              <span className="text-[10px] mt-1 font-medium">Adicionar</span>
+              <BoxIcon name="image-add" className="text-3xl" />
+              <span className="text-[10px] mt-1.5 font-medium">Adicionar</span>
             </div>
           )}
 
-          <div className="flex-1 w-full space-y-1.5">
-            <div className="flex flex-wrap gap-2">
+          <div className="flex-1 w-full space-y-2.5 flex flex-col justify-center">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-xs shrink-0"
+                className="text-xs shrink-0 w-full sm:w-auto"
+                disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <BoxIcon name="upload" className="mr-1 text-sm" />
-                {imagePreview ? "Trocar imagem" : "Selecionar imagem"}
+                <BoxIcon name="image" className="mr-2 text-sm" />
+                {imagePreview ? "Trocar da galeria" : "Escolher da galeria"}
               </Button>
+              
+              {isMobile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs shrink-0 w-full sm:w-auto"
+                  disabled={busy}
+                  onClick={() => cameraInputRef.current?.click()}
+                >
+                  <BoxIcon name="camera" className="mr-2 text-sm" />
+                  Tirar foto
+                </Button>
+              )}
+
               {imagePreview && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={() => {
-                    setImagePreview("");
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
+                  disabled={busy}
+                  className="text-xs text-muted-foreground hover:text-destructive shrink-0 w-full sm:w-auto"
+                  onClick={handleRemoveImage}
                 >
                   Remover
                 </Button>
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Formatos suportados: PNG, JPG, WEBP (componente visual).
+            <p className="text-[11px] text-muted-foreground text-center sm:text-left">
+              Formatos aceitos: PNG, JPG, WEBP. Tamanho máximo: 5MB.
             </p>
           </div>
         </div>
@@ -1134,23 +1220,13 @@ function ProductForm({
 
   const ActionButtons = (
     <div className="flex w-full justify-between gap-2">
-      <Button variant="outline" onClick={() => onOpenChange(false)}>
+      <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
         Cancelar
       </Button>
       <LoadingButton
         loading={busy}
         disabled={busy || !canSave}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            await onSubmit(form);
-            if (!isEdit) {
-              localStorage.removeItem("@zelo-pdv/new-product-draft");
-            }
-          } finally {
-            setBusy(false);
-          }
-        }}
+        onClick={handleFormSubmit}
       >
         Salvar
       </LoadingButton>
@@ -1179,17 +1255,7 @@ function ProductForm({
                 <LoadingButton
                   loading={busy}
                   disabled={busy || !canSave}
-                  onClick={async () => {
-                    setBusy(true);
-                    try {
-                      await onSubmit(form);
-                      if (!isEdit) {
-                        localStorage.removeItem("@zelo-pdv/new-product-draft");
-                      }
-                    } finally {
-                      setBusy(false);
-                    }
-                  }}
+                  onClick={handleFormSubmit}
                   className="h-11 w-full rounded-full font-medium"
                 >
                   Salvar
@@ -1198,6 +1264,7 @@ function ProductForm({
                   type="button"
                   variant="ghost"
                   onClick={() => onOpenChange(false)}
+                  disabled={busy}
                   className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancelar

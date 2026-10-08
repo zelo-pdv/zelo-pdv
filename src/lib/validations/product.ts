@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const categorySchema = z.object({
   name: z
@@ -21,14 +21,14 @@ export const productSchema = z.object({
       message: "A categoria é obrigatória",
     }),
   description: z.string().max(500, "A descrição é muito longa").optional().nullable(),
-  image: z.string().max(255).optional().nullable(),
+  image: z.string().max(2048).optional().nullable(),
   unit: z.string().min(1, "A unidade é obrigatória").max(10, "A unidade é muito longa"),
   costPrice: z.coerce.number().min(0, "O preço de custo não pode ser negativo").max(9999999, "Valor muito alto"),
   salePrice: z.coerce
     .number()
     .min(0.01, "O preço de venda é obrigatório e deve ser maior que zero")
     .max(9999999, "Valor muito alto"),
-  stock: z.coerce.number().min(0, "O estoque não pode ser negativo").max(9999999, "Valor muito alto"),
+  stock: z.coerce.number().max(9999999, "Valor muito alto"),
   minStock: z.coerce.number().min(0, "O estoque mínimo não pode ser negativo").max(9999999, "Valor muito alto"),
   notes: z.string().max(500, "A observação é muito longa").optional().nullable(),
   active: z.boolean().default(true).optional(),
