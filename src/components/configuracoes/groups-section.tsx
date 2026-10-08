@@ -473,7 +473,7 @@ function GroupForm({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
-            <DrawerTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DrawerTitle>
+            <DrawerTitle>{isEdit ? "Editar grupo" : "Novo grupo"}</DrawerTitle>
           </DrawerHeader>
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -481,8 +481,24 @@ function GroupForm({
                 <div className="pb-4 pt-1">{FormFields}</div>
               </ScrollArea>
             </div>
-            <div className="shrink-0 pt-4 border-t border-border">
-              {ActionButtons}
+            <div className="shrink-0 pt-3 flex flex-col gap-2 w-full border-t border-border">
+              <LoadingButton
+                onClick={submit}
+                disabled={!form.name.trim() || saving}
+                loading={saving}
+                className="h-11 w-full rounded-full font-medium"
+              >
+                Salvar
+              </LoadingButton>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={saving}
+                className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </DrawerContent>
@@ -494,7 +510,7 @@ function GroupForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar grupo" : "Adicionar"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar grupo" : "Novo grupo"}</DialogTitle>
         </DialogHeader>
 
         {FormFields}

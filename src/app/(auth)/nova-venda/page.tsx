@@ -927,19 +927,10 @@ export default function NovaVenda() {
                     </div>
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStep("cart")}
-                    size="lg"
-                    className="rounded-full"
-                    disabled={isFinalizing}
-                  >
-                    Voltar
-                  </Button>
+                <div className="flex flex-col gap-2 w-full">
                   <Button
                     size="lg"
-                    className="flex-1 rounded-full"
+                    className="h-11 w-full rounded-full font-medium"
                     onClick={finalize}
                     disabled={
                       isFinalizing ||
@@ -950,6 +941,15 @@ export default function NovaVenda() {
                     {isFinalizing
                       ? "Salvando..."
                       : `${editingSaleId ? "Atualizar Venda" : "Confirmar"} · ${currency(total)}`}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setStep("cart")}
+                    className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+                    disabled={isFinalizing}
+                  >
+                    Voltar
                   </Button>
                 </div>
               </div>

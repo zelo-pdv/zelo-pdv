@@ -588,7 +588,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <DrawerContent className="p-4">
               <DrawerHeader className="px-0">
                 <DrawerTitle>
-                  {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+                  {editingCategory ? "Editar categoria" : "Nova categoria"}
                 </DrawerTitle>
               </DrawerHeader>
 
@@ -618,19 +618,22 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 </div>
               </div>
 
-              <div className="flex w-full justify-between gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                >
-                  Cancelar
-                </Button>
+              <div className="flex flex-col gap-2 w-full pt-4">
                 <LoadingButton
                   onClick={handleSaveCategory}
                   loading={savingCategory}
+                  className="h-11 w-full rounded-full font-medium"
                 >
                   Salvar
                 </LoadingButton>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </Button>
               </div>
             </DrawerContent>
           </Drawer>
@@ -643,7 +646,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+                  {editingCategory ? "Editar categoria" : "Nova categoria"}
                 </DialogTitle>
               </DialogHeader>
 
@@ -697,7 +700,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <DrawerContent className="p-4">
               <DrawerHeader className="px-0">
                 <DrawerTitle>
-                  {editingUnit ? "Editar Unidade" : "Nova Unidade"}
+                  {editingUnit ? "Editar unidade" : "Nova unidade"}
                 </DrawerTitle>
               </DrawerHeader>
 
@@ -747,16 +750,22 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 </div>
               </div>
 
-              <div className="flex w-full justify-between gap-2 pt-2">
+              <div className="flex flex-col gap-2 w-full pt-4">
+                <LoadingButton
+                  onClick={handleSaveUnit}
+                  loading={savingUnit}
+                  className="h-11 w-full rounded-full font-medium"
+                >
+                  Salvar
+                </LoadingButton>
                 <Button
-                  variant="outline"
+                  type="button"
+                  variant="ghost"
                   onClick={() => setIsUnitModalOpen(false)}
+                  className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancelar
                 </Button>
-                <LoadingButton onClick={handleSaveUnit} loading={savingUnit}>
-                  Salvar
-                </LoadingButton>
               </div>
             </DrawerContent>
           </Drawer>
@@ -765,7 +774,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {editingUnit ? "Editar Unidade" : "Nova Unidade"}
+                  {editingUnit ? "Editar unidade" : "Nova unidade"}
                 </DialogTitle>
               </DialogHeader>
 

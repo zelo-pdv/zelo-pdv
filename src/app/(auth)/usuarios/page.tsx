@@ -533,7 +533,7 @@ function UserForm({
       <Drawer open={open} onOpenChange={onOpenChange} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
-            <DrawerTitle>{isEdit ? "Editar usuário" : "Adicionar"}</DrawerTitle>
+            <DrawerTitle>{isEdit ? "Editar usuário" : "Novo usuário"}</DrawerTitle>
           </DrawerHeader>
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -541,8 +541,23 @@ function UserForm({
                 <div className="pb-4">{FormFields}</div>
               </ScrollArea>
             </div>
-            <div className="shrink-0 pt-4 border-t border-border">
-              {ActionButtons}
+            <div className="shrink-0 pt-3 flex flex-col gap-2 w-full border-t border-border">
+              <LoadingButton
+                onClick={submit}
+                loading={isSubmitting}
+                className="h-11 w-full rounded-full font-medium"
+              >
+                Salvar
+              </LoadingButton>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </DrawerContent>
@@ -554,7 +569,7 @@ function UserForm({
     <Dialog open={open} onOpenChange={onOpenChange} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar usuário" : "Adicionar"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar usuário" : "Novo usuário"}</DialogTitle>
         </DialogHeader>
         {FormFields}
         <DialogFooter>{ActionButtons}</DialogFooter>
@@ -723,7 +738,26 @@ function ChangePasswordDialog({
             </p>
           </DrawerHeader>
           {ContentBody}
-          <div className="pt-2">{ActionButtons}</div>
+          <div className="flex flex-col gap-2 pt-4 w-full">
+            <Button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={isSubmitting}
+              className="h-11 w-full rounded-full font-medium"
+            >
+              {isSubmitting && <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />}
+              Salvar nova senha
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </Button>
+          </div>
         </DrawerContent>
       </Drawer>
     );

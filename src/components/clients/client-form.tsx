@@ -447,7 +447,7 @@ export function ClientForm({
       <Drawer open={open} onOpenChange={onOpenChange} blur>
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="shrink-0 px-4">
-            <DrawerTitle>{isEdit ? "Editar cliente" : "Adicionar"}</DrawerTitle>
+            <DrawerTitle>{isEdit ? "Editar cliente" : "Novo cliente"}</DrawerTitle>
           </DrawerHeader>
           <div className="flex min-h-0 flex-1 flex-col px-4 pb-6 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -455,8 +455,24 @@ export function ClientForm({
                 <div className="pb-4">{FormFields}</div>
               </ScrollArea>
             </div>
-            <div className="shrink-0 pt-4 mt-2 border-t border-border">
-              {ActionButtons}
+            <div className="shrink-0 pt-3 mt-2 flex flex-col gap-2 w-full border-t border-border">
+              <LoadingButton
+                loading={loading}
+                disabled={form.name.trim().length < 2 || loading}
+                onClick={submit}
+                className="h-11 w-full rounded-full font-medium"
+              >
+                Salvar
+              </LoadingButton>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+                className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </DrawerContent>
@@ -468,7 +484,7 @@ export function ClientForm({
     <Dialog open={open} onOpenChange={onOpenChange} blur>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar cliente" : "Adicionar"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar cliente" : "Novo cliente"}</DialogTitle>
         </DialogHeader>
         {FormFields}
         <DialogFooter>{ActionButtons}</DialogFooter>

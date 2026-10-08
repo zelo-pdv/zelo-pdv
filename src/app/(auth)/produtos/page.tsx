@@ -468,7 +468,25 @@ function StockEntry({
             <DrawerTitle>Entrada de estoque</DrawerTitle>
           </DrawerHeader>
           {ContentBody}
-          <div className="pt-2">{ActionButtons}</div>
+          <div className="flex flex-col gap-2 pt-4 w-full">
+            <LoadingButton
+              loading={busy}
+              disabled={qty <= 0}
+              onClick={handleAddStock}
+              className="h-11 w-full rounded-full font-medium"
+            >
+              Adicionar
+            </LoadingButton>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              disabled={busy}
+              className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </Button>
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -1146,7 +1164,7 @@ function ProductForm({
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="shrink-0 px-4">
               <DrawerTitle>
-                {isEdit ? "Editar produto" : "Adicionar"}
+                {isEdit ? "Editar produto" : "Novo produto"}
               </DrawerTitle>
             </DrawerHeader>
 
@@ -1157,8 +1175,33 @@ function ProductForm({
                 </ScrollArea>
               </div>
 
-              <div className="shrink-0 pt-4 border-t border-border">
-                {ActionButtons}
+              <div className="shrink-0 pt-3 flex flex-col gap-2 w-full border-t border-border">
+                <LoadingButton
+                  loading={busy}
+                  disabled={busy || !canSave}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await onSubmit(form);
+                      if (!isEdit) {
+                        localStorage.removeItem("@zelo-pdv/new-product-draft");
+                      }
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                  className="h-11 w-full rounded-full font-medium"
+                >
+                  Salvar
+                </LoadingButton>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onOpenChange(false)}
+                  className="h-10 w-full rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </Button>
               </div>
             </div>
           </DrawerContent>
@@ -1181,7 +1224,7 @@ function ProductForm({
       <Dialog open={open} onOpenChange={handleFormOpenChange} blur>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Editar produto" : "Adicionar"}</DialogTitle>
+            <DialogTitle>{isEdit ? "Editar produto" : "Novo produto"}</DialogTitle>
           </DialogHeader>
           {FormFields}
           <DialogFooter>{ActionButtons}</DialogFooter>
