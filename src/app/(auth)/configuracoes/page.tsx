@@ -12,14 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { PaymentMethod, PAYMENT_LABELS, SaleStatus } from "@/types";
+import { PaymentMethod, PAYMENT_LABELS, SaleStatus, type Product } from "@/types";
 import { getLoja, updateLoja } from "@/services/loja.service";
+import { productsService } from "@/services/products.service";
 import {
   LojaAddressFormData,
   LojaFormData,
   lojaSchema,
 } from "@/lib/validations/loja";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
+import { currency } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { GroupsSection } from "@/components/configuracoes/groups-section";
@@ -598,6 +600,37 @@ function SalesConfigSection() {
     }
   };
 
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+
+  useEffect(() => {
+    if (isExpanded && productsList.length === 0) {
+      void productsService.list().then((res: any) => {
+        setProductsList(res || []);
+      });
+    }
+  }, [isExpanded, productsList.length]);
+
+  const handleToggleOpenPrice = (checked: boolean) => {
+    setSalesSettings({ openPriceEnabled: checked });
+    if (checked) {
+      toast.success("Preço aberto na venda ativado");
+    } else {
+      toast.info("Preço aberto na venda desativado");
+    }
+  };
+
+  const handleSetOpenPriceMode = (mode: "ALL" | "SPECIFIC") => {
+    setSalesSettings({ openPriceMode: mode });
+  };
+
+  const handleToggleProductOpenPrice = (productId: string) => {
+    const current = salesSettings.openPriceProductIds || [];
+    const exists = current.includes(productId);
+    const updated = exists ? current.filter((id) => id !== productId) : [...current, productId];
+    setSalesSettings({ openPriceProductIds: updated });
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="py-4">
@@ -669,6 +702,113 @@ function SalesConfigSection() {
               checked={trackStock && salesSettings.blockOutOfStock}
               onCheckedChange={handleToggleBlockOutOfStock}
             />
+          </div>
+
+          {/* Preço Aberto na hora da venda */}
+          <div className="flex flex-col gap-3 rounded-xl border border-border/70 p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-4">
+                <Label
+                  className="text-sm font-medium cursor-pointer"
+                  htmlFor="toggle-open-price"
+                >
+                  Permitir alteração de preço na venda (Preço Aberto)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Permite editar o valor unitário do produto na primeira etapa da venda (no carrinho), sem alterar o preço cadastrado no produto.
+                </p>
+              </div>
+              <Switch
+                id="toggle-open-price"
+                checked={salesSettings.openPriceEnabled ?? false}
+                onCheckedChange={handleToggleOpenPrice}
+              />
+            </div>
+
+            {salesSettings.openPriceEnabled && (
+              <div className="mt-2 space-y-3 pt-3 border-t border-border/60 animate-in fade-in-50 duration-150">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Abrangência do Preço Aberto
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={(salesSettings.openPriceMode ?? "ALL") === "ALL" ? "default" : "outline"}
+                      className="h-8 text-xs"
+                      onClick={() => handleSetOpenPriceMode("ALL")}
+                    >
+                      Todos os produtos (Global)
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={salesSettings.openPriceMode === "SPECIFIC" ? "default" : "outline"}
+                      className="h-8 text-xs"
+                      onClick={() => handleSetOpenPriceMode("SPECIFIC")}
+                    >
+                      Produtos específicos
+                    </Button>
+                  </div>
+                </div>
+
+                {salesSettings.openPriceMode === "SPECIFIC" && (
+                  <div className="space-y-2 rounded-lg bg-muted/40 p-3 border border-border/60">
+                    <Label className="text-xs font-medium">
+                      Selecione os produtos com preço aberto:
+                    </Label>
+                    <Input
+                      placeholder="Buscar produto por nome ou código..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="h-8 text-xs bg-background"
+                    />
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                      {productsList
+                        .filter((p) =>
+                          p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                          (p.code && p.code.toLowerCase().includes(productSearch.toLowerCase()))
+                        )
+                        .map((p) => {
+                          const isSelected = (salesSettings.openPriceProductIds || []).includes(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => handleToggleProductOpenPrice(p.id)}
+                              className={cn(
+                                "flex items-center justify-between rounded-md p-2 text-xs cursor-pointer border transition",
+                                isSelected
+                                  ? "border-primary bg-primary/10 font-medium text-foreground"
+                                  : "border-border/60 bg-background hover:bg-muted"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <BoxIcon
+                                  name={isSelected ? "check-square" : "square"}
+                                  className={cn("text-sm", isSelected ? "text-primary" : "text-muted-foreground")}
+                                />
+                                <span className="truncate">{p.name}</span>
+                              </div>
+                              <span className="shrink-0 text-muted-foreground tabular-nums">
+                                {currency(Number(p.salePrice))}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      {productsList.length === 0 && (
+                        <p className="text-xs text-muted-foreground py-2 text-center">
+                          Nenhum produto cadastrado.
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {(salesSettings.openPriceProductIds || []).length} produto(s) selecionado(s) com preço aberto.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Item #2: Forma de pagamento padrão */}

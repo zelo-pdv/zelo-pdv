@@ -223,6 +223,15 @@ export function SalesDataTable({
                   >
                     Pendentes
                   </Button>
+                  <Button
+                    type="button"
+                    variant={statusFilter === SaleStatus.CANCELADO ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setStatusFilter(SaleStatus.CANCELADO)}
+                  >
+                    Canceladas
+                  </Button>
                 </div>
               </div>
 

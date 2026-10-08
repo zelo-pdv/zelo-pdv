@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-permission";
 import { checkEmailConflict, checkPhoneConflict } from "@/lib/validations/uniqueness";
 import { clientFormSchema } from "@/lib/validations/client";
+import { createAuditLog } from "@/lib/audit";
 
 // [GET] /api/clients/[id] - Busca um cliente específico
 export async function GET(
@@ -16,8 +17,8 @@ export async function GET(
     if (!auth.authorized) return auth.response;
     const user = auth.user;
 
-    const client = await prisma.client.findUnique({
-      where: { id, lojaId: user.lojaId },
+    const client = await prisma.client.findFirst({
+      where: { id, lojaId: user.lojaId, deletedAt: null },
       include: { address: true },
     });
 
@@ -55,7 +56,7 @@ export async function PATCH(
     const user = auth.user;
 
     // Validate that client belongs to user's loja before updating
-    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId } });
+    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId, deletedAt: null } });
     if (!existingClient) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
     // Validação de unicidade cruzada de e-mail e telefone
@@ -135,18 +136,27 @@ export async function DELETE(
     const user = auth.user;
 
     // Validate that client belongs to user's loja before deleting
-    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId } });
+    const existingClient = await prisma.client.findFirst({ where: { id, lojaId: user.lojaId, deletedAt: null } });
     if (!existingClient) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
-    // Remove os endereços vinculados antes de apagar o cliente
-    await prisma.address
-      .deleteMany({
-        where: { clientId: id, lojaId: user.lojaId },
-      })
-      .catch(() => {});
+    // Soft delete: preserva o histórico de vendas intacto
+    await prisma.client.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        active: false,
+      },
+    });
 
-    await prisma.client.deleteMany({
-      where: { id, lojaId: user.lojaId },
+    await createAuditLog({
+      action: "DELETE_CLIENT",
+      entity: "Client",
+      entityId: id,
+      details: {
+        name: existingClient.name,
+      },
+      userId: user.id,
+      lojaId: user.lojaId,
     });
 
     return new NextResponse(null, { status: 204 });

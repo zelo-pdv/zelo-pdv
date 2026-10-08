@@ -13,7 +13,7 @@ export async function GET() {
 
   try {
     const products = await prisma.product.findMany({
-      where: { lojaId: auth.user.lojaId },
+      where: { lojaId: auth.user.lojaId, deletedAt: null },
       include: { category: true },
       orderBy: { name: "asc" },
     });

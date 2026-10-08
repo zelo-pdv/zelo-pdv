@@ -27,6 +27,8 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
     hideCostPrice: false,
   };
   const setProductsSettings = useSettingsStore((s) => s.setProductsSettings);
+  const salesSettings = useSettingsStore((s) => s.sales);
+  const setSalesSettings = useSettingsStore((s) => s.setSalesSettings);
 
   const [thresholdInput, setThresholdInput] = useState(
     String(productsSettings.globalLowStockThreshold ?? 5)
@@ -358,6 +360,35 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     toast.success("Exibição de imagens ativada");
                   } else {
                     toast.info("Exibição de imagens desativada");
+                  }
+                }}
+              />
+            </div>
+
+            <Separator className="my-1" />
+
+            {/* Preço Aberto na hora da venda */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-4">
+                <Label
+                  className="text-sm font-medium cursor-pointer"
+                  htmlFor="toggle-open-price-modal"
+                >
+                  Permitir alteração de preço na venda (Preço Aberto)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Permite editar o valor unitário do produto na primeira etapa da venda (no carrinho), sem alterar o preço cadastrado no produto.
+                </p>
+              </div>
+              <Switch
+                id="toggle-open-price-modal"
+                checked={salesSettings?.openPriceEnabled ?? false}
+                onCheckedChange={(checked) => {
+                  setSalesSettings({ openPriceEnabled: checked });
+                  if (checked) {
+                    toast.success("Preço aberto na venda ativado");
+                  } else {
+                    toast.info("Preço aberto na venda desativado");
                   }
                 }}
               />

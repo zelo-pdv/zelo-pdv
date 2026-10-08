@@ -41,10 +41,11 @@ export async function checkEmailConflict({
     return "Este e-mail já está sendo utilizado por um usuário na sua loja.";
   }
 
-  // 2. Verifica se já existe um Cliente com esse e-mail na loja
+  // 2. Verifica se já existe um Cliente com esse e-mail na loja (não excluído)
   const existingClient = await prisma.client.findFirst({
     where: {
       lojaId,
+      deletedAt: null,
       email: {
         equals: cleanEmail,
         mode: "insensitive",
@@ -90,10 +91,11 @@ export async function checkPhoneConflict({
     }
   }
 
-  // 2. Verifica conflito com Clientes da loja
+  // 2. Verifica conflito com Clientes da loja (não excluídos)
   const clientsWithPhone = await prisma.client.findMany({
     where: {
       lojaId,
+      deletedAt: null,
       phone: { not: "" },
       ...(excludeClientId ? { id: { not: excludeClientId } } : {}),
     },

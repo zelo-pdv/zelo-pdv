@@ -362,8 +362,8 @@ function DeleteProduct({
           <AlertDialogTitle>Remover produto?</AlertDialogTitle>
 
           <AlertDialogDescription>
-            {product?.name} será removido do catálogo. Esta ação não pode ser
-            desfeita.
+            {product?.name} será removido do catálogo. O histórico de vendas deste
+            produto será mantido intacto no sistema. Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

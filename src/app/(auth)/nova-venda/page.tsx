@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { BoxIcon } from "@/components/ui/box-icon";
 
@@ -48,7 +49,8 @@ import { ProductPicker } from "@/components/nova-venda/product-picker";
 
 import { clientsService } from "@/services/clients.service";
 import { productsService } from "@/services/products.service";
-import { salesService } from "@/services/sales.service";
+import { apiRequest } from "@/lib/api-request";
+import { salesService, updateSale } from "@/services/sales.service";
 import {
   Client,
   PAYMENT_LABELS,
@@ -69,6 +71,7 @@ type CartItem = {
 };
 
 export default function NovaVenda() {
+  const router = useRouter();
   const { can } = usePermissions();
   const isMobile = useIsMobile();
   const salesSettings = useSettingsStore((s) => s.sales) ?? {
@@ -95,6 +98,8 @@ export default function NovaVenda() {
   // Estado do Carrinho e Fluxo (substitui o useCartStore)
   const [client, setClient] = useState<Client | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [editingSaleNumber, setEditingSaleNumber] = useState<number | null>(null);
   const [step, setStep] = useState<"cart" | "payment">("cart");
   const [payment, setPayment] = useState<PaymentMethod>(
     salesSettings.defaultPaymentMethod || PaymentMethod.DINHEIRO
@@ -112,21 +117,47 @@ export default function NovaVenda() {
 
   const [clientPicker, setClientPicker] = useState(false);
   const [productPicker, setProductPicker] = useState(false);
+  const [editingPriceMap, setEditingPriceMap] = useState<Record<string, string>>({});
+
+  const isItemOpenPrice = (productId: string) => {
+    if (!salesSettings?.openPriceEnabled) return false;
+    if (salesSettings?.openPriceMode === "SPECIFIC") {
+      return (
+        Array.isArray(salesSettings?.openPriceProductIds) &&
+        salesSettings.openPriceProductIds.includes(productId)
+      );
+    }
+    return true;
+  };
+
+  const updateItemPrice = (id: string, newPrice: number) => {
+    if (isNaN(newPrice) || newPrice < 0) return;
+    setItems((prev) =>
+      prev.map((i) => (i.productId === id ? { ...i, unitPrice: newPrice } : i))
+    );
+  };
 
   const checkout = step === "payment";
 
-  // Item #16: Carrega rascunho do carrinho persistido
+  // Item #16: Carrega rascunho do carrinho persistido (ou venda sendo editada)
   useEffect(() => {
     try {
       const savedDraft = localStorage.getItem("zelo_cart_draft");
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
+        if (parsed.editingSaleId) {
+          setEditingSaleId(parsed.editingSaleId);
+          setEditingSaleNumber(parsed.editingSaleNumber ?? null);
+        }
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
           setItems(parsed.items);
           if (parsed.client) setClient(parsed.client);
           if (parsed.discountType) setDiscountType(parsed.discountType);
           if (parsed.discountValue) setDiscountValue(parsed.discountValue);
           if (parsed.notes) setNotes(parsed.notes);
+          if (parsed.payment) setPayment(parsed.payment);
+          if (parsed.status) setStatus(parsed.status);
+          if (parsed.dueDate) setDueDate(parsed.dueDate);
         }
       }
     } catch (err) {
@@ -137,15 +168,20 @@ export default function NovaVenda() {
   // Item #16: Salva rascunho do carrinho em localStorage
   useEffect(() => {
     try {
-      if (items.length > 0) {
+      if (items.length > 0 || editingSaleId) {
         localStorage.setItem(
           "zelo_cart_draft",
           JSON.stringify({
+            editingSaleId,
+            editingSaleNumber,
             items,
             client,
             discountType,
             discountValue,
             notes,
+            payment,
+            status,
+            dueDate,
           })
         );
       } else {
@@ -154,19 +190,19 @@ export default function NovaVenda() {
     } catch (err) {
       console.error("Erro ao salvar rascunho:", err);
     }
-  }, [items, client, discountType, discountValue, notes]);
+  }, [items, client, discountType, discountValue, notes, editingSaleId, editingSaleNumber, payment, status, dueDate]);
 
   // Item #2 e Item #3: Atualiza forma de pagamento e status padrão caso alterados nas configurações
   const paymentMethodsList = salesSettings?.paymentMethods?.length ? salesSettings.paymentMethods : Object.values(PaymentMethod);
 
   useEffect(() => {
-    if (salesSettings.defaultPaymentMethod && step === "cart") {
+    if (!editingSaleId && salesSettings.defaultPaymentMethod && step === "cart") {
       setPayment(salesSettings.defaultPaymentMethod);
     }
-    if (salesSettings.defaultSaleStatus && step === "cart") {
+    if (!editingSaleId && salesSettings.defaultSaleStatus && step === "cart") {
       setStatus(salesSettings.defaultSaleStatus);
     }
-  }, [salesSettings.defaultPaymentMethod, salesSettings.defaultSaleStatus, step]);
+  }, [salesSettings.defaultPaymentMethod, salesSettings.defaultSaleStatus, step, editingSaleId]);
 
   // Busca os clientes e produtos ao carregar a página com suporte a refresh silencioso
   const refreshData = async (silent = false) => {
@@ -190,9 +226,16 @@ export default function NovaVenda() {
           c.name.toLowerCase() === "consumidor final" ||
           c.name.toLowerCase() === "ao consumidor",
       );
-      if (defaultClient && salesSettings.requireClient) {
-        setClient((prev) => prev || defaultClient);
-      }
+      setClient((prev) => {
+        if (prev?.id) {
+          const match = typedClients.find((c) => c.id === prev.id);
+          if (match) return match;
+        }
+        if (!prev && defaultClient && salesSettings.requireClient) {
+          return defaultClient;
+        }
+        return prev;
+      });
 
       setProducts(typedProducts);
     } catch (error) {
@@ -333,6 +376,9 @@ export default function NovaVenda() {
     try {
       localStorage.removeItem("zelo_cart_draft");
     } catch {}
+    setEditingSaleId(null);
+    setEditingSaleNumber(null);
+    setEditingPriceMap({});
     const defaultClient = clients.find(
       (c) =>
         c.name.toLowerCase() === "consumidor final" ||
@@ -349,7 +395,6 @@ export default function NovaVenda() {
     setNotes("");
   };
 
-
   const finalize = async () => {
     if (items.length === 0) return;
     if (salesSettings.requireClient && !client) {
@@ -363,23 +408,59 @@ export default function NovaVenda() {
 
     setIsFinalizing(true);
     try {
-      await salesService.create({
-        clientId: client?.id || null,
-        clientName: client?.name || "Consumidor Final",
-        items,
-        total,
-        discount: discountAmount > 0 ? discountAmount : undefined,
-        paymentMethod: payment,
-        status,
-        dueDate: status === "PENDENTE" ? dueDate || undefined : undefined,
-        notes,
-      });
+      if (editingSaleId) {
+        const updatePayload = {
+          clientId: client?.id || null,
+          clientName: client?.name || "Consumidor Final",
+          items,
+          total,
+          discount: discountAmount > 0 ? discountAmount : undefined,
+          paymentMethod: payment,
+          status,
+          dueDate: status === "PENDENTE" ? dueDate || undefined : undefined,
+          notes,
+        };
 
-      toast.success("Venda registrada com sucesso!");
-      notifyLocalSync("sales");
-      notifyLocalSync("products");
-      notifyLocalSync("clients");
-      clear();
+        if (typeof salesService?.update === "function") {
+          await salesService.update(editingSaleId, updatePayload);
+        } else if (typeof updateSale === "function") {
+          await updateSale(editingSaleId, updatePayload);
+        } else {
+          await apiRequest(`/sales/${editingSaleId}`, {
+            method: "PUT",
+            body: JSON.stringify(updatePayload),
+          });
+        }
+
+        toast.success(
+          editingSaleNumber
+            ? `Venda #${editingSaleNumber} atualizada com sucesso!`
+            : "Venda atualizada com sucesso!"
+        );
+        notifyLocalSync("sales");
+        notifyLocalSync("products");
+        notifyLocalSync("clients");
+        clear();
+        router.push("/historico");
+      } else {
+        await salesService.create({
+          clientId: client?.id || null,
+          clientName: client?.name || "Consumidor Final",
+          items,
+          total,
+          discount: discountAmount > 0 ? discountAmount : undefined,
+          paymentMethod: payment,
+          status,
+          dueDate: status === "PENDENTE" ? dueDate || undefined : undefined,
+          notes,
+        });
+
+        toast.success("Venda registrada com sucesso!");
+        notifyLocalSync("sales");
+        notifyLocalSync("products");
+        notifyLocalSync("clients");
+        clear();
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao registrar venda.");
     } finally {
@@ -400,6 +481,28 @@ export default function NovaVenda() {
 
   return (
     <div className="w-full h-[86vh] flex flex-col px-4">
+      {editingSaleId && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <BoxIcon name="edit" className="text-base text-amber-600 dark:text-amber-400" />
+            <span>
+              Editando <strong>Venda #{editingSaleNumber || editingSaleId.slice(-6)}</strong>
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
+            onClick={() => {
+              clear();
+              toast.info("Edição de venda cancelada.");
+              router.push("/historico");
+            }}
+          >
+            Cancelar edição
+          </Button>
+        </div>
+      )}
       <Card
         className="mb-3 h-18.5 cursor-pointer border-border/70 transition hover:border-primary/40"
         onClick={() => setClientPicker(true)}
@@ -493,9 +596,51 @@ export default function NovaVenda() {
                       <div className="truncate text-sm font-medium">
                         {it.productName}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {currency(it.unitPrice)} un
-                      </div>
+                      {isItemOpenPrice(it.productId) ? (
+                        <div className="mt-1 flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground font-medium">R$</span>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={
+                              editingPriceMap[it.productId] ??
+                              (it.unitPrice === 0 ? "0,00" : it.unitPrice.toFixed(2).replace(".", ","))
+                            }
+                            onFocus={() => {
+                              if (editingPriceMap[it.productId] === undefined) {
+                                setEditingPriceMap((prev) => ({
+                                  ...prev,
+                                  [it.productId]:
+                                    it.unitPrice === 0 ? "" : it.unitPrice.toFixed(2).replace(".", ","),
+                                }));
+                              }
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.,]/g, "");
+                              setEditingPriceMap((prev) => ({ ...prev, [it.productId]: val }));
+                              const clean = val.replace(",", ".");
+                              const num = parseFloat(clean);
+                              if (!isNaN(num) && num >= 0) {
+                                updateItemPrice(it.productId, num);
+                              }
+                            }}
+                            onBlur={() => {
+                              setEditingPriceMap((prev) => {
+                                const copy = { ...prev };
+                                delete copy[it.productId];
+                                return copy;
+                              });
+                            }}
+                            className="h-6.5 w-24 px-2 py-0 text-xs font-semibold tabular-nums text-foreground border-primary/40 focus:border-primary"
+                            title="Preço aberto editável na venda"
+                          />
+                          <span className="text-muted-foreground">un</span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          {currency(it.unitPrice)} un
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
@@ -614,7 +759,7 @@ export default function NovaVenda() {
           <DrawerContent className="h-[90vh]">
             <DrawerHeader className="flex-row items-center gap-2 shrink-0 px-4 md:px-6">
               <DrawerTitle>
-                Pagamento
+                {editingSaleId ? `Editar Venda #${editingSaleNumber || editingSaleId.slice(-6)}` : "Pagamento"}
               </DrawerTitle>
             </DrawerHeader>
 
@@ -701,7 +846,7 @@ export default function NovaVenda() {
                       )}
                     </div>
 
-                    <div className="mb-3 flex flex-col gap-2">
+                    <div className="mb-4 flex flex-col gap-2">
                       <Label>Forma de pagamento</Label>
                       <Select
                         value={payment}
@@ -720,7 +865,7 @@ export default function NovaVenda() {
                       </Select>
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-4">
                       <Label>Status</Label>
                       <div className="mt-1 grid grid-cols-2 gap-2">
                         {Object.values(SaleStatus).map((s) => (
@@ -741,7 +886,7 @@ export default function NovaVenda() {
                     </div>
 
                     {status === SaleStatus.PENDENTE && (
-                      <div className="mb-3 space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                      <div className="mb-4 space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
                         <div className="text-sm text-amber-700">
                           Valor pendente:{" "}
                           <span className="font-semibold">{currency(total)}</span>
@@ -796,12 +941,15 @@ export default function NovaVenda() {
                     size="lg"
                     className="flex-1 rounded-full"
                     onClick={finalize}
-                    disabled={isFinalizing || !can("nova-venda", "Adicionar")}
+                    disabled={
+                      isFinalizing ||
+                      (editingSaleId ? !can("historico", "Editar") : !can("nova-venda", "Adicionar"))
+                    }
                   >
                     <BoxIcon name="check" className="mr-2 text-base" />
                     {isFinalizing
                       ? "Salvando..."
-                      : `Confirmar · ${currency(total)}`}
+                      : `${editingSaleId ? "Atualizar Venda" : "Confirmar"} · ${currency(total)}`}
                   </Button>
                 </div>
               </div>
@@ -819,7 +967,7 @@ export default function NovaVenda() {
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md p-0 flex flex-col gap-0">
             <DialogHeader className="flex-row items-center gap-2 shrink-0 px-6 pt-6 pb-2">
               <DialogTitle className="mt-0 pt-0">
-                Pagamento
+                {editingSaleId ? `Editar Venda #${editingSaleNumber || editingSaleId.slice(-6)}` : "Pagamento"}
               </DialogTitle>
             </DialogHeader>
 
@@ -989,13 +1137,16 @@ export default function NovaVenda() {
                 <Button
                   onClick={finalize}
                   size="lg"
-                  disabled={isFinalizing || !can("nova-venda", "Adicionar")}
+                  disabled={
+                    isFinalizing ||
+                    (editingSaleId ? !can("historico", "Editar") : !can("nova-venda", "Adicionar"))
+                  }
                   className="flex-1 rounded-full"
                 >
                   <BoxIcon name="check" className="mr-2 text-base" />
                   {isFinalizing
                     ? "Salvando..."
-                    : `Confirmar · ${currency(total)}`}
+                    : `${editingSaleId ? "Atualizar Venda" : "Confirmar"} · ${currency(total)}`}
                 </Button>
               </div>
             </div>

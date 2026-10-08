@@ -12,7 +12,7 @@ export async function GET() {
     const user = auth.user;
 
     const clients = await prisma.client.findMany({
-      where: { lojaId: user.lojaId },
+      where: { lojaId: user.lojaId, deletedAt: null },
       include: {
         address: true, // Inclui o endereço relacionado
       },

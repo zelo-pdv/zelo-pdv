@@ -32,9 +32,8 @@ export default function DeleteClient({
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
           <AlertDialogDescription>
-            &quot;{client?.name}&quot; será removido permanentemente. Todas as
-            vendas atreladas a este cliente podem ser afetadas. Esta ação não
-            pode ser desfeita.
+            &quot;{client?.name}&quot; será removido. O histórico de vendas deste
+            cliente será mantido intacto no sistema. Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

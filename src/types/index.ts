@@ -53,6 +53,7 @@ export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod] | s
 export enum SaleStatus {
   PAGO = "PAGO",
   PENDENTE = "PENDENTE",
+  CANCELADO = "CANCELADO",
 }
 
 export const PAYMENT_LABELS: Record<string, string> = {

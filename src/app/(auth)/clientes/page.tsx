@@ -81,10 +81,12 @@ export default function ClientesPage() {
       const clientSales = sales.filter((s) => s.clientId === c.id) || [];
       return {
         ...c,
-        totalSpent: clientSales.reduce(
-          (sum, s) => sum + (Number(s.total) || 0),
-          0,
-        ),
+        totalSpent: clientSales
+          .filter((s) => s.status === "PAGO")
+          .reduce(
+            (sum, s) => sum + (Number(s.total) || 0),
+            0,
+          ),
         pendingAmount: clientSales
           .filter((s) => s.status === "PENDENTE")
           .reduce((sum, s) => sum + (Number(s.total) || 0), 0),

@@ -140,6 +140,10 @@ export async function POST(req: Request) {
       const trackStock = config?.products?.trackStock ?? true;
       const blockOutOfStock = config?.sales?.blockOutOfStock ?? false;
 
+      const openPriceEnabled = config?.sales?.openPriceEnabled ?? false;
+      const openPriceMode = config?.sales?.openPriceMode ?? "ALL";
+      const openPriceProductIds = config?.sales?.openPriceProductIds ?? [];
+
       for (const item of parsed.items) {
         if (item.quantity <= 0) {
           throw new Error("Quantidade inválida para o produto.");
@@ -154,7 +158,15 @@ export async function POST(req: Request) {
           throw new Error(`Estoque insuficiente para o produto ${dbProduct.name}.`);
         }
 
-        const unitPrice = dbProduct.salePrice.toNumber();
+        const isProductOpenPrice = openPriceEnabled && (
+          openPriceMode === "ALL" ||
+          (Array.isArray(openPriceProductIds) && openPriceProductIds.includes(item.productId))
+        );
+
+        const unitPrice = (isProductOpenPrice && item.unitPrice && item.unitPrice > 0)
+          ? item.unitPrice
+          : dbProduct.salePrice.toNumber();
+
         const subtotal = item.quantity * unitPrice;
         calculatedTotal += subtotal;
 

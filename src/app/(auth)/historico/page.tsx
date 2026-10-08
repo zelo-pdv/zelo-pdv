@@ -24,18 +24,31 @@ import { SaleVoucher } from "@/components/sale-voucher";
 import { useVouchersStore, voucherCode } from "@/store/useVouchersStore";
 import { currency, dateTime, formatDateOnly } from "@/lib/format";
 import { getPaymentLabel, type Sale, SaleStatus } from "@/types";
-import { salesService } from "@/services/sales.service";
+import { apiRequest } from "@/lib/api-request";
+import { salesService, cancelSale } from "@/services/sales.service";
 import { getSaleColumns } from "./columns";
 import { SalesDataTable } from "./data-table";
+import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePermissions } from "@/components/auth/permissions-provider";
 import { useDataSync, notifyLocalSync } from "@/hooks/use-data-sync";
 
 export default function HistoricoPage() {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const { can } = usePermissions();
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [saleToCancel, setSaleToCancel] = useState<Sale | null>(null);
   const addVoucher = useVouchersStore((s) => s.addVoucher);
 
   const handleMarkAsPaid = async (saleId: string) => {
@@ -134,6 +147,88 @@ export default function HistoricoPage() {
     }
   }, [sales]);
 
+  const handleEditSale = (sale: Sale) => {
+    if (sale.status === SaleStatus.CANCELADO) {
+      toast.error("Vendas canceladas não podem ser editadas.");
+      return;
+    }
+    if (!can("historico", "Editar")) {
+      toast.error("Você não tem permissão para editar vendas.");
+      return;
+    }
+
+    const editDraft = {
+      editingSaleId: sale.id,
+      editingSaleNumber: sale.saleNumber,
+      items: sale.items.map((it) => ({
+        productId: it.productId,
+        productName: it.productName,
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+      })),
+      client: sale.clientId
+        ? {
+            id: sale.clientId,
+            name: sale.clientName || "",
+            phone: "",
+          }
+        : null,
+      discountType: "fixed" as const,
+      discountValue: sale.discount ? String(sale.discount) : "",
+      notes: sale.notes || "",
+      payment: sale.paymentMethod,
+      status: sale.status,
+      dueDate: sale.dueDate ? formatDateOnly(sale.dueDate) : "",
+    };
+
+    try {
+      localStorage.setItem("zelo_cart_draft", JSON.stringify(editDraft));
+      toast.info(`Carregando venda #${sale.saleNumber || sale.id.slice(-6)} para edição...`);
+      router.push("/nova-venda");
+    } catch {
+      toast.error("Erro ao preparar venda para edição.");
+    }
+  };
+
+  const handleConfirmCancelSale = async () => {
+    if (!saleToCancel) return;
+    try {
+      setIsUpdatingStatus(true);
+      if (typeof salesService?.cancel === "function") {
+        await salesService.cancel(saleToCancel.id);
+      } else if (typeof cancelSale === "function") {
+        await cancelSale(saleToCancel.id);
+      } else if (typeof (salesService as any)?.updateStatus === "function") {
+        await (salesService as any).updateStatus(saleToCancel.id, SaleStatus.CANCELADO);
+      } else {
+        await apiRequest(`/sales/${saleToCancel.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "CANCELADO" }),
+        });
+      }
+      toast.success(
+        `Venda #${saleToCancel.saleNumber || saleToCancel.id.slice(-6)} cancelada com sucesso! O estoque foi restabelecido.`,
+      );
+      setSales((prev) =>
+        prev.map((s) =>
+          s.id === saleToCancel.id ? { ...s, status: SaleStatus.CANCELADO } : s,
+        ),
+      );
+      setDetail((prev) =>
+        prev && prev.id === saleToCancel.id
+          ? { ...prev, status: SaleStatus.CANCELADO }
+          : prev,
+      );
+      notifyLocalSync("sales");
+      notifyLocalSync("products");
+      setSaleToCancel(null);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao cancelar venda.");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const columns = useMemo(
     () =>
       getSaleColumns({
@@ -147,9 +242,11 @@ export default function HistoricoPage() {
           });
           setVoucherState({ sale });
         },
+        onEdit: can("historico", "Editar") ? handleEditSale : undefined,
+        onCancel: can("historico", "Editar") ? (sale) => setSaleToCancel(sale) : undefined,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [can, addVoucher],
   );
 
   if (isLoading) {
@@ -242,16 +339,39 @@ export default function HistoricoPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Status</span>
                   <Badge
-                    variant={detail.status === "PAGO" ? "secondary" : "outline"}
+                    variant={
+                      detail.status === "PAGO"
+                        ? "secondary"
+                        : detail.status === "CANCELADO"
+                          ? "outline"
+                          : "outline"
+                    }
                     className={
                       detail.status === "PENDENTE"
-                        ? "border-amber-500/40 text-amber-700"
-                        : ""
+                        ? "border-amber-500/40 text-amber-700 dark:text-amber-400"
+                        : detail.status === "CANCELADO"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive dark:bg-destructive/20 font-medium"
+                          : ""
                     }
                   >
-                    {detail.status === "PAGO" ? "Pago" : "Pendente"}
+                    {detail.status === "PAGO"
+                      ? "Pago"
+                      : detail.status === "CANCELADO"
+                        ? "Cancelado"
+                        : "Pendente"}
                   </Badge>
                 </div>
+
+                {detail.status === "CANCELADO" && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive dark:bg-destructive/20">
+                    <div className="font-semibold flex items-center gap-1.5">
+                      <BoxIcon name="info-circle" className="text-base" /> Venda cancelada
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      Os itens foram devolvidos ao estoque e o valor não compõe o faturamento.
+                    </p>
+                  </div>
+                )}
 
                 {detail.dueDate && (
                   <div className="flex items-center justify-between text-sm">
@@ -282,6 +402,30 @@ export default function HistoricoPage() {
                     )}
                     Marcar como pago
                   </Button>
+                )}
+
+                {detail.status !== "CANCELADO" && can("historico", "Editar") && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full"
+                      onClick={() => {
+                        handleEditSale(detail);
+                        setDetail(null);
+                      }}
+                    >
+                      <BoxIcon name="edit-alt" className="mr-2 text-base" /> Editar venda
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        setSaleToCancel(detail);
+                      }}
+                    >
+                      <BoxIcon name="x-circle" className="mr-2 text-base" /> Cancelar venda
+                    </Button>
+                  </>
                 )}
 
                 <Button
@@ -374,16 +518,39 @@ export default function HistoricoPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Status</span>
                   <Badge
-                    variant={detail.status === "PAGO" ? "secondary" : "outline"}
+                    variant={
+                      detail.status === "PAGO"
+                        ? "secondary"
+                        : detail.status === "CANCELADO"
+                          ? "outline"
+                          : "outline"
+                    }
                     className={
                       detail.status === "PENDENTE"
-                        ? "border-amber-500/40 text-amber-700"
-                        : ""
+                        ? "border-amber-500/40 text-amber-700 dark:text-amber-400"
+                        : detail.status === "CANCELADO"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive dark:bg-destructive/20 font-medium"
+                          : ""
                     }
                   >
-                    {detail.status === "PAGO" ? "Pago" : "Pendente"}
+                    {detail.status === "PAGO"
+                      ? "Pago"
+                      : detail.status === "CANCELADO"
+                        ? "Cancelado"
+                        : "Pendente"}
                   </Badge>
                 </div>
+
+                {detail.status === "CANCELADO" && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive dark:bg-destructive/20">
+                    <div className="font-semibold flex items-center gap-1.5">
+                      <BoxIcon name="info-circle" className="text-base" /> Venda cancelada
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      Os itens foram devolvidos ao estoque e o valor não compõe o faturamento.
+                    </p>
+                  </div>
+                )}
 
                 {detail.dueDate && (
                   <div className="flex items-center justify-between text-sm">
@@ -416,6 +583,30 @@ export default function HistoricoPage() {
                   </Button>
                 )}
 
+                {detail.status !== "CANCELADO" && can("historico", "Editar") && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full"
+                      onClick={() => {
+                        handleEditSale(detail);
+                        setDetail(null);
+                      }}
+                    >
+                      <BoxIcon name="edit-alt" className="mr-2 text-base" /> Editar venda
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        setSaleToCancel(detail);
+                      }}
+                    >
+                      <BoxIcon name="x-circle" className="mr-2 text-base" /> Cancelar venda
+                    </Button>
+                  </>
+                )}
+
                 <Button
                   className="w-full rounded-full"
                   onClick={() => {
@@ -443,6 +634,33 @@ export default function HistoricoPage() {
         clientPhone={voucherState?.phone}
         onClose={() => setVoucherState(null)}
       />
+
+      {/* Confirmação para Cancelar Venda */}
+      <AlertDialog open={!!saleToCancel} onOpenChange={(o) => !o && setSaleToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar venda?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente cancelar a venda #{saleToCancel?.saleNumber || saleToCancel?.id.slice(-6)}? Os produtos retornarão ao estoque e o valor de {saleToCancel ? currency(saleToCancel.total) : ""} não será mais contabilizado no faturamento. O registro permanecerá no histórico como Cancelado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingStatus}>Voltar</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={isUpdatingStatus}
+              onClick={handleConfirmCancelSale}
+            >
+              {isUpdatingStatus ? (
+                <BoxIcon name="loader-alt" className="mr-2 text-base bx-spin" />
+              ) : (
+                <BoxIcon name="x-circle" className="mr-2 text-base" />
+              )}
+              Confirmar cancelamento
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -116,6 +116,9 @@ export interface SalesSettings {
   defaultPaymentMethod: string;
   defaultSaleStatus: SaleStatus;
   paymentMethods: string[];
+  openPriceEnabled?: boolean;
+  openPriceMode?: "ALL" | "SPECIFIC";
+  openPriceProductIds?: string[];
 }
 
 export const defaultSalesSettings: SalesSettings = {
@@ -124,7 +127,10 @@ export const defaultSalesSettings: SalesSettings = {
   defaultPaymentMethod: "DINHEIRO",
   defaultSaleStatus: SaleStatus.PAGO,
   paymentMethods: ["DINHEIRO", "PIX", "CARTAO_DE_CREDITO", "CARTAO_DEBITO"],
-}
+  openPriceEnabled: false,
+  openPriceMode: "ALL",
+  openPriceProductIds: [],
+};
 
 export type DashboardPeriod = "today" | "week" | "month";
 

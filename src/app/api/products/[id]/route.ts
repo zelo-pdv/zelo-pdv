@@ -20,7 +20,7 @@ export async function PATCH(
     const body = await request.json();
 
     const existingProduct = await prisma.product.findFirst({
-      where: { id, lojaId: auth.user.lojaId },
+      where: { id, lojaId: auth.user.lojaId, deletedAt: null },
     });
 
     if (!existingProduct) {
@@ -179,15 +179,34 @@ export async function DELETE(
     const { id } = await params;
 
     const existingProduct = await prisma.product.findFirst({
-      where: { id, lojaId: auth.user.lojaId },
+      where: { id, lojaId: auth.user.lojaId, deletedAt: null },
     });
 
     if (!existingProduct) {
       return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 });
     }
 
-    await prisma.product.delete({
+    // Soft delete: preserva o histórico de vendas intacto e libera SKU/código de barras
+    const suffix = `_del_${Date.now()}`;
+    await prisma.product.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        active: false,
+        code: existingProduct.code ? `${existingProduct.code}${suffix}` : null,
+        barcode: existingProduct.barcode ? `${existingProduct.barcode}${suffix}` : null,
+      },
+    });
+
+    await createAuditLog({
+      action: "DELETE_PRODUCT",
+      entity: "Product",
+      entityId: id,
+      details: {
+        name: existingProduct.name,
+      },
+      userId: auth.user.id,
+      lojaId: auth.user.lojaId,
     });
 
     return NextResponse.json({ success: true });
