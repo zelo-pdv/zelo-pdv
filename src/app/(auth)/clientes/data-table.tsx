@@ -16,7 +16,6 @@ import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -278,38 +277,6 @@ export function ClientsDataTable({
           )}
         </div>
       </div>
-
-      {/* Badges de Filtros Ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Filtros ativos:</span>
-          {activeFilter !== "Todos" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Status: {activeFilter}
-              <button
-                type="button"
-                onClick={() => setActiveFilter("Todos")}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-
-          {pendingFilter !== "Todos" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Pendência: {pendingFilter === "Pendentes" ? "Com pendências" : "Sem pendências"}
-              <button
-                type="button"
-                onClick={() => setPendingFilter("Todos")}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-        </div>
-      )}
 
       <Card className="border-border/70 p-0">
         <CardContent className="p-0">

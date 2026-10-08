@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { BoxIcon } from "@/components/ui/box-icon";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 interface ProductThumbProps {
   name: string;
   image?: string | null;
   className?: string;
+  forceShow?: boolean;
 }
 
-export function ProductThumb({ name, image, className }: ProductThumbProps) {
+export function ProductThumb({ name, image, className, forceShow }: ProductThumbProps) {
+  const showProductImages = useSettingsStore((s) => s.products?.showProductImages ?? true);
   const [hasError, setHasError] = useState(false);
   const [lastImage, setLastImage] = useState(image);
 
@@ -18,19 +22,9 @@ export function ProductThumb({ name, image, className }: ProductThumbProps) {
     setHasError(false);
   }
 
-  const letters = name
-    .split(" ")
-    .map((s) => s[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  // Deterministic hue from name
-  let hash = 0;
-  for (let i = 0; i < name.length; i++)
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  const hue = hash % 360;
+  if (!forceShow && !showProductImages) {
+    return null;
+  }
 
   const validImage = Boolean(image && image.trim() && !hasError);
 
@@ -57,14 +51,11 @@ export function ProductThumb({ name, image, className }: ProductThumbProps) {
   return (
     <div
       className={cn(
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold text-white shadow-xs select-none",
+        "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/50 text-muted-foreground shadow-xs select-none",
         className
       )}
-      style={{
-        background: `linear-gradient(135deg, hsl(${hue} 70% 60%), hsl(${(hue + 40) % 360} 70% 45%))`,
-      }}
     >
-      {letters}
+      <BoxIcon name="image-alt" className="text-lg text-muted-foreground" />
     </div>
   );
 }

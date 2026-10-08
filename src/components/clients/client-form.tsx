@@ -109,25 +109,22 @@ export function ClientForm({
 }) {
   const isMobile = useIsMobile();
 
-  const getInitialState = useCallback(
-    (): ClientFormData => {
-      let initialPhone = initial?.phone || "";
-      if (initialPhone.startsWith("+55")) {
-        initialPhone = initialPhone.replace(/^\+55/, "");
-      }
-      return {
-        name: initial?.name || "",
-        phone: maskPhone(initialPhone),
-        email: initial?.email || "",
-        address: parseInitialAddress(initial?.address),
-        notes: initial?.notes || "",
-        active: initial?.active ?? true,
-        createdAt: initial?.createdAt || new Date(),
-        updatedAt: initial?.updatedAt || new Date(),
-      };
-    },
-    [initial],
-  );
+  const getInitialState = useCallback((): ClientFormData => {
+    let initialPhone = initial?.phone || "";
+    if (initialPhone.startsWith("+55")) {
+      initialPhone = initialPhone.replace(/^\+55/, "");
+    }
+    return {
+      name: initial?.name || "",
+      phone: maskPhone(initialPhone),
+      email: initial?.email || "",
+      address: parseInitialAddress(initial?.address),
+      notes: initial?.notes || "",
+      active: initial?.active ?? true,
+      createdAt: initial?.createdAt || new Date(),
+      updatedAt: initial?.updatedAt || new Date(),
+    };
+  }, [initial]);
 
   const [form, setForm] = useState<ClientFormData>(getInitialState());
   const [loading, setLoading] = useState(false);
@@ -286,7 +283,7 @@ export function ClientForm({
         <h3 className="text-sm font-medium">Endereço</h3>
 
         <div className="col-span-2 space-y-2">
-          <Label>Rua</Label>
+          <Label>Logradouro (Rua / Av.)</Label>
           <Input
             placeholder="Ex: Rua das Flores"
             value={form.address.street}
@@ -433,15 +430,13 @@ export function ClientForm({
       <Button
         variant="outline"
         onClick={() => onOpenChange(false)}
-        disabled={loading}
-      >
+        disabled={loading}>
         Cancelar
       </Button>
       <LoadingButton
         loading={loading}
         disabled={form.name.trim().length < 2 || loading}
-        onClick={submit}
-      >
+        onClick={submit}>
         Salvar
       </LoadingButton>
     </div>

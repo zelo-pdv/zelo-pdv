@@ -13,7 +13,6 @@ import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -148,14 +147,6 @@ export function SalesDataTable({
   const totalFiltered = table.getFilteredRowModel().rows.length;
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
-
-  const datePresetLabels: Record<string, string> = {
-    today: "Hoje",
-    "7days": "Últimos 7 dias",
-    "30days": "Últimos 30 dias",
-    thisMonth: "Este mês",
-    custom: "Personalizado",
-  };
 
   return (
     <div>
@@ -360,59 +351,6 @@ export function SalesDataTable({
           </Popover>
         </div>
       </div>
-
-      {/* Badges de Filtros Ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Filtros ativos:</span>
-          {statusFilter !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Status: {statusFilter === SaleStatus.PAGO ? "Pagas" : "Pendentes"}
-              <button
-                type="button"
-                onClick={() => setStatusFilter("all")}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-
-          {paymentFilter !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Pagamento: {getPaymentLabel(paymentFilter as string)}
-              <button
-                type="button"
-                onClick={() => setPaymentFilter("all")}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-
-          {datePreset !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Período:{" "}
-              {datePreset === "custom"
-                ? `${startDate || "..."} até ${endDate || "..."}`
-                : datePresetLabels[datePreset] || datePreset}
-              <button
-                type="button"
-                onClick={() => {
-                  setDatePreset("all");
-                  setStartDate("");
-                  setEndDate("");
-                }}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-
-        </div>
-      )}
 
       {/* Tabela de Vendas */}
       <Card className="border-border/70 p-0">

@@ -38,7 +38,6 @@ import { productsService } from "@/services/products.service";
 import { categoriesService } from "@/services/categories.service";
 import { unitsService, Unit } from "@/services/units.service";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ProductThumb } from "@/components/product-thumb";
 import {
   Select,
   SelectContent,
@@ -544,6 +543,9 @@ function ProductForm({
   const productsSettings = useSettingsStore((s) => s.products);
   const [form, setForm] = useState<FormState>(initial);
   const [busy, setBusy] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>(initial.image || "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [rawValues, setRawValues] = useState<Record<string, string>>({
     costPrice: initial.costPrice === 0 ? "" : String(initial.costPrice),
     salePrice: initial.salePrice === 0 ? "" : String(initial.salePrice),
@@ -557,6 +559,7 @@ function ProductForm({
     if (open) {
       if (isEdit) {
         setForm(initial);
+        setImagePreview(initial.image || "");
         setRawValues({
           costPrice: initial.costPrice === 0 ? "" : String(initial.costPrice),
           salePrice: initial.salePrice === 0 ? "" : String(initial.salePrice),
@@ -569,6 +572,7 @@ function ProductForm({
           try {
             const parsed = JSON.parse(draft);
             setForm(parsed);
+            setImagePreview(parsed.image || "");
             setRawValues({
               costPrice: parsed.costPrice === 0 ? "" : String(parsed.costPrice),
               salePrice: parsed.salePrice === 0 ? "" : String(parsed.salePrice),
@@ -577,9 +581,11 @@ function ProductForm({
             });
           } catch {
             setForm(initial);
+            setImagePreview(initial.image || "");
           }
         } else {
           setForm(initial);
+          setImagePreview(initial.image || "");
           setRawValues({
             costPrice: initial.costPrice === 0 ? "" : String(initial.costPrice),
             salePrice: initial.salePrice === 0 ? "" : String(initial.salePrice),
@@ -618,11 +624,101 @@ function ProductForm({
     onOpenChange(nextOpen);
   };
 
+  // Capitaliza a primeira letra de cada palavra (ex: "Café Torrado")
+  const toTitleCaseWords = (str: string): string => {
+    return str.replace(/(?:^|\s)\S/g, (char) => char.toUpperCase());
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const target = e.target;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const formatted = toTitleCaseWords(target.value);
+    updateString("name", formatted);
+    if (start !== null && end !== null) {
+      requestAnimationFrame(() => {
+        target.setSelectionRange(start, end);
+      });
+    }
+  };
+
+  // Determina casas decimais permitidas para a unidade selecionada
+  const getUnitDecimals = (unitAbbr: string): number => {
+    const u = units.find((item) => item.abbreviation === unitAbbr);
+    if (u !== undefined && u.decimalPlaces !== undefined) {
+      if (unitAbbr.toUpperCase() === "G" && u.decimalPlaces === 0) return 3;
+      return u.decimalPlaces;
+    }
+    const upper = (unitAbbr || "").toUpperCase();
+    if (["UN", "CX", "PCT", "PAR", "FD", "DZ"].includes(upper)) return 0;
+    if (["G", "KG", "L", "ML"].includes(upper)) return 3;
+    if (["M", "MT", "CM"].includes(upper)) return 2;
+    return 0;
+  };
+
   // Atualiza um campo de texto simples
   const updateString = (k: keyof FormState, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // Para campos numéricos: mantém o rawValue durante digitação e só commita um número válido
+  const handleUnitChange = (newUnit: string | null) => {
+    if (!newUnit) return;
+    const newDecimals = getUnitDecimals(newUnit);
+    if (newDecimals === 0) {
+      const newStock = Math.floor(form.stock);
+      const newMinStock = Math.floor(form.minStock);
+      setForm((f) => ({ ...f, unit: newUnit, stock: newStock, minStock: newMinStock }));
+      setRawValues((prev) => ({
+        ...prev,
+        stock: newStock === 0 ? "" : String(newStock),
+        minStock: newMinStock === 0 ? "" : String(newMinStock),
+      }));
+    } else {
+      updateString("unit", newUnit);
+    }
+  };
+
+  // Lógica específica para estoque atual e mínimo baseado na unidade
+  const handleStockNumericChange = (k: "stock" | "minStock", raw: string) => {
+    const maxDecimals = getUnitDecimals(form.unit);
+    if (maxDecimals === 0) {
+      const sanitized = raw.replace(/\D/g, "");
+      setRawValues((prev) => ({ ...prev, [k]: sanitized }));
+      const num = sanitized === "" ? 0 : parseInt(sanitized, 10);
+      setForm((f) => ({ ...f, [k]: num }));
+    } else {
+      const sanitized = raw.replace(/[^0-9.,]/g, "");
+      const parts = sanitized.replace(",", ".").split(".");
+      let normalized = parts[0];
+      if (parts.length > 1) {
+        normalized += "." + parts.slice(1).join("").slice(0, maxDecimals);
+      }
+      const displayRaw = sanitized.includes(",") && parts.length > 1
+        ? parts[0] + "," + parts.slice(1).join("").slice(0, maxDecimals)
+        : (parts.length > 1 ? parts[0] + "." + parts.slice(1).join("").slice(0, maxDecimals) : parts[0]);
+
+      setRawValues((prev) => ({ ...prev, [k]: displayRaw }));
+      const num = parseFloat(normalized);
+      if (!isNaN(num) && num >= 0) {
+        setForm((f) => ({ ...f, [k]: num }));
+      } else if (normalized === "" || normalized === ".") {
+        setForm((f) => ({ ...f, [k]: 0 }));
+      }
+    }
+  };
+
+  const handleStockBlur = (k: "stock" | "minStock") => {
+    const num = form[k] as number;
+    const maxDecimals = getUnitDecimals(form.unit);
+    if (num === 0) {
+      setRawValues((prev) => ({ ...prev, [k]: "" }));
+    } else if (maxDecimals === 0) {
+      setRawValues((prev) => ({ ...prev, [k]: String(Math.floor(num)) }));
+    } else {
+      setRawValues((prev) => ({ ...prev, [k]: String(num) }));
+    }
+  };
+
+  // Para campos numéricos de preço (mantém vírgula/ponto)
   const handleNumericChange = (k: keyof FormState, raw: string) => {
     // Permite apenas números, vírgula e ponto
     const sanitized = raw.replace(/[^0-9.,]/g, "");
@@ -648,6 +744,21 @@ function ProductForm({
     const num = form[k] as number;
     setRawValues((prev) => ({ ...prev, [k]: num === 0 ? "" : String(num) }));
   };
+
+  // Cálculos de Lucro e Margem
+  const cost = typeof form.costPrice === "number" ? form.costPrice : 0;
+  const sale = typeof form.salePrice === "number" ? form.salePrice : 0;
+  const hasCostAndSale = cost > 0 && sale > 0;
+  const profitVal = sale - cost;
+  const marginVal = sale > 0 ? (profitVal / sale) * 100 : 0;
+
+  const profitDisplay = hasCostAndSale
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(profitVal)
+    : "-";
+
+  const marginDisplay = hasCostAndSale
+    ? `${marginVal.toFixed(2).replace(".", ",")}%`
+    : "-";
 
   const handleBarcodeChange = (raw: string) => {
     // Apenas números, max 13 caracteres
@@ -715,7 +826,7 @@ function ProductForm({
           className={requiredInputClass}
           name="name"
           value={form.name}
-          onChange={(e) => updateString("name", e.target.value)}
+          onChange={handleNameChange}
           placeholder="Nome do produto"
         />
       </div>
@@ -762,7 +873,7 @@ function ProductForm({
               handleBarcodeValidation(generated);
             }}
           >
-            <BoxIcon name="magic-wand" className="text-base text-foreground" />
+            <BoxIcon name="magic-wand" solid className="text-base text-foreground" />
           </Button>
           <Button
             type="button"
@@ -785,7 +896,7 @@ function ProductForm({
         <Label>Unidade</Label>
         <Select
           value={form.unit || ""}
-          onValueChange={(value) => updateString("unit", value as string)}
+          onValueChange={handleUnitChange}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione uma unidade">
@@ -851,27 +962,60 @@ function ProductForm({
         </div>
       )}
 
+      {!productsSettings?.hideCostPrice && (
+        <>
+          <div className="space-y-2">
+            <Label>Lucro</Label>
+            <Input
+              readOnly
+              disabled
+              value={profitDisplay}
+              className="bg-muted cursor-not-allowed font-medium text-foreground disabled:opacity-100"
+              placeholder="-"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Margem de lucro</Label>
+            <Input
+              readOnly
+              disabled
+              value={marginDisplay}
+              className="bg-muted cursor-not-allowed font-medium text-foreground disabled:opacity-100"
+              placeholder="-"
+            />
+          </div>
+        </>
+      )}
+
       {(productsSettings?.trackStock ?? true) && (
         <>
           <div className="space-y-2">
-            <Label>Estoque atual</Label>
+            <Label>
+              Estoque atual {getUnitDecimals(form.unit) === 0 ? "(Inteiro)" : "(Até 3 decimais)"}
+            </Label>
             <Input
               name="stock"
-              inputMode="decimal"
+              inputMode={getUnitDecimals(form.unit) === 0 ? "numeric" : "decimal"}
+              step={getUnitDecimals(form.unit) === 0 ? "1" : "0.001"}
               value={rawValues.stock}
-              onChange={(e) => handleNumericChange("stock", e.target.value)}
-              onBlur={() => handleNumericBlur("stock")}
+              onChange={(e) => handleStockNumericChange("stock", e.target.value)}
+              onBlur={() => handleStockBlur("stock")}
               placeholder="0"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Estoque mínimo</Label>
+            <Label>
+              Estoque mínimo {getUnitDecimals(form.unit) === 0 ? "(Inteiro)" : "(Até 3 decimais)"}
+            </Label>
             <Input
-              inputMode="decimal"
+              name="minStock"
+              inputMode={getUnitDecimals(form.unit) === 0 ? "numeric" : "decimal"}
+              step={getUnitDecimals(form.unit) === 0 ? "1" : "0.001"}
               value={rawValues.minStock}
-              onChange={(e) => handleNumericChange("minStock", e.target.value)}
-              onBlur={() => handleNumericBlur("minStock")}
+              onChange={(e) => handleStockNumericChange("minStock", e.target.value)}
+              onBlur={() => handleStockBlur("minStock")}
               placeholder="0"
             />
           </div>
@@ -879,19 +1023,83 @@ function ProductForm({
       )}
 
       <div className="col-span-2 space-y-2">
-        <Label>URL da Imagem</Label>
-        <div className="flex items-center gap-3">
-          <ProductThumb
-            name={form.name || "P"}
-            image={form.image}
-            className="h-10 w-10 shrink-0 rounded-lg text-xs"
+        <Label>Imagem do Produto</Label>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl border border-border/70 bg-muted/20">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const url = URL.createObjectURL(file);
+                setImagePreview(url);
+              }
+            }}
           />
-          <Input
-            value={form.image}
-            onChange={(e) => updateString("image", e.target.value)}
-            placeholder="https://exemplo.com/imagem.png"
-            className="flex-1"
-          />
+          {imagePreview ? (
+            <div className="relative group shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="Prévia do produto"
+                className="h-20 w-20 rounded-xl object-cover border border-border shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setImagePreview("");
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm hover:opacity-90 cursor-pointer"
+                title="Remover imagem"
+              >
+                <BoxIcon name="x" className="text-xs" />
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center h-20 w-20 rounded-xl border border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+              title="Adicionar imagem"
+            >
+              <BoxIcon name="image-add" className="text-2xl" />
+              <span className="text-[10px] mt-1 font-medium">Adicionar</span>
+            </div>
+          )}
+
+          <div className="flex-1 w-full space-y-1.5">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs shrink-0"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <BoxIcon name="upload" className="mr-1 text-sm" />
+                {imagePreview ? "Trocar imagem" : "Selecionar imagem"}
+              </Button>
+              {imagePreview && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => {
+                    setImagePreview("");
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                >
+                  Remover
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Formatos suportados: PNG, JPG, WEBP (componente visual).
+            </p>
+          </div>
         </div>
       </div>
 

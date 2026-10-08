@@ -16,7 +16,6 @@ import { BoxIcon } from "@/components/ui/box-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -278,38 +277,6 @@ export function ProductsDataTable({
           </Button>
         </div>
       </div>
-
-      {/* Badges de Filtros Ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Filtros ativos:</span>
-          {statusFilter !== "Todos" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Status: {statusFilter}
-              <button
-                type="button"
-                onClick={() => setStatusFilter("Todos")}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-
-          {categoryFilter !== "Todas" && (
-            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
-              Categoria: {categoryFilter}
-              <button
-                type="button"
-                onClick={() => table.getColumn("category")?.setFilterValue(undefined)}
-                className="hover:text-destructive cursor-pointer rounded-full p-0.5"
-              >
-                <BoxIcon name="x" className="text-xs" />
-              </button>
-            </Badge>
-          )}
-        </div>
-      )}
 
       <Card className="border-border/70 p-0">
         <CardContent className="p-0">

@@ -333,15 +333,44 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 }}
               />
             </div>
+
+            <Separator className="my-1" />
+
+            {/* Exibir / Ocultar Imagens dos Produtos */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-4">
+                <Label
+                  className="text-sm font-medium cursor-pointer"
+                  htmlFor="toggle-show-product-images"
+                >
+                  Exibir imagens dos produtos
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Exibe ou oculta as imagens e miniaturas de produtos na listagem de produtos, tela de vendas e demais páginas.
+                </p>
+              </div>
+              <Switch
+                id="toggle-show-product-images"
+                checked={productsSettings.showProductImages ?? true}
+                onCheckedChange={(checked) => {
+                  setProductsSettings({ showProductImages: checked });
+                  if (checked) {
+                    toast.success("Exibição de imagens ativada");
+                  } else {
+                    toast.info("Exibição de imagens desativada");
+                  }
+                }}
+              />
+            </div>
           </div>
 
-        {/* Navegação por Abas no Mobile */}
-        <div className="flex md:hidden rounded-lg bg-muted p-1 gap-1">
+        {/* Navegação por Abas (Mobile e PC) */}
+        <div className="flex rounded-lg bg-muted p-1 gap-1 w-full">
           <button
             type="button"
             onClick={() => setActiveProductTab("categories")}
             className={cn(
-              "flex-1 py-1.5 text-xs font-medium rounded-md transition-all text-center",
+              "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all text-center cursor-pointer",
               activeProductTab === "categories"
                 ? "bg-background text-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -353,7 +382,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             type="button"
             onClick={() => setActiveProductTab("units")}
             className={cn(
-              "flex-1 py-1.5 text-xs font-medium rounded-md transition-all text-center",
+              "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all text-center cursor-pointer",
               activeProductTab === "units"
                 ? "bg-background text-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -366,12 +395,12 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
         {loading ? (
           <GlobalLoader />
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="w-full">
             {/* Categorias */}
             <div
               className={cn(
                 "border rounded-md p-4 flex flex-col h-100",
-                activeProductTab !== "categories" && "hidden md:flex"
+                activeProductTab !== "categories" && "hidden"
               )}
             >
               <div className="flex justify-between items-center mb-4 shrink-0">
@@ -454,7 +483,7 @@ export function ProductsConfigModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <div
               className={cn(
                 "border rounded-md p-4 flex flex-col h-100",
-                activeProductTab !== "units" && "hidden md:flex"
+                activeProductTab !== "units" && "hidden"
               )}
             >
               <div className="flex justify-between items-center mb-4 shrink-0">

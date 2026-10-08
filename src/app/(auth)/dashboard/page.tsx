@@ -32,16 +32,15 @@ function StatCard({
   hint?: string;
   tone?: "default" | "warn" | "success" | "pending";
 }) {
-
   return (
-
-    <Card className={cn(
-      "@container/card relative overflow-hidden transition-all duration-200",
-      tone === "default" && "border-l-4 border-l-primary/60",
-      tone === "pending" && "border-l-4 border-l-amber-500/60",
-      tone === "warn" && "border-l-4 border-l-destructive/60",
-      tone === "success" && "border-l-4 border-l-emerald-500/60",
-    )}>
+    <Card
+      className={cn(
+        "@container/card relative overflow-hidden transition-all duration-200",
+        tone === "default" && "border-l-4 border-l-primary/60",
+        tone === "pending" && "border-l-4 border-l-amber-500/60",
+        tone === "warn" && "border-l-4 border-l-destructive/60",
+        tone === "success" && "border-l-4 border-l-emerald-500/60",
+      )}>
       <CardContent className="p-4 md:p-5">
         <div className="flex flex-col min-w-0">
           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -85,8 +84,13 @@ function SalesWeekChart({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <BoxIcon name="trending-up" className="text-base text-foreground" />
-              <h2 className="text-base font-semibold">Vendas nos últimos 7 dias</h2>
+              <BoxIcon
+                name="trending-up"
+                className="text-base text-foreground"
+              />
+              <h2 className="text-base font-semibold">
+                Vendas nos últimos 7 dias
+              </h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Volume diário de vendas finalizadas e pagas
@@ -114,20 +118,58 @@ function SalesWeekChart({
             <svg
               viewBox="0 0 700 200"
               className="w-full h-44 overflow-visible"
-              aria-label="Gráfico de vendas dos últimos 7 dias"
-            >
+              aria-label="Gráfico de vendas dos últimos 7 dias">
               <defs>
-                <linearGradient id="barGradientPrimary" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.55" />
+                <linearGradient
+                  id="barGradientPrimary"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.95"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.55"
+                  />
                 </linearGradient>
-                <linearGradient id="barGradientRegular" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.65" />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.25" />
+                <linearGradient
+                  id="barGradientRegular"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.65"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.25"
+                  />
                 </linearGradient>
-                <linearGradient id="barGradientHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="1" />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.75" />
+                <linearGradient
+                  id="barGradientHover"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity="1"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.75"
+                  />
                 </linearGradient>
               </defs>
 
@@ -177,8 +219,7 @@ function SalesWeekChart({
                     key={d.dateStr}
                     onMouseEnter={() => setHoveredIdx(i)}
                     onMouseLeave={() => setHoveredIdx(null)}
-                    className="cursor-pointer"
-                  >
+                    className="cursor-pointer">
                     {/* Área de toque/hover maior */}
                     <rect
                       x={x - 8}
@@ -200,8 +241,8 @@ function SalesWeekChart({
                         isHovered
                           ? "url(#barGradientHover)"
                           : d.isToday
-                          ? "url(#barGradientPrimary)"
-                          : "url(#barGradientRegular)"
+                            ? "url(#barGradientPrimary)"
+                            : "url(#barGradientRegular)"
                       }
                       className="transition-all duration-300"
                     />
@@ -216,9 +257,8 @@ function SalesWeekChart({
                           "text-[11px] font-semibold transition-all duration-200",
                           isHovered || d.isToday
                             ? "fill-foreground font-bold"
-                            : "fill-muted-foreground"
-                        )}
-                      >
+                            : "fill-muted-foreground",
+                        )}>
                         {currency(d.total)}
                       </text>
                     )}
@@ -232,9 +272,8 @@ function SalesWeekChart({
                         "text-[12px] transition-colors",
                         d.isToday
                           ? "fill-primary font-bold"
-                          : "fill-foreground font-medium"
-                      )}
-                    >
+                          : "fill-foreground font-medium",
+                      )}>
                       {d.isToday ? "Hoje" : d.label}
                     </text>
 
@@ -243,8 +282,7 @@ function SalesWeekChart({
                       x={x + barWidth / 2}
                       y="178"
                       textAnchor="middle"
-                      className="text-[10px] fill-muted-foreground font-normal"
-                    >
+                      className="text-[10px] fill-muted-foreground font-normal">
                       {d.shortDate}
                     </text>
                   </g>
@@ -273,7 +311,7 @@ export default function Dashboard() {
   };
 
   const [period, setPeriod] = useState<DashboardPeriod>(
-    dashboardSettings.defaultPeriod || "today"
+    dashboardSettings.defaultPeriod || "today",
   );
 
   useEffect(() => {
@@ -349,7 +387,9 @@ export default function Dashboard() {
       .filter((s) => s.status === "PAGO")
       .reduce((sum, s) => sum + Number(s.total), 0);
 
-    const countInPeriod = filteredSales.filter((s) => s.status === "PAGO").length;
+    const countInPeriod = filteredSales.filter(
+      (s) => s.status === "PAGO",
+    ).length;
 
     const pending = sales
       .filter((s) => s.status === "PENDENTE")
@@ -365,10 +405,14 @@ export default function Dashboard() {
           ? Number(p.minStock)
           : 0;
       let min = minStockNum > 0 ? minStockNum : threshold;
-      
+
       if (minStockNum <= 0 && p.category?.lowStockThreshold != null) {
         min = p.category.lowStockThreshold;
-      } else if (minStockNum <= 0 && p.categoryId && catThresholds?.[p.categoryId]) {
+      } else if (
+        minStockNum <= 0 &&
+        p.categoryId &&
+        catThresholds?.[p.categoryId]
+      ) {
         min = catThresholds[p.categoryId];
       }
 
@@ -377,7 +421,13 @@ export default function Dashboard() {
     });
 
     return { soldInPeriod, countInPeriod, pending, pendingCount, low };
-  }, [sales, products, period, productsSettings.globalLowStockThreshold, productsSettings.categoryLowStockThresholds]);
+  }, [
+    sales,
+    products,
+    period,
+    productsSettings.globalLowStockThreshold,
+    productsSettings.categoryLowStockThresholds,
+  ]);
 
   // Item #12: Dados dos últimos 7 dias para o gráfico
   const last7DaysData = useMemo(() => {
@@ -440,14 +490,21 @@ export default function Dashboard() {
   // Limite fixo de vendas recentes (padrão até 5)
   const latest = sortedSales.slice(0, 5);
 
-  if (isLoading || (!can("dashboard", "Visualizar") && getFirstAccessibleRoute(can) !== "/dashboard")) {
+  if (
+    isLoading ||
+    (!can("dashboard", "Visualizar") &&
+      getFirstAccessibleRoute(can) !== "/dashboard")
+  ) {
     return <GlobalLoader />;
   }
 
   if (!can("dashboard", "Visualizar")) {
     return (
       <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <BoxIcon name="error" className="text-5xl text-muted-foreground opacity-50" />
+        <BoxIcon
+          name="error"
+          className="text-5xl text-muted-foreground opacity-50"
+        />
         <p className="text-sm font-medium">
           Você não tem permissão para visualizar o dashboard.
         </p>
@@ -462,7 +519,9 @@ export default function Dashboard() {
       {/* Header com Saudação e Botão de Configurações do Dashboard */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Olá, {firstName}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Olá, {firstName}
+          </h1>
           <p className="text-sm text-muted-foreground">
             Aqui está o resumo da sua loja.
           </p>
@@ -472,8 +531,7 @@ export default function Dashboard() {
             variant="outline"
             onClick={() => setIsConfigOpen(true)}
             className="h-10 px-3 sm:px-4 rounded-full shadow-xs gap-2 font-medium shrink-0 cursor-pointer"
-            aria-label="Configurações do Dashboard"
-          >
+            aria-label="Configurações do Dashboard">
             <BoxIcon name="cog" className="text-lg text-foreground" />
             <span className="hidden sm:inline text-sm">Configurações</span>
           </Button>
@@ -490,9 +548,8 @@ export default function Dashboard() {
               "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
               period === "today"
                 ? "bg-background text-foreground shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+                : "text-muted-foreground hover:text-foreground",
+            )}>
             Hoje
           </button>
           <button
@@ -502,9 +559,8 @@ export default function Dashboard() {
               "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
               period === "week"
                 ? "bg-background text-foreground shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+                : "text-muted-foreground hover:text-foreground",
+            )}>
             Semana
           </button>
           <button
@@ -514,9 +570,8 @@ export default function Dashboard() {
               "px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer",
               period === "month"
                 ? "bg-background text-foreground shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+                : "text-muted-foreground hover:text-foreground",
+            )}>
             Mês
           </button>
         </div>
@@ -526,17 +581,18 @@ export default function Dashboard() {
       <div
         className={cn(
           "flex overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory gap-3 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:overflow-visible",
-          dashboardSettings.hideLowStockCard ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3",
-          "[&>div]:min-w-[85vw] [&>div]:snap-center sm:[&>div]:min-w-0"
-        )}
-      >
+          dashboardSettings.hideLowStockCard
+            ? "sm:grid-cols-2"
+            : "sm:grid-cols-2 lg:grid-cols-3",
+          "[&>div]:min-w-[85vw] [&>div]:snap-center sm:[&>div]:min-w-0",
+        )}>
         <StatCard
           label={
             period === "today"
               ? "Vendido hoje"
               : period === "week"
-              ? "Vendido na semana"
-              : "Vendido no mês"
+                ? "Vendido na semana"
+                : "Vendido no mês"
           }
           value={currency(stats.soldInPeriod)}
           hint={`${stats.countInPeriod} venda${stats.countInPeriod === 1 ? "" : "s"} no período`}
@@ -562,58 +618,68 @@ export default function Dashboard() {
       <SalesWeekChart data={last7DaysData} />
 
       {/* Item #7: Ocultar seção de Estoque Baixo se configurado ou se controle de estoque estiver desativado */}
-      {!dashboardSettings.hideLowStockCard && (productsSettings?.trackStock ?? true) && products.length > 0 && stats.low.length > 0 && (
-        <section className="mt-8">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">
-              Produtos com estoque baixo
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs font-medium gap-1.5 shrink-0"
-              onClick={async () => {
-                setIsExportingList(true);
-                await handleExportLowStockPdf(stats.low, productsSettings.globalLowStockThreshold ?? 5);
-                setIsExportingList(false);
-              }}
-              disabled={isExportingList}
-            >
-              <BoxIcon name={isExportingList ? "loader-alt" : "download"} className={cn("text-sm", isExportingList && "animate-spin")} />
-              <span className="hidden sm:inline">Gerar Lista (PDF)</span>
-              <span className="sm:hidden">PDF</span>
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {stats.low
-              .slice(0, 4)
-              .map((p) => (
-              <Card key={p.id} className="border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-foreground">
-                    <BoxIcon name="package" className="text-xl text-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{p.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {Number(p.stock)} em estoque · mínimo{" "}
-                      {p.minStock !== null && p.minStock !== undefined
-                        ? Number(p.minStock)
-                        : (productsSettings.globalLowStockThreshold ?? 5)}
+      {!dashboardSettings.hideLowStockCard &&
+        (productsSettings?.trackStock ?? true) &&
+        products.length > 0 &&
+        stats.low.length > 0 && (
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">
+                Produtos com estoque baixo
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-medium gap-1.5 shrink-0"
+                onClick={async () => {
+                  setIsExportingList(true);
+                  await handleExportLowStockPdf(
+                    stats.low,
+                    productsSettings.globalLowStockThreshold ?? 5,
+                  );
+                  setIsExportingList(false);
+                }}
+                disabled={isExportingList}>
+                <BoxIcon
+                  name={isExportingList ? "loader-alt" : "download"}
+                  className={cn("text-sm", isExportingList && "animate-spin")}
+                />
+                <span className="hidden sm:inline">Gerar Lista (PDF)</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {stats.low.slice(0, 4).map((p) => (
+                <Card key={p.id} className="border-border bg-card">
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-foreground">
+                      <BoxIcon
+                        name="package"
+                        className="text-xl text-foreground"
+                      />
                     </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-amber-500/40 text-amber-700"
-                  >
-                    Repor
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">
+                        {p.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {Number(p.stock)} em estoque · mínimo{" "}
+                        {p.minStock !== null && p.minStock !== undefined
+                          ? Number(p.minStock)
+                          : (productsSettings.globalLowStockThreshold ?? 5)}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 text-amber-700">
+                      Repor
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
 
       {!dashboardSettings.hideRecentSales && latest.length > 0 && (
         <section className="mt-8">
@@ -623,8 +689,7 @@ export default function Dashboard() {
             </h2>
             <Link
               href="/historico"
-              className="text-xs font-medium text-primary hover:underline"
-            >
+              className="text-xs font-medium text-primary hover:underline">
               Ver tudo
             </Link>
           </div>
@@ -633,8 +698,7 @@ export default function Dashboard() {
               {latest.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
+                  className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
                       {s.clientName}
@@ -645,7 +709,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm font-semibold tabular-nums">
-                      {currency(s.total)}
+                      R${currency(s.total)}
                     </div>
                     <Badge
                       variant={s.status === "PAGO" ? "secondary" : "outline"}
@@ -653,8 +717,7 @@ export default function Dashboard() {
                         s.status === "PENDENTE"
                           ? "border-amber-500/40 text-amber-700"
                           : ""
-                      }
-                    >
+                      }>
                       {s.status === "PAGO" ? "Pago" : "Pendente"}
                     </Badge>
                   </div>
@@ -665,7 +728,10 @@ export default function Dashboard() {
         </section>
       )}
 
-      <DashboardConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+      <DashboardConfigModal
+        isOpen={isConfigOpen}
+        onClose={() => setIsConfigOpen(false)}
+      />
     </div>
   );
 }

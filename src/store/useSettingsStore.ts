@@ -146,6 +146,7 @@ export interface ProductsSettings {
   trackStock: boolean;
   globalLowStockThreshold: number;
   hideCostPrice: boolean;
+  showProductImages?: boolean;
   categoryLowStockThresholds?: Record<string, number>;
 }
 
@@ -153,6 +154,7 @@ export const defaultProductsSettings: ProductsSettings = {
   trackStock: true,
   globalLowStockThreshold: 5,
   hideCostPrice: false,
+  showProductImages: true,
   categoryLowStockThresholds: {},
 };
 
