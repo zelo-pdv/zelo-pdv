@@ -14,9 +14,12 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Zelo",
+  title: {
+    default: "Zelo",
+    template: "%s | Zelo",
+  },
   description:
-    "Sistema de controle de vendas e estoque para pequenos negócios.",
+    "Zelo: Gestão de vendas e pedidos para revendedores. Seu caderno de pedidos digital com catálogo e controle de cobranças sem complicação.",
   manifest: "/site.webmanifest",
   icons: {
     icon: [

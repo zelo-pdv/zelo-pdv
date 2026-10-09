@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -575,7 +575,8 @@ function ProductForm({
     minStock: initial.minStock === 0 ? "" : String(initial.minStock),
   });
 
-  const DRAFT_KEY = "@zelo-pdv/new-product-draft";
+  const DRAFT_KEY = "@zelo/new-product-draft";
+  const LEGACY_DRAFT_KEY = "@zelo-pdv/new-product-draft";
 
   useEffect(() => {
     if (open) {
@@ -591,7 +592,7 @@ function ProductForm({
           minStock: initial.minStock === 0 ? "" : String(initial.minStock),
         });
       } else {
-        const draft = localStorage.getItem(DRAFT_KEY);
+        const draft = localStorage.getItem(DRAFT_KEY) || localStorage.getItem(LEGACY_DRAFT_KEY);
         if (draft) {
           try {
             const parsed = JSON.parse(draft);
@@ -895,6 +896,7 @@ function ProductForm({
 
       if (!isEdit) {
         localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(LEGACY_DRAFT_KEY);
       }
     } finally {
       setBusy(false);

@@ -1,26 +1,45 @@
-# Zelo PDV
+# Zelo
 
-O **Zelo PDV** é um sistema completo de Ponto de Venda (PDV) moderno, multi-tenant e responsivo, desenvolvido com **Next.js**, **Prisma** e **Tailwind CSS**. Ele foi projetado para atender lojas do varejo com excelência, segurança e velocidade.
+> **Gestão de Vendas e Pedidos para Revendedores**  
+> *Seu caderno de vendas digital com catálogo de campanhas integrado.*
+
+O **Zelo** é um assistente de bolso inteligente e offline-first desenvolvido especialmente para revendedoras e consultores autônomos gerenciarem encomendas, clientes e cobranças sem complicação.
+
+Diferente de um PDV tradicional de varejo — que foca em caixas físicos, cupons fiscais e vendas de balcão imediata —, o Zelo foi desenhado para a dinâmica real da venda direta: **anotação de encomendas**, **consolidação de pedidos de campanha**, **controle de entregas** e **gestão de recebimentos/cobrança** (fiado, parcelado, carnê e Pix).
+
+---
+
+## 🎯 Por que o Zelo?
+
+1. **Ciclo Completo da Venda Direta:** Coleta o pedido dos clientes (encomendas), consolida as peças para o fechamento de ciclo da marca (Avon, Natura, Boticário, DeMillus, etc.) e facilita a entrega e cobrança.
+2. **Catálogo Integrado de Campanhas:** Busca inteligente direto pelos códigos da revista/catálogo, eliminando o trabalho braçal de cadastrar item por item.
+3. **Caderno Digital Inteligente:** Substitui o caderno de papel por uma ferramenta prática, ágil, com controle de saldo devedor e histórico por cliente.
+4. **Offline-First & Responsivo:** Funciona perfeitamente em smartphones e desktops, garantindo que o revendedor nunca perca uma anotação, mesmo sem conexão estável.
+
+---
 
 ## 🚀 Tecnologias
 
 - **Framework:** [Next.js 15+](https://nextjs.org/) (App Router)
 - **Linguagem:** TypeScript
 - **Banco de Dados:** SQLite (desenvolvimento) / PostgreSQL (produção) via [Prisma ORM](https://www.prisma.io/)
-- **Estilização:** [Tailwind CSS](https://tailwindcss.com/) com shadcn/ui
+- **Estilização:** [Tailwind CSS](https://tailwindcss.com/) com componentes shadcn/ui
 - **Autenticação & Segurança:** Autenticação via JWT cookies com isolamento de Multi-Tenancy nativo via Middleware (`proxy.ts`).
+- **PWA & Offline:** Service Worker e Web Manifest para instalação como aplicativo mobile.
 - **Testes:** [Vitest](https://vitest.dev/) para suíte de testes de regressão E2E.
 
-## 🔒 Arquitetura de Segurança
+---
 
-O sistema possui uma camada de segurança avançada rigorosamente auditada:
+## 🔒 Arquitetura de Segurança & Multi-Tenancy
 
-1. **Multi-Tenancy Restrito:** Cada usuário e produto pertence exclusivamente a uma `Loja`. Consultas no banco sempre injetam automaticamente o `lojaId`, evitando vazamento de dados entre empresas.
-2. **RBAC (Role-Based Access Control):** O sistema utiliza 3 níveis de acesso: `OWNER`, `ADMIN` e `SELLER`.
-   - O `OWNER` nunca pode ser excluído ou desativado de sua própria loja.
-   - O `SELLER` não tem acesso a páginas ou rotas de API sensíveis de gerência (ex: alterar loja, excluir produtos, gerenciar outros usuários).
-3. **Validação E2E no Proxy (`proxy.ts`):** O projeto utiliza um sistema de intercepção no Next.js (equivalente ao `middleware.ts` para a infraestrutura atual) garantindo que nenhuma rota protegida seja acessada por sessões falsificadas ou tokens expirados.
-4. **Resiliência a Concorrência (Race Conditions):** O fluxo de fechamento de vendas utiliza transações atômicas com locks otimistas de banco de dados (`UPDATE ... WHERE stock >= qty`) e um loop de retry para colisões do gerador sequencial de recibos da loja (`P2002`).
+O Zelo conta com uma camada rigorosa de proteção e isolamento:
+
+1. **Multi-Tenancy Restrito:** Cada conta/loja possui seus próprios clientes, pedidos e produtos isolados por `lojaId`.
+2. **RBAC (Role-Based Access Control):** Níveis de permissão configuráveis (`ADMIN`, `Gerente`, `Vendedor`) com proteção contra auto-exclusão do proprietário.
+3. **Validação E2E no Proxy (`proxy.ts`):** Intercepção de requisições garantindo autenticidade e validade da sessão antes de atingir as rotas protegidas.
+4. **Resiliência a Concorrência:** Fechamento atômico de pedidos com locks otimistas e controle seguro de numeração de recibos.
+
+---
 
 ## ⚙️ Instalação e Execução
 
@@ -33,7 +52,7 @@ O sistema possui uma camada de segurança avançada rigorosamente auditada:
 1. Clone o repositório e instale as dependências:
    ```bash
    git clone <repo>
-   cd zelo-pdv
+   cd zelo
    pnpm install
    ```
 
@@ -43,9 +62,10 @@ O sistema possui uma camada de segurança avançada rigorosamente auditada:
    # Preencha a DATABASE_URL e a JWT_SECRET no .env
    ```
 
-3. Execute as migrações do Prisma para criar as tabelas no banco:
+3. Execute as migrações e seed do banco de dados:
    ```bash
    pnpm prisma migrate dev
+   pnpm prisma db seed
    ```
 
 4. Inicie o servidor de desenvolvimento:
@@ -53,30 +73,32 @@ O sistema possui uma camada de segurança avançada rigorosamente auditada:
    pnpm dev
    ```
 
-5. O sistema estará disponível em [http://localhost:3000](http://localhost:3000).
+5. Acesse o sistema em [http://localhost:3000](http://localhost:3000).
+
+---
 
 ## 🧪 Testes de Regressão E2E
 
-O Zelo PDV conta com uma suíte abrangente de testes *End-to-End* integrada (E2E) construída em **Vitest**, que simula um servidor real conectando em um banco de testes real.
-
-Para executar a suíte de testes E2E:
+Para executar a suíte de testes:
 
 ```bash
-# Certifique-se de não estar com o servidor rodando na mesma porta, ou deixe que os testes subam um servidor aleatório interno.
 pnpm test:e2e
 ```
 
 A suíte cobre:
 - `auth.test.ts`: Controle de sessão e logins case-insensitive.
-- `rbac.test.ts`: Tenta invadir rotas protegidas usando tokens de SELLER.
-- `multi-tenant.test.ts`: Valida o vazamento (ou ausência de vazamento) de dados entre duas lojas diferentes simultâneas.
-- `sales.test.ts`: Transações com concorrência alta, estoques atômicos e exclusão com estorno de inventário.
-- `pagination.test.ts`: Integridade na rolagem infinita/cursores de páginação de recibos.
+- `rbac.test.ts`: Políticas de controle de acesso.
+- `multi-tenant.test.ts`: Isolamento de dados entre diferentes contas.
+- `sales.test.ts`: Transações atômicas de pedidos e estoque.
+- `pagination.test.ts`: Rolagem infinita e cursores de paginação.
+
+---
 
 ## 📄 Estrutura de Diretórios Principal
 
-- `/src/app` - Rotas, páginas e APIs da aplicação Next.js.
-- `/src/components` - Componentes React reutilizáveis da UI.
-- `/src/lib` - Utilitários, configurações (ex: inicialização do Prisma, `proxy.ts`, esquemas de validação).
-- `/prisma` - Schemas do banco de dados e migrações.
-- `/tests` - Suítes de testes automatizados Vitest.
+- `/src/app` - Rotas, páginas e APIs da aplicação Next.js (App Router).
+- `/src/components` - Componentes React reutilizáveis de interface e formulários.
+- `/src/lib` - Utilitários, regras de autenticação (`proxy.ts`), exportação e schemas.
+- `/src/store` - Gerenciamento de estado de pedidos e configurações.
+- `/prisma` - Modelagem do banco de dados, migrações e seeds.
+- `/tests` - Suítes de testes automatizados com Vitest.

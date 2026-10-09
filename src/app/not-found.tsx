@@ -35,7 +35,7 @@ export default function NotFound() {
       </div>
 
       <p className="mt-12 text-xs text-muted-foreground">
-        Zelo PDV · Sistema de Gestão e Vendas
+        Zelo · Gestão de Vendas e Pedidos para Revendedores
       </p>
     </div>
   );

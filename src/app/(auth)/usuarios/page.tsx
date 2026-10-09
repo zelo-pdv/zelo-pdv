@@ -298,7 +298,8 @@ function UserForm({
   onSuccess: (user: AppUser, isEdit: boolean) => void;
 }) {
   const isMobile = useIsMobile();
-  const DRAFT_KEY = "@zelo-pdv/new-user-draft";
+  const DRAFT_KEY = "@zelo/new-user-draft";
+  const LEGACY_DRAFT_KEY = "@zelo-pdv/new-user-draft";
 
   const [form, setForm] = useState<FormData>(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
@@ -319,7 +320,7 @@ function UserForm({
         active: initial.active,
       });
     } else {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = localStorage.getItem(DRAFT_KEY) || localStorage.getItem(LEGACY_DRAFT_KEY);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -386,6 +387,7 @@ function UserForm({
         });
         toast.success("Usuário criado com sucesso!");
         localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(LEGACY_DRAFT_KEY);
         setForm(emptyForm);
         onSuccess(created, false);
       }

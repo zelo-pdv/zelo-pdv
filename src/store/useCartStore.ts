@@ -3,12 +3,12 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Product, SaleItem, PaymentMethod, SaleStatus } from "@/types";
 import { Client } from "@/prisma/client";
 
-export type PdvStep = "cart" | "review" | "payment";
+export type SaleStep = "cart" | "review" | "payment";
 
 interface CartState {
   client: Client | null;
   items: SaleItem[];
-  step: PdvStep;
+  step: SaleStep;
   payment: PaymentMethod;
   status: SaleStatus;
   dueDate: string;
@@ -17,7 +17,7 @@ interface CartState {
   addProduct: (p: Product, qty?: number) => void;
   updateQty: (productId: string, qty: number) => void;
   removeItem: (productId: string) => void;
-  setStep: (s: PdvStep) => void;
+  setStep: (s: SaleStep) => void;
   setPayment: (p: PaymentMethod) => void;
   setStatus: (s: SaleStatus) => void;
   setDueDate: (d: string) => void;

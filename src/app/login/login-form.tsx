@@ -59,7 +59,7 @@ export function LoginForm() {
         }
       }
 
-      toast.success(`Bem-vindo(a), seu PDV está pronto!`);
+      toast.success(`Bem-vindo(a), o Zelo está pronto!`);
       const targetRoute = getFirstAccessibleRoute({
         permissions: res?.user?.permissions,
         isAdmin: res?.user?.isAdmin,
@@ -80,9 +80,9 @@ export function LoginForm() {
         <div className="absolute inset-0 z-0 opacity-25 dark:opacity-15 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.4),transparent_50%)]" />
         <div className="absolute bottom-0 right-0 z-0 opacity-20 dark:opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.4),transparent_60%)] w-150 h-150" />
 
-        {/* Topo - Nome Zelo PDV */}
+        {/* Topo - Nome Zelo */}
         <div className="relative z-10 flex items-center">
-          <span className="text-2xl font-bold tracking-tight text-white">Zelo PDV</span>
+          <span className="text-2xl font-bold tracking-tight text-white">Zelo</span>
         </div>
 
         {/* Meio - Logo do Zelo em destaque */}
@@ -90,7 +90,7 @@ export function LoginForm() {
           <div className="relative flex items-center justify-center">
             <Image
               src="/zelo-white.png"
-              alt="Zelo PDV Logo"
+              alt="Zelo Logo"
               width={260}
               height={260}
               priority
@@ -102,10 +102,10 @@ export function LoginForm() {
         {/* Rodapé do lado esquerdo */}
         <div className="relative z-10 max-w-lg mt-auto">
           <h2 className="text-3xl xl:text-4xl font-bold mb-4 leading-tight text-white tracking-tight">
-            Gestão inteligente para o seu negócio decolar
+            O caderno de pedidos da revendedora, inteligente e prático
           </h2>
           <p className="text-blue-100/80 text-base xl:text-lg">
-            Controle de vendas, estoque e muito mais em uma plataforma simples, rápida e segura.
+            Seu assistente de bolso para gerenciar encomendas, clientes e cobranças sem complicação.
           </p>
         </div>
       </div>
@@ -121,19 +121,18 @@ export function LoginForm() {
           <div className="flex lg:hidden flex-col items-center mb-8 gap-3">
             <Image
               src="/zelo-black.png"
-              alt="Zelo PDV Logo"
+              alt="Zelo Logo"
               width={96}
               height={96}
               className="object-contain dark:hidden"
             />
             <Image
               src="/zelo-white.png"
-              alt="Zelo PDV Logo"
+              alt="Zelo Logo"
               width={96}
               height={96}
               className="object-contain hidden dark:block"
             />
-            {/* <span className="text-xl font-bold tracking-tight text-foreground">Zelo PDV</span> */}
           </div>
 
           <div className="mb-8 text-left">
@@ -141,7 +140,7 @@ export function LoginForm() {
               Bem-vindo(a) de volta!
             </h1>
             <p className="text-muted-foreground">
-              Acesse sua conta para continuar gerenciando suas vendas.
+              Acesse sua conta para continuar gerenciando seus pedidos e vendas.
             </p>
           </div>
 

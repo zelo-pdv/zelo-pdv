@@ -1,6 +1,7 @@
 {
-  "name": "Zelo PDV",
+  "name": "Zelo",
   "short_name": "Zelo",
+  "description": "Zelo: Gestão de vendas e pedidos para revendedores.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

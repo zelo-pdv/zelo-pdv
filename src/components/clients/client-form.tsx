@@ -176,14 +176,15 @@ export function ClientForm({
     }
   };
 
-  const DRAFT_KEY = "@zelo-pdv/new-client-draft";
+  const DRAFT_KEY = "@zelo/new-client-draft";
+  const LEGACY_DRAFT_KEY = "@zelo-pdv/new-client-draft";
 
   useEffect(() => {
     if (open) {
       if (isEdit) {
         setForm(getInitialState());
       } else {
-        const draft = localStorage.getItem(DRAFT_KEY);
+        const draft = localStorage.getItem(DRAFT_KEY) || localStorage.getItem(LEGACY_DRAFT_KEY);
         if (draft) {
           try {
             setForm(JSON.parse(draft));
@@ -229,6 +230,7 @@ export function ClientForm({
 
       if (!isEdit) {
         localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(LEGACY_DRAFT_KEY);
       }
     } finally {
       setLoading(false);

@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <div className="relative shrink-0 flex items-center justify-center">
             <Image
               src="/zelo-black.png"
-              alt="Zelo PDV"
+              alt="Zelo"
               width={48}
               height={48}
               priority
@@ -53,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             />
             <Image
               src="/zelo-white.png"
-              alt="Zelo PDV"
+              alt="Zelo"
               width={48}
               height={48}
               priority

@@ -163,8 +163,8 @@ async function main() {
   console.log(`Grupo ADMIN configurado: ${adminGroup.name} (${adminGroup.id})`);
 
   // Usuário Admin
-  const email = "zelopdv@gmail.com";
-  const password = "Zelopdv@2026";
+  const email = "zelo@gmail.com";
+  const password = "Zelo@2026";
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const adminUser = await prisma.user.upsert({
@@ -206,7 +206,7 @@ async function main() {
   // Configurar dados padrão para Loja Demo
   const { adminGroup: demoAdminGroup } = await setupDefaultDataForLoja(demoLoja.id);
 
-  const demoEmail = "demo@zelopdv.com";
+  const demoEmail = "demo@zelo.com";
   const demoPassword = "demo";
   const demoHashedPassword = await bcrypt.hash(demoPassword, 10);
 

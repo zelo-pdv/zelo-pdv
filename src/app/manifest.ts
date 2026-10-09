@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Zelo PDV',
+    name: 'Zelo',
     short_name: 'Zelo',
-    description: 'Sistema de controle de vendas e estoque para pequenos negócios.',
+    description: 'Zelo: Gestão de vendas e pedidos para revendedores. Seu caderno digital inteligente de vendas.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
